@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Checkout - Kickshaus</title>
+
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100">
+
+  <!-- HEADER -->
+  <div class="max-w-6xl mx-auto px-4 py-6">
+    <div class="flex items-center gap-4">
+      <button onclick="history.back()" class="text-2xl hover:text-blue-600 transition">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+      <h1 class="text-3xl font-bold mx-auto" style="font-family: 'Playfair Display', serif;">Checkout</h1>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="max-w-6xl mx-auto px-4 pb-12">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+      <!-- ORDER SUMMARY -->
+      <div class="lg:col-span-2 bg-white rounded-xl p-6 shadow-md">
+        <h2 class="text-xl font-bold mb-4">Order Summary</h2>
+
+        <!-- Cart Items Container -->
+        <div id="checkoutItemsContainer" class="space-y-4">
+          <!-- Items will be dynamically inserted -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyCheckoutState" class="text-center py-12" style="display: none;">
+          <i class="fas fa-shopping-cart" style="font-size: 4rem; color: #ccc; margin-bottom: 20px;"></i>
+          <p class="text-gray-600 mb-4">Your cart is empty</p>
+          <a href="index.html" class="inline-block bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 transition">
+            Continue Shopping
+          </a>
+        </div>
+
+        <p class="text-sm text-gray-500 mt-4" id="itemCountText">0 items in cart</p>
+      </div>
+
+      <!-- PAYMENT SUMMARY -->
+      <div class="bg-white rounded-xl p-6 shadow-md h-fit sticky top-4">
+
+        <h2 class="text-xl font-bold mb-4">Payment Summary</h2>
+
+        <div class="space-y-3 text-base">
+          <div class="flex justify-between">
+            <span>Subtotal</span>
+            <span id="checkoutSubtotal">₦0</span>
+          </div>
+
+          <div class="flex justify-between">
+            <span>Sales Tax (7.5%)</span>
+            <span id="checkoutTax">₦0</span>
+          </div>
+
+          <div class="flex justify-between text-green-600 hidden" id="discountRow">
+            <span>Discount</span>
+            <span id="checkoutDiscount">-₦0</span>
+          </div>
+        </div>
+
+        <div class="border-t my-4"></div>
+
+        <div class="flex justify-between font-bold text-xl mb-6">
+          <span>Total</span>
+          <span id="checkoutTotal">₦0</span>
+        </div>
+
+        <!-- COUPON -->
+        <div class="flex gap-2 mb-6">
+          <input id="couponInput"
+            class="flex-1 border rounded-lg px-3 py-2 text-sm"
+            placeholder="Enter coupon code" />
+
+          <button onclick="applyCoupon()"
+            class="border border-blue-600 text-blue-600 px-4 rounded-lg text-sm font-semibold hover:bg-blue-50 transition">
+            Apply
+          </button>
+        </div>
+
+        <p id="couponMsg" class="text-sm mb-6"></p>
+
+        <!-- CTA BUTTONS -->
+        <div class="space-y-3">
+          <!-- Proceed to Delivery -->
+          <a href="delivery.html" id="proceedBtn"
+             class="block w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-xl font-semibold text-center transition">
+            Proceed to Delivery
+          </a>
+
+          <!-- Continue Shopping -->
+          <a href="index.html"
+             class="block w-full border border-gray-300 hover:border-gray-400 py-3 rounded-xl text-sm text-center font-semibold transition">
+            Continue Shopping
+          </a>
+        </div>
+
+        <!-- TRUST -->
+        <p class="text-xs text-gray-500 text-center mt-4">
+          🔒 Secure checkout • All payments are encrypted
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="global-state.js"></script>
+  <script>
+    let discountAmount = 0;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderCheckoutItems();
+    });
+
+    // Render checkout items - handles both cart and "Buy Now" orders
+    function renderCheckoutItems() {
+      const container = document.getElementById('checkoutItemsContainer');
+      const emptyState = document.getElementById('emptyCheckoutState');
+      const itemCountText = document.getElementById('itemCountText');
+      const proceedBtn = document.getElementById('proceedBtn');
+      
+      // Check if this is a "Buy Now" order
+      const buyNowOrder = JSON.parse(localStorage.getItem('buyNowOrder') || 'null');
+      const cart = buyNowOrder || KickshausState.cart;
+      
+      let itemCount;
+      if (buyNowOrder) {
+        itemCount = buyNowOrder.reduce((sum, item) => sum + item.quantity, 0);
+      } else {
+        itemCount = KickshausState.getCartItemCount();
+      }
+
+      if (cart.length === 0) {
+        container.style.display = 'none';
+        emptyState.style.display = 'block';
+        proceedBtn.style.opacity = '0.5';
+        proceedBtn.style.pointerEvents = 'none';
+        itemCountText.textContent = '0 items in cart';
+        return;
+      }
+
+      container.style.display = 'block';
+      emptyState.style.display = 'none';
+      proceedBtn.style.opacity = '1';
+      proceedBtn.style.pointerEvents = 'auto';
+      itemCountText.textContent = `${itemCount} ${itemCount === 1 ? 'item' : 'items'} ${buyNowOrder ? 'to purchase' : 'in cart'}`;
+
+      container.innerHTML = cart.map(item => `
+        <div class="flex items-center gap-4 border-b pb-4">
+          <div class="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden shrink-0">
+            <img 
+              src="${item.image || item.images[0]}"
+              alt="${item.name}"
+              class="w-full h-full object-contain"
+            />
+          </div>
+
+          <div class="flex-1">
+            <p class="font-semibold">${item.name}</p>
+            <p class="text-sm text-gray-500">Size: ${item.size} • Color: ${item.color}</p>
+            <p class="text-sm text-gray-600 mt-1">Qty: ${item.quantity}</p>
+          </div>
+
+          <p class="font-bold">₦${(item.price * item.quantity).toLocaleString()}</p>
+        </div>
+      `).join('');
+
+      updateCheckoutSummary(cart, buyNowOrder);
+    }
+
+    // Update checkout summary
+    function updateCheckoutSummary(cart, isBuyNow) {
+      let subtotal;
+      
+      if (isBuyNow) {
+        subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      } else {
+        subtotal = KickshausState.getCartTotal();
+      }
+      
+      const tax = Math.round(subtotal * 0.075); // 7.5% tax
+      const total = subtotal + tax - discountAmount;
+
+      document.getElementById('checkoutSubtotal').textContent = `₦${subtotal.toLocaleString()}`;
+      document.getElementById('checkoutTax').textContent = `₦${tax.toLocaleString()}`;
+      document.getElementById('checkoutTotal').textContent = `₦${total.toLocaleString()}`;
+
+      if (discountAmount > 0) {
+        document.getElementById('checkoutDiscount').textContent = `-₦${discountAmount.toLocaleString()}`;
+      }
+
+      // Save to localStorage for next pages
+      localStorage.setItem('checkoutSummary', JSON.stringify({
+        subtotal,
+        tax,
+        discount: discountAmount,
+        total,
+        itemCount: cart.reduce((sum, item) => sum + item.quantity, 0),
+        isBuyNow: !!isBuyNow
+      }));
+    }
+
+    // Apply coupon
+    function applyCoupon() {
+      const coupon = document.getElementById('couponInput').value.trim().toUpperCase();
+      const msg = document.getElementById('couponMsg');
+      const discountRow = document.getElementById('discountRow');
+      
+      // Get current subtotal
+      const buyNowOrder = JSON.parse(localStorage.getItem('buyNowOrder') || 'null');
+      const currentSubtotal = buyNowOrder ? 
+        buyNowOrder.reduce((sum, item) => sum + (item.price * item.quantity), 0) : 
+        KickshausState.getCartTotal();
+
+      if (coupon === 'SAVE500' || coupon === 'KICKSHAUS10') {
+        discountAmount = coupon === 'SAVE500' ? 500 : Math.round(currentSubtotal * 0.1);
+        discountRow.classList.remove('hidden');
+        msg.textContent = '✓ Coupon applied successfully!';
+        msg.className = 'text-sm mb-6 text-green-600 font-semibold';
+      } else if (coupon === '') {
+        msg.textContent = 'Please enter a coupon code';
+        msg.className = 'text-sm mb-6 text-gray-500';
+        discountAmount = 0;
+        discountRow.classList.add('hidden');
+      } else {
+        msg.textContent = '✗ Invalid coupon code';
+        msg.className = 'text-sm mb-6 text-red-600 font-semibold';
+        discountAmount = 0;
+        discountRow.classList.add('hidden');
+      }
+
+      const cart = buyNowOrder || KickshausState.cart;
+      updateCheckoutSummary(cart, buyNowOrder);
+    }
+  </script>
+</body>
+</html>

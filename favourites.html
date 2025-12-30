@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Favorites - Kickshaus</title>
+  
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+
+  <style>
+    :root {
+      --bg: #f5f5f5;
+      --card: #ffffff;
+      --text: #111111;
+      --text-muted: #666666;
+      --accent: #ffd700;
+      --heart: #ff3366;
+      --primary: #00A8E8;
+      --shadow: 0 8px 24px rgba(0,0,0,0.08);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 2rem;
+    }
+
+    body.dark-theme {
+      --bg: #0F0F0F;
+      --card: #1E1E1E;
+      --text: #FFFFFF;
+      --text-muted: #B0B0B0;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      padding: 1.2rem 1rem;
+      background: var(--card);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .back-btn {
+      font-size: 1.6rem;
+      color: var(--text);
+      cursor: pointer;
+      padding: 0.5rem;
+      background: none;
+      border: none;
+      transition: transform 0.2s;
+    }
+
+    .back-btn:hover {
+      transform: translateX(-4px);
+    }
+
+    .title {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.1rem;
+      font-weight: 700;
+      margin-left: 0.8rem;
+      flex: 1;
+    }
+
+    .favorites-count {
+      font-size: 1rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .favorites-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.5rem;
+      padding: 1.5rem 1rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .favorite-item {
+      background: var(--card);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      position: relative;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .favorite-item:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.12);
+    }
+
+    .product-image-container {
+      position: relative;
+      aspect-ratio: 1 / 1;
+      background: #f8f9fa;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .product-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      padding: 1.5rem;
+      transition: transform 0.4s ease;
+    }
+
+    .favorite-item:hover .product-image {
+      transform: scale(1.08);
+    }
+
+    .heart {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      font-size: 1.8rem;
+      color: var(--heart);
+      cursor: pointer;
+      filter: drop-shadow(0 2px 6px rgba(255,51,102,0.4));
+      transition: transform 0.2s ease;
+      background: white;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+    }
+
+    .heart:hover {
+      transform: scale(1.15);
+    }
+
+    .heart:active {
+      transform: scale(0.95);
+    }
+
+    .product-info {
+      padding: 1.2rem 1.4rem;
+      text-align: center;
+    }
+
+    .product-name {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+      color: var(--text);
+    }
+
+    .product-category {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 0.8rem;
+    }
+
+    .product-price {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 1rem;
+    }
+
+    .price-symbol {
+      font-size: 1.1rem;
+      font-weight: 500;
+    }
+
+    .add-to-cart-btn {
+      width: 100%;
+      padding: 0.8rem;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .add-to-cart-btn:hover {
+      background: #0088BB;
+      transform: translateY(-2px);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .empty-icon {
+      font-size: 5rem;
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+    }
+
+    .empty-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      color: var(--text);
+    }
+
+    .empty-text {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+      line-height: 1.6;
+    }
+
+    .btn-shop {
+      display: inline-block;
+      padding: 1rem 2rem;
+      background: var(--primary);
+      color: white;
+      text-decoration: none;
+      border-radius: 12px;
+      font-weight: 600;
+      transition: all 0.3s;
+    }
+
+    .btn-shop:hover {
+      background: #0088BB;
+      transform: translateY(-2px);
+    }
+
+    @media (max-width: 600px) {
+      .favorites-grid {
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 1.2rem;
+      }
+      
+      .title {
+        font-size: 1.9rem;
+      }
+      
+      .product-price {
+        font-size: 1.15rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <button class="back-btn" id="backBtn">
+      <i class="fas fa-arrow-left"></i>
+    </button>
+    <h1 class="title">Favorites</h1>
+    <span class="favorites-count" id="favCount">0 items</span>
+  </header>
+
+  <div class="favorites-grid" id="favoritesGrid">
+    <!-- Cards will be injected here -->
+  </div>
+
+  <div class="empty-state" id="emptyState" style="display: none;">
+    <div class="empty-icon">💔</div>
+    <h2 class="empty-title">No favorites yet</h2>
+    <p class="empty-text">
+      Start adding products to your favorites by clicking the heart icon on any product.
+      Your favorite items will appear here for easy access!
+    </p>
+    <a href="index.html" class="btn-shop">
+      <i class="fas fa-shopping-bag"></i> Start Shopping
+    </a>
+  </div>
+
+  <script src="global-state.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const grid = document.getElementById('favoritesGrid');
+    const emptyState = document.getElementById('emptyState');
+    const favCount = document.getElementById('favCount');
+
+    if (!grid) {
+      console.error('Element with id="favoritesGrid" not found!');
+      return;
+    }
+
+    // Render favorites
+    function renderFavorites() {
+      const favorites = KickshausState.favorites;
+      
+      // Update count
+      favCount.textContent = `${favorites.length} ${favorites.length === 1 ? 'item' : 'items'}`;
+      
+      if (favorites.length === 0) {
+        grid.style.display = 'none';
+        emptyState.style.display = 'block';
+        return;
+      }
+
+      grid.style.display = 'grid';
+      emptyState.style.display = 'none';
+
+      grid.innerHTML = favorites.map(item => `
+        <div class="favorite-item" data-id="${item.id}">
+          <div class="product-image-container" onclick="window.location.href='product-detail.html?id=${item.id}'">
+            <img src="${item.images[0]}" alt="${item.name}" class="product-image" loading="lazy"/>
+            <button class="heart" onclick="event.stopPropagation(); removeFavorite('${item.id}')" aria-label="Remove from favorites">
+              <i class="fas fa-heart"></i>
+            </button>
+          </div>
+          <div class="product-info">
+            <div class="product-name">${item.name}</div>
+            <div class="product-category">${item.category}</div>
+            <div class="product-price">
+              <span class="price-symbol">₦</span>${item.price.toLocaleString()}
+            </div>
+            <button class="add-to-cart-btn" onclick="addToCartFromFavorites('${item.id}')">
+              <i class="fas fa-shopping-cart"></i>
+              Add to Cart
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Remove from favorites
+    window.removeFavorite = function(id) {
+      showConfirmationModal(
+        'Are you sure you want to remove this item from your favorites?',
+        () => {
+          KickshausState.removeFavorite(id);
+          renderFavorites();
+          showToast('Removed from favorites');
+        }
+      );
+    };
+
+    // Add to cart from favorites
+    window.addToCartFromFavorites = function(id) {
+      const product = KickshausState.favorites.find(item => item.id === id);
+      if (product) {
+        KickshausState.addToCart({
+          ...product,
+          size: product.sizes ? product.sizes[0] : 'N/A',
+          color: product.colors ? product.colors[0] : 'N/A'
+        });
+        showToast('Added to cart! Continue shopping or checkout.');
+      }
+    };
+
+    // Back button navigation
+    const backBtn = document.getElementById('backBtn');
+    if (backBtn) {
+      backBtn.onclick = () => {
+        window.location.href = 'index.html';
+      };
+    }
+
+    // Initial render
+    renderFavorites();
+    
+    console.log('✨ Favorites page loaded with', KickshausState.favorites.length, 'items');
+  });
+  </script>
+  <script src="global-state.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Delivery Details - Kickshaus</title>
+
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 min-h-screen">
+
+  <!-- HEADER -->
+  <div class="flex items-center px-6 py-6 max-w-4xl mx-auto">
+    <button onclick="history.back()" class="text-2xl mr-4 hover:text-blue-600 transition">
+      <i class="fas fa-arrow-left"></i>
+    </button>
+    <h1 class="text-3xl mx-auto font-bold" style="font-family: 'Playfair Display', serif;">
+      Delivery Details
+    </h1>
+  </div>
+  
+  <!-- ORDER SUMMARY BAR -->
+  <div class="max-w-4xl mx-auto px-6 mb-6">
+    <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+      <div class="flex justify-between items-center flex-wrap gap-2">
+        <div>
+          <p class="text-sm text-gray-600">Order Total</p>
+          <p class="text-xl font-bold text-blue-600" id="orderTotal">₦0</p>
+        </div>
+        <div>
+          <p class="text-sm text-gray-600">Items</p>
+          <p class="text-xl font-bold" id="orderItems">0</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FORM -->
+  <form id="deliveryForm" class="px-6 space-y-5 max-w-4xl mx-auto pb-12">
+
+    <div class="bg-white rounded-xl p-6 shadow-md">
+      <h2 class="text-xl font-bold mb-4">Contact Information</h2>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold mb-2">Full Name *</label>
+          <input
+            type="text"
+            name="fullName"
+            placeholder="Enter your full name"
+            class="w-full bg-gray-50 border border-gray-300 py-3 px-4 rounded-lg text-base outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"
+            required
+          />
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold mb-2">Email Address *</label>
+          <input
+            type="email"
+            name="email"
+            placeholder="your@email.com"
+            class="w-full bg-gray-50 border border-gray-300 py-3 px-4 rounded-lg text-base outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"
+            required
+          />
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold mb-2">Phone Number *</label>
+          <input
+            type="tel"
+            name="phone"
+            placeholder="+234 XXX XXX XXXX"
+            class="w-full bg-gray-50 border border-gray-300 py-3 px-4 rounded-lg text-base outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"
+            required
+          />
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-xl p-6 shadow-md">
+      <h2 class="text-xl font-bold mb-4">Delivery Address</h2>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold mb-2">Street Address *</label>
+          <input
+            type="text"
+            name="address"
+            placeholder="House number and street name"
+            class="w-full bg-gray-50 border border-gray-300 py-3 px-4 rounded-lg text-base outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"
+            required
+          />
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold mb-2">City *</label>
+            <input
+              type="text"
+              name="city"
+              placeholder="City"
+              class="w-full bg-gray-50 border border-gray-300 py-3 px-4 rounded-lg text-base outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"
+              required
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold mb-2">State *</label>
+            <input
+              type="text"
+              name="state"
+              placeholder="State"
+              class="w-full bg-gray-50 border border-gray-300 py-3 px-4 rounded-lg text-base outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"
+              required
+            />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold mb-2">Additional Notes (Optional)</label>
+          <textarea
+            name="notes"
+            placeholder="Any special delivery instructions..."
+            rows="3"
+            class="w-full bg-gray-50 border border-gray-300 py-3 px-4 rounded-lg text-base outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"
+          ></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- BUTTON -->
+    <button
+      type="submit"
+      class="w-full bg-red-600 hover:bg-red-700 transition text-white font-bold py-4 rounded-xl text-xl shadow-lg">
+      Proceed to Payment <i class="fas fa-arrow-right ml-2"></i>
+    </button>
+
+  </form>
+
+  <script src="global-state.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Load order summary (handles both cart and Buy Now)
+      const checkoutSummary = JSON.parse(localStorage.getItem('checkoutSummary') || '{}');
+      document.getElementById('orderTotal').textContent = `₦${(checkoutSummary.total || 0).toLocaleString()}`;
+      document.getElementById('orderItems').textContent = checkoutSummary.itemCount || 0;
+
+      // Handle form submission
+      document.getElementById("deliveryForm").addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        // Collect form data
+        const formData = new FormData(this);
+        const deliveryData = {
+          fullName: formData.get('fullName'),
+          email: formData.get('email'),
+          phone: formData.get('phone'),
+          address: formData.get('address'),
+          city: formData.get('city'),
+          state: formData.get('state'),
+          notes: formData.get('notes')
+        };
+
+        // Validate
+        if (!deliveryData.fullName || !deliveryData.email || !deliveryData.phone || 
+            !deliveryData.address || !deliveryData.city || !deliveryData.state) {
+          showToast("Please fill in all required fields.", 'error');
+          return;
+        }
+
+        // Save to localStorage
+        localStorage.setItem("deliveryDetails", JSON.stringify(deliveryData));
+        
+        // Check if this was a Buy Now order
+        const isBuyNow = checkoutSummary.isBuyNow;
+        
+        if (isBuyNow) {
+          // For Buy Now orders, we'll clear the temporary order after payment
+          localStorage.setItem('pendingBuyNowOrder', 'true');
+        }
+        
+        // Show success and redirect
+        showToast("Delivery details saved successfully!");
+        
+        setTimeout(() => {
+          window.location.href = "payment.html";
+        }, 1000);
+      });
+    });
+  </script>
+   <script src="global-state.js"></script>
+<script src="script.js"></script>
+
+</body>
+</html>

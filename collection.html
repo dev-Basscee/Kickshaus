@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>All Collections - Kickshaus</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- THEME TOGGLE -->
+  <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">
+    <i class="fas fa-moon"></i>
+  </button>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="container">
+      <nav class="nav">
+        <div class="nav-logo">
+          <a href="index.html">
+            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='%2300A8E8' d='M50 10 L80 30 L80 70 L50 90 L20 70 L20 30 Z'/%3E%3Cpath fill='white' d='M35 40 Q50 35 65 40 L65 60 Q50 65 35 60 Z'/%3E%3C/svg%3E" alt="Kickshaus Logo">
+          </a>
+        </div>
+
+        <ul class="nav-menu">
+          <li><a href="index.html" class="nav-link">Home</a></li>
+          <li><a href="index.html#products" class="nav-link">Products</a></li>
+          <li><a href="index.html#featured" class="nav-link">Featured</a></li>
+          <li><a href="collection.html" class="nav-link active">Collections</a></li>
+        </ul>
+
+        <div class="nav-actions">
+          <button class="icon-btn" aria-label="Search">
+            <i class="fas fa-search"></i>
+          </button>
+          <a href="favourites.html" class="icon-btn heart-btn" aria-label="Favorites">
+            <i class="fas fa-heart"></i>
+            <span class="badge badge-favorites" id="favoriteBadge">0</span>
+          </a>
+          <a href="cart.html" class="icon-btn cart-btn" aria-label="Cart">
+            <i class="fas fa-shopping-cart"></i>
+            <span class="badge badge-cart" id="cartBadge">0</span>
+          </a>
+          <a href="login.html" class="icon-btn account-btn" aria-label="Account">
+            <i class="fas fa-user"></i>
+          </a>
+          <button class="mobile-menu-toggle" aria-label="Menu">
+            <i class="fas fa-bars"></i>
+          </button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <main class="collections-page">
+    <div class="container">
+      <!-- Page Header -->
+      <div class="collections-header">
+        <h1 class="collections-title">All Collections</h1>
+        <p class="collections-subtitle">Discover our complete range of premium handcrafted footwear</p>
+        
+        <div class="filters-bar">
+          <div class="filter-group">
+            <select class="filter-select" id="sortFilter">
+              <option value="featured">Sort by: Featured</option>
+              <option value="price-low">Price: Low to High</option>
+              <option value="price-high">Price: High to Low</option>
+              <option value="newest">Newest First</option>
+              <option value="bestselling">Best Selling</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <select class="filter-select" id="categoryFilter">
+              <option value="all">All Categories</option>
+              <option value="dress">Dress Shoes</option>
+              <option value="loafers">Loafers</option>
+              <option value="sneakers">Sneakers</option>
+              <option value="boots">Boots</option>
+              <option value="Fashion">Fashion</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <select class="filter-select" id="priceFilter">
+              <option value="all">All Prices</option>
+              <option value="0-150000">₦0 - ₦150,000</option>
+              <option value="150000-200000">₦150,000 - ₦200,000</option>
+              <option value="200000+">₦200,000+</option>
+            </select>
+          </div>
+
+          <button class="filter-reset" id="resetFilters">
+            <i class="fas fa-redo"></i> Reset
+          </button>
+        </div>
+
+        <div class="results-count">
+          Showing <span id="resultCount">0</span> products
+        </div>
+      </div>
+
+      <!-- Products Grid -->
+      <div class="products-grid collections-grid" id="allProductsGrid">
+        <!-- Products will be inserted here by JavaScript -->
+      </div>
+
+      <!-- Loading State -->
+      <div class="loading-state" id="loadingState" style="display: none;">
+        <div class="spinner"></div>
+        <p>Loading collections...</p>
+      </div>
+
+      <!-- No Results -->
+      <div class="no-results" id="noResults" style="display: none;">
+        <i class="fas fa-search" style="font-size: 4rem; color: var(--text-muted); margin-bottom: 20px;"></i>
+        <h3>No products found</h3>
+        <p>Try adjusting your filters or search criteria</p>
+        <button class="btn btn-primary" onclick="resetAllFilters()">Clear Filters</button>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination" id="pagination">
+        <button class="page-btn" id="prevPage" disabled>
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        <div class="page-numbers" id="pageNumbers"></div>
+        <button class="page-btn" id="nextPage">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-brand">
+          <div class="footer-logo">
+            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='%2300A8E8' d='M50 10 L80 30 L80 70 L50 90 L20 70 L20 30 Z'/%3E%3Cpath fill='white' d='M35 40 Q50 35 65 40 L65 60 Q50 65 35 60 Z'/%3E%3C/svg%3E" alt="Kickshaus Logo">
+          </div>
+          <p class="footer-tagline">Kickshaus<br>Premium Footwear For Your Best Luxury</p>
+          <p class="footer-address" style="color:var(--text-muted); font-size:0.9rem; margin-top:12px; line-height:1.6;">
+            2 Prof. Ikechi Mgbeoji Street,<br>
+            Okun, Ajah, Lagos State, Nigeria
+          </p>
+        </div>
+
+        <div class="footer-links">
+          <div class="footer-column">
+            <h4>Shop</h4>
+            <ul>
+              <li><a href="collection.html">New Arrivals</a></li>
+              <li><a href="collection.html">Men</a></li>
+              <li><a href="collection.html">Women</a></li>
+              <li><a href="collection.html">Sale</a></li>
+            </ul>
+          </div>
+
+          <div class="footer-column">
+            <h4>Support</h4>
+            <ul>
+              <li><a href="index.html#contact">Contact Us</a></li>
+              <li><a href="#">FAQs</a></li>
+              <li><a href="#">Shipping</a></li>
+              <li><a href="#">Returns</a></li>
+            </ul>
+          </div>
+
+          <div class="footer-column">
+            <h4>Company</h4>
+            <ul>
+              <li><a href="#">About Us</a></li>
+              <li><a href="#">Careers</a></li>
+              <li><a href="#">Privacy Policy</a></li>
+              <li><a href="#">Terms</a></li>
+            </ul>
+          </div>
+
+          <div class="footer-column">
+            <h4>Follow Us</h4>
+            <div class="social-links">
+              <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+              <a href="#" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
+              <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+              <a href="#" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; 2025 Kickshaus. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- BACK TO TOP -->
+  <button id="backToTop" class="back-to-top" aria-label="Back to top">
+    <i class="fas fa-arrow-up"></i>
+  </button>
+
+  <!-- IMPORTANT: Load global-state.js FIRST -->
+  <script src="global-state.js"></script>
+  <script src="script.js"></script>
+  <script>
+    // Collection page specific functionality
+    let filteredProducts = [...PRODUCTS_DATABASE];
+    let currentPage = 1;
+    const productsPerPage = 12;
+
+    // Render products
+    function renderCollectionProducts() {
+      const grid = document.getElementById('allProductsGrid');
+      const loading = document.getElementById('loadingState');
+      const noResults = document.getElementById('noResults');
+      const pagination = document.getElementById('pagination');
+
+      loading.style.display = 'flex';
+      grid.innerHTML = '';
+
+      setTimeout(() => {
+        loading.style.display = 'none';
+
+        if (filteredProducts.length === 0) {
+          noResults.style.display = 'flex';
+          pagination.style.display = 'none';
+          return;
+        }
+
+        noResults.style.display = 'none';
+        pagination.style.display = 'flex';
+
+        const startIndex = (currentPage - 1) * productsPerPage;
+        const endIndex = startIndex + productsPerPage;
+        const productsToShow = filteredProducts.slice(startIndex, endIndex);
+
+        grid.innerHTML = productsToShow.map(product => `
+          <div class="product-card ${product.stock === 0 ? 'out-of-stock' : ''}" 
+               data-id="${product.id}" 
+               onclick="window.location.href='product-detail.html?id=${product.id}'"
+               style="cursor: pointer;">
+            <div class="product-image">
+              <img src="${product.images[0]}" alt="${product.name}">
+              ${product.badge ? `<span class="product-badge ${product.badge}">${product.badge === 'new' ? 'New' : 'Best Seller'}</span>` : ''}
+              ${product.stock === 0 ? `<span class="product-badge out-of-stock-badge">Out of Stock</span>` : ''}
+              
+              <div class="product-actions">
+                <button class="action-btn favorite-btn ${KickshausState.isFavorited(product.id) ? 'active' : ''}" 
+                        data-id="${product.id}"
+                        onclick="event.stopPropagation(); toggleFavorite(${JSON.stringify(product).replace(/"/g, '&quot;')}, this);">
+                  <i class="${KickshausState.isFavorited(product.id) ? 'fas' : 'far'} fa-heart"></i>
+                </button>
+                <button class="action-btn quick-view-btn" 
+                        data-id="${product.id}"
+                        onclick="event.stopPropagation(); window.location.href='product-detail.html?id=${product.id}';">
+                  <i class="fas fa-eye"></i>
+                </button>
+              </div>
+            </div>
+            
+            <div class="product-info">
+              <h3 class="product-name">${product.name}</h3>
+              <p class="product-category">${product.category}</p>
+              <div class="product-rating">
+                ${generateStars(product.rating)}
+                <span>(${product.rating})</span>
+              </div>
+              <div class="product-footer">
+                <span class="product-price">${formatCurrency(product.price)}</span>
+                ${product.stock > 0 ? `
+                  <button class="btn-icon add-cart" 
+                          data-id="${product.id}"
+                          onclick="event.stopPropagation(); quickAddToCart(${JSON.stringify(product).replace(/"/g, '&quot;')});">
+                    <i class="fas fa-shopping-cart"></i>
+                  </button>
+                ` : `
+                  <button class="btn-icon notify-btn" disabled>
+                    Notify
+                  </button>
+                `}
+              </div>
+            </div>
+          </div>
+        `).join('');
+
+        renderPagination();
+        document.getElementById('resultCount').textContent = filteredProducts.length;
+      }, 500);
+    }
+
+    // Toggle favorite
+    function toggleFavorite(product, btn) {
+      const isFavorited = KickshausState.toggleFavorite(product);
+      const icon = btn.querySelector('i');
+      
+      if (isFavorited) {
+        icon.classList.replace('far', 'fas');
+        btn.classList.add('active');
+        showToast('Added to favorites!');
+      } else {
+        icon.classList.replace('fas', 'far');
+        btn.classList.remove('active');
+        showToast('Removed from favorites');
+      }
+    }
+
+    // Quick add to cart
+    function quickAddToCart(product) {
+      KickshausState.addToCart({
+        ...product,
+        size: product.sizes ? product.sizes[0] : 'N/A',
+        color: product.colors ? product.colors[0] : 'N/A'
+      });
+      showToast('Added to cart! Continue shopping or checkout.');
+    }
+
+    // Pagination
+    function renderPagination() {
+      const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+      const pageNumbers = document.getElementById('pageNumbers');
+      
+      let numbersHTML = '';
+      for (let i = 1; i <= totalPages; i++) {
+        numbersHTML += `<button class="page-number ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+      }
+      pageNumbers.innerHTML = numbersHTML;
+
+      document.getElementById('prevPage').disabled = currentPage === 1;
+      document.getElementById('nextPage').disabled = currentPage === totalPages;
+    }
+
+    function goToPage(page) {
+      currentPage = page;
+      renderCollectionProducts();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    document.getElementById('prevPage')?.addEventListener('click', () => {
+      if (currentPage > 1) goToPage(currentPage - 1);
+    });
+
+    document.getElementById('nextPage')?.addEventListener('click', () => {
+      const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+      if (currentPage < totalPages) goToPage(currentPage + 1);
+    });
+
+    // Apply filters
+    function applyFilters() {
+      const sortValue = document.getElementById('sortFilter').value;
+      const categoryValue = document.getElementById('categoryFilter').value;
+      const priceValue = document.getElementById('priceFilter').value;
+
+      filteredProducts = [...PRODUCTS_DATABASE];
+
+      if (categoryValue !== 'all') {
+        filteredProducts = filteredProducts.filter(p => p.category.toLowerCase() === categoryValue.toLowerCase());
+      }
+
+      if (priceValue !== 'all') {
+        if (priceValue === '0-150000') {
+          filteredProducts = filteredProducts.filter(p => p.price <= 150000);
+        } else if (priceValue === '150000-200000') {
+          filteredProducts = filteredProducts.filter(p => p.price > 150000 && p.price <= 200000);
+        } else if (priceValue === '200000+') {
+          filteredProducts = filteredProducts.filter(p => p.price > 200000);
+        }
+      }
+
+      if (sortValue === 'price-low') {
+        filteredProducts.sort((a, b) => a.price - b.price);
+      } else if (sortValue === 'price-high') {
+        filteredProducts.sort((a, b) => b.price - a.price);
+      } else if (sortValue === 'newest') {
+        filteredProducts = filteredProducts.filter(p => p.badge === 'new').concat(
+          filteredProducts.filter(p => p.badge !== 'new')
+        );
+      } else if (sortValue === 'bestselling') {
+        filteredProducts = filteredProducts.filter(p => p.badge === 'bestseller').concat(
+          filteredProducts.filter(p => p.badge !== 'bestseller')
+        );
+      }
+
+      currentPage = 1;
+      renderCollectionProducts();
+    }
+
+    document.getElementById('sortFilter')?.addEventListener('change', applyFilters);
+    document.getElementById('categoryFilter')?.addEventListener('change', applyFilters);
+    document.getElementById('priceFilter')?.addEventListener('change', applyFilters);
+
+    function resetAllFilters() {
+      document.getElementById('sortFilter').value = 'featured';
+      document.getElementById('categoryFilter').value = 'all';
+      document.getElementById('priceFilter').value = 'all';
+      applyFilters();
+    }
+
+    document.getElementById('resetFilters')?.addEventListener('click', resetAllFilters);
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      renderCollectionProducts();
+      console.log('✨ Collections page loaded!');
+    });
+  </script>
+  <script src="global-state.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product Details - Kickshaus</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="product-detail.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="product-detail-body">
+
+  <!-- THEME TOGGLE -->
+  <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">
+    <i class="fas fa-moon"></i>
+  </button>
+
+  <!-- SIMPLE HEADER -->
+  <header class="header-minimal">
+    <div class="container-fluid">
+      <div class="header-minimal-content">
+        <div class="brand-name">Kickshaus</div>
+        <div class="header-actions">
+          <a href="cart.html" class="icon-btn-minimal">
+            <i class="fas fa-shopping-cart"></i>
+            <span class="badge badge-cart" id="cartBadgeHeader">0</span>
+          </a>
+          <a href="favourites.html" class="icon-btn-minimal">
+            <i class="fas fa-heart"></i>
+            <span class="badge badge-favorites" id="favBadgeHeader">0</span>
+          </a>
+          <a href="login.html" class="icon-btn-minimal">
+            <i class="fas fa-user"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- BACK BUTTON -->
+  <div class="back-button-wrapper">
+    <button class="back-btn" onclick="history.back()">
+      <i class="fas fa-arrow-left"></i>
+    </button>
+  </div>
+
+  <!-- LOADING STATE -->
+  <div id="loadingState" style="display: flex; justify-content: center; align-items: center; min-height: 60vh;">
+    <div style="text-align: center;">
+      <div style="width: 50px; height: 50px; border: 4px solid #f3f3f3; border-top: 4px solid #00A8E8; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+      <p style="color: var(--text-muted);">Loading product...</p>
+    </div>
+  </div>
+
+  <!-- PRODUCT NOT FOUND STATE -->
+  <div id="notFoundState" style="display: none; text-align: center; padding: 100px 20px;">
+    <i class="fas fa-exclamation-circle" style="font-size: 4rem; color: var(--text-muted); margin-bottom: 20px;"></i>
+    <h2 style="font-size: 2rem; margin-bottom: 16px;">Product Not Found</h2>
+    <p style="color: var(--text-muted); margin-bottom: 32px;">Sorry, we couldn't find the product you're looking for.</p>
+    <a href="index.html" class="btn btn-primary">Back to Home</a>
+  </div>
+
+  <!-- MAIN PRODUCT DETAIL -->
+  <main class="product-detail-main" id="productDetailMain" style="display: none;">
+    <div class="container-fluid">
+      <div class="product-detail-layout">
+        
+        <!-- LEFT SIDE: IMAGE GALLERY -->
+        <div class="gallery-section">
+          <!-- Main Image with Arrows -->
+          <div class="main-image-container">
+            <button class="gallery-arrow prev" id="prevBtn">
+              <i class="fas fa-chevron-left"></i>
+            </button>
+            
+            <div class="main-image-wrapper">
+              <img src="" 
+                   alt="Product Image" 
+                   class="main-image" 
+                   id="mainImage">
+            </div>
+            
+            <button class="gallery-arrow next" id="nextBtn">
+              <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
+
+          <!-- Thumbnail Strip -->
+          <div class="thumbnail-strip" id="thumbnailStrip">
+            <!-- Thumbnails will be dynamically inserted -->
+          </div>
+        </div>
+
+        <!-- RIGHT SIDE: PRODUCT INFO -->
+        <div class="info-section">
+          <!-- Title & Favorite -->
+          <div class="product-header-row">
+            <h1 class="product-title" id="productTitle">Loading...</h1>
+            <button class="favorite-btn-detail" id="favoriteBtn" data-id="">
+              <i class="far fa-heart"></i>
+            </button>
+          </div>
+
+          <!-- Star Rating -->
+          <div class="star-rating" id="starRating"></div>
+
+          <!-- Description -->
+          <p class="product-desc" id="productDesc"></p>
+
+          <!-- Price -->
+          <div class="price-row">
+            <span class="price-main" id="productPrice">₦0</span>
+            <span class="price-striked" id="oldPrice" style="display: none;"></span>
+          </div>
+
+          <!-- Size Chart Link -->
+          <a href="#" class="size-chart-link" onclick="event.preventDefault(); showToast('Size chart feature coming soon!');">Size Chart</a>
+
+          <!-- Size & Color Dropdowns -->
+          <div class="dropdown-row">
+            <div class="dropdown-group">
+              <label>Size</label>
+              <select class="product-select" id="sizeSelect">
+                <option value="">Select Size</option>
+              </select>
+            </div>
+
+            <div class="dropdown-group">
+              <label>Color</label>
+              <select class="product-select" id="colorSelect">
+                <option value="">Select Color</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Stock Status -->
+          <div class="stock-status" id="stockStatus" style="padding: 12px; border-radius: 8px; margin: 16px 0; font-weight: 600;">
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="action-buttons">
+            <button class="btn-add-cart" id="addToCartBtn">
+              <i class="fas fa-shopping-cart"></i> Add To Cart
+            </button>
+            <a href="checkout.html" class="btn-one-click">
+              <i class="fas fa-bolt"></i> Buy Now
+            </a>
+          </div>
+
+          <!-- Product Features -->
+          <div class="product-features" style="margin-top: 32px; padding: 24px; background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border-color);">
+            <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 16px;">Product Features</h3>
+            <ul style="list-style: none; padding: 0;">
+              <li style="padding: 8px 0; display: flex; align-items: center; gap: 12px;">
+                <i class="fas fa-check-circle" style="color: #00A8E8;"></i>
+                <span>Premium quality materials</span>
+              </li>
+              <li style="padding: 8px 0; display: flex; align-items: center; gap: 12px;">
+                <i class="fas fa-check-circle" style="color: #00A8E8;"></i>
+                <span>Handcrafted with attention to detail</span>
+              </li>
+              <li style="padding: 8px 0; display: flex; align-items: center; gap: 12px;">
+                <i class="fas fa-check-circle" style="color: #00A8E8;"></i>
+                <span>Comfortable fit for all-day wear</span>
+              </li>
+              <li style="padding: 8px 0; display: flex; align-items: center; gap: 12px;">
+                <i class="fas fa-check-circle" style="color: #00A8E8;"></i>
+                <span>Free shipping on orders over ₦100,000</span>
+              </li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <style>
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      background: #FF4444;
+      color: white;
+      font-size: 0.7rem;
+      font-weight: 600;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .icon-btn-minimal {
+      position: relative;
+      text-decoration: none;
+      color: inherit;
+    }
+  </style>
+
+  <script src="global-state.js"></script>
+  <script>
+    // ==========================================
+    // PRODUCT DETAIL PAGE - FULLY FUNCTIONAL
+    // ==========================================
+
+    let currentProduct = null;
+    let currentImageIndex = 0;
+    let galleryImages = [];
+
+    // Get product ID from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const productId = urlParams.get('id');
+
+    // ===== THEME TOGGLE =====
+    const themeToggle = document.getElementById('themeToggle');
+    const body = document.body;
+    const themeIcon = themeToggle.querySelector('i');
+
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    if (savedTheme === 'dark') {
+      body.classList.add('dark-theme');
+      themeIcon.classList.replace('fa-moon', 'fa-sun');
+    }
+
+    themeToggle.addEventListener('click', () => {
+      body.classList.toggle('dark-theme');
+      const isDark = body.classList.contains('dark-theme');
+      
+      if (isDark) {
+        themeIcon.classList.replace('fa-moon', 'fa-sun');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        themeIcon.classList.replace('fa-sun', 'fa-moon');
+        localStorage.setItem('theme', 'light');
+      }
+    });
+
+    // ===== LOAD PRODUCT =====
+    function loadProduct() {
+      const loadingState = document.getElementById('loadingState');
+      const notFoundState = document.getElementById('notFoundState');
+      const productMain = document.getElementById('productDetailMain');
+
+      if (!productId) {
+        loadingState.style.display = 'none';
+        notFoundState.style.display = 'block';
+        return;
+      }
+
+      // Get product from database
+      currentProduct = getProductById(productId);
+
+      if (!currentProduct) {
+        loadingState.style.display = 'none';
+        notFoundState.style.display = 'block';
+        return;
+      }
+
+      // Product found, render it
+      loadingState.style.display = 'none';
+      productMain.style.display = 'block';
+      renderProduct();
+    }
+
+    // ===== RENDER PRODUCT =====
+    function renderProduct() {
+      // Set images
+      galleryImages = currentProduct.images || [];
+      
+      // Set title and description
+      document.getElementById('productTitle').textContent = currentProduct.name;
+      document.getElementById('productDesc').textContent = currentProduct.description || currentProduct.category;
+      document.getElementById('productPrice').textContent = formatCurrency(currentProduct.price);
+      
+      // Set rating
+      if (currentProduct.rating) {
+        document.getElementById('starRating').innerHTML = generateStars(currentProduct.rating);
+      }
+
+      // Set stock status
+      const stockStatus = document.getElementById('stockStatus');
+      if (currentProduct.stock > 0) {
+        stockStatus.innerHTML = `<i class="fas fa-check-circle"></i> In Stock (${currentProduct.stock} available)`;
+        stockStatus.style.background = 'rgba(102, 187, 106, 0.1)';
+        stockStatus.style.color = '#66BB6A';
+      } else {
+        stockStatus.innerHTML = `<i class="fas fa-times-circle"></i> Out of Stock`;
+        stockStatus.style.background = 'rgba(255, 107, 107, 0.1)';
+        stockStatus.style.color = '#FF6B6B';
+        document.getElementById('addToCartBtn').disabled = true;
+        document.getElementById('addToCartBtn').style.opacity = '0.5';
+        document.getElementById('addToCartBtn').style.cursor = 'not-allowed';
+      }
+
+      // Populate sizes
+      const sizeSelect = document.getElementById('sizeSelect');
+      if (currentProduct.sizes && currentProduct.sizes.length > 0) {
+        sizeSelect.innerHTML = '<option value="">Select Size</option>' + 
+          currentProduct.sizes.map(size => `<option value="${size}">${size}</option>`).join('');
+      }
+
+      // Populate colors
+      const colorSelect = document.getElementById('colorSelect');
+      if (currentProduct.colors && currentProduct.colors.length > 0) {
+        colorSelect.innerHTML = '<option value="">Select Color</option>' + 
+          currentProduct.colors.map(color => 
+            `<option value="${color}">${color.charAt(0).toUpperCase() + color.slice(1)}</option>`
+          ).join('');
+      }
+
+      // Set favorite button
+      const favoriteBtn = document.getElementById('favoriteBtn');
+      favoriteBtn.dataset.id = currentProduct.id;
+      updateFavoriteButton();
+
+      // Render gallery
+      renderGallery();
+    }
+
+    // ===== RENDER GALLERY =====
+    function renderGallery() {
+      if (galleryImages.length === 0) return;
+
+      // Set main image
+      document.getElementById('mainImage').src = galleryImages[0];
+
+      // Render thumbnails
+      const thumbnailStrip = document.getElementById('thumbnailStrip');
+      thumbnailStrip.innerHTML = galleryImages.map((img, index) => `
+        <div class="thumbnail ${index === 0 ? 'active' : ''}" data-index="${index}" onclick="selectImage(${index})">
+          <img src="${img}" alt="View ${index + 1}">
+        </div>
+      `).join('');
+    }
+
+    // ===== IMAGE GALLERY NAVIGATION =====
+    const mainImage = document.getElementById('mainImage');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+
+    function updateMainImage(index) {
+      if (galleryImages.length === 0) return;
+      
+      currentImageIndex = index;
+      mainImage.style.opacity = '0';
+      
+      setTimeout(() => {
+        mainImage.src = galleryImages[index];
+        mainImage.style.opacity = '1';
+        
+        // Update active thumbnail
+        document.querySelectorAll('.thumbnail').forEach((thumb, i) => {
+          thumb.classList.toggle('active', i === index);
+        });
+      }, 200);
+    }
+
+    window.selectImage = function(index) {
+      updateMainImage(index);
+    };
+
+    prevBtn.addEventListener('click', () => {
+      currentImageIndex = (currentImageIndex - 1 + galleryImages.length) % galleryImages.length;
+      updateMainImage(currentImageIndex);
+    });
+
+    nextBtn.addEventListener('click', () => {
+      currentImageIndex = (currentImageIndex + 1) % galleryImages.length;
+      updateMainImage(currentImageIndex);
+    });
+
+    // ===== FAVORITE BUTTON =====
+    const favoriteBtn = document.getElementById('favoriteBtn');
+
+    function updateFavoriteButton() {
+      const isFavorited = KickshausState.isFavorited(currentProduct.id);
+      const icon = favoriteBtn.querySelector('i');
+      
+      if (isFavorited) {
+        favoriteBtn.classList.add('active');
+        icon.classList.remove('far');
+        icon.classList.add('fas');
+      } else {
+        favoriteBtn.classList.remove('active');
+        icon.classList.remove('fas');
+        icon.classList.add('far');
+      }
+    }
+
+    favoriteBtn.addEventListener('click', () => {
+      KickshausState.toggleFavorite(currentProduct);
+      updateFavoriteButton();
+      
+      const isFavorited = KickshausState.isFavorited(currentProduct.id);
+      showToast(isFavorited ? 'Added to favorites!' : 'Removed from favorites');
+    });
+
+    // ===== ADD TO CART =====
+    const addToCartBtn = document.getElementById('addToCartBtn');
+    const sizeSelect = document.getElementById('sizeSelect');
+    const colorSelect = document.getElementById('colorSelect');
+
+    addToCartBtn.addEventListener('click', () => {
+      const size = sizeSelect.value;
+      const color = colorSelect.value;
+
+      if (!size) {
+        showToast('Please select a size', 'error');
+        sizeSelect.focus();
+        return;
+      }
+
+      if (!color) {
+        showToast('Please select a color', 'error');
+        colorSelect.focus();
+        return;
+      }
+
+      // Add to cart
+      KickshausState.addToCart({
+        ...currentProduct,
+        size: size,
+        color: color
+      });
+      
+      showToast('✓ Successfully added to cart! Continue shopping or proceed to checkout.');
+    });
+
+    // ===== BUY NOW - Direct purchase without requiring existing cart =====
+    const buyNowBtn = document.querySelector('.btn-one-click');
+    
+    if (buyNowBtn) {
+      buyNowBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        
+        const size = sizeSelect.value;
+        const color = colorSelect.value;
+
+        if (!size) {
+          showToast('Please select a size', 'error');
+          sizeSelect.focus();
+          return;
+        }
+
+        if (!color) {
+          showToast('Please select a color', 'error');
+          colorSelect.focus();
+          return;
+        }
+
+        // Create a temporary single-item cart for this purchase
+        const buyNowItem = {
+          ...currentProduct,
+          size: size,
+          color: color,
+          quantity: 1
+        };
+        
+        // Save as a special "buy now" order
+        localStorage.setItem('buyNowOrder', JSON.stringify([buyNowItem]));
+        
+        // Calculate checkout summary for this single item
+        const subtotal = currentProduct.price;
+        const tax = Math.round(subtotal * 0.075);
+        const total = subtotal + tax;
+        
+        localStorage.setItem('checkoutSummary', JSON.stringify({
+          subtotal,
+          tax,
+          discount: 0,
+          total,
+          itemCount: 1,
+          isBuyNow: true
+        }));
+        
+        showToast('Proceeding to checkout...');
+        
+        setTimeout(() => {
+          window.location.href = 'checkout.html';
+        }, 800);
+      });
+    }
+
+    // ===== INITIALIZE =====
+    document.addEventListener('DOMContentLoaded', () => {
+      loadProduct();
+      console.log('✨ Product Detail Page Loaded');
+    });
+  </script>
+   <script src="global-state.js"></script>
+<script src="script.js"></script>
+
+</body>
+</html>

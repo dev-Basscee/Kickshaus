@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Payment Options • Kickshaus</title>
+
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+
+  <style>
+    :root {
+      --bg: #f8f9fa;
+      --card: #ffffff;
+      --text: #111111;
+      --muted: #666666;
+      --red: #c41e3a;
+      --gold: #d4af37;
+      --border: #e0e0e0;
+      --shadow: 0 12px 40px rgba(0,0,0,0.08);
+      --glow: #c41e3a;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 5rem;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 1.2rem;
+      margin-bottom: 3rem;
+    }
+
+    .back-arrow {
+      font-size: 1.8rem;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .back-arrow:hover {
+      color: var(--red);
+      transform: translateX(-4px);
+    }
+
+    .title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.6rem, 6vw, 4.2rem);
+      font-weight: 900;
+      letter-spacing: 0.8px;
+      background: linear-gradient(90deg, var(--text), var(--red), var(--text));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-align: center;
+      flex: 1;
+    }
+
+    .order-summary {
+      background: var(--card);
+      padding: 24px;
+      border-radius: 16px;
+      margin-bottom: 32px;
+      box-shadow: var(--shadow);
+    }
+
+    .order-summary h3 {
+      font-size: 1.2rem;
+      margin-bottom: 16px;
+      color: var(--text);
+    }
+
+    .order-detail {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .order-detail:last-child {
+      border-bottom: none;
+      font-weight: 700;
+      font-size: 1.2rem;
+      padding-top: 16px;
+    }
+
+    .payment-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .payment-option {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.6rem 1.8rem;
+      cursor: pointer;
+      transition: all 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
+    .payment-option:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 16px 40px rgba(196, 30, 58, 0.15);
+      border-color: var(--red);
+    }
+
+    .payment-option:active {
+      transform: translateY(-2px) scale(0.98);
+    }
+
+    .method-left {
+      display: flex;
+      align-items: center;
+      gap: 1.4rem;
+    }
+
+    .icon-box {
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(212, 175, 55, 0.08);
+      border: 1px solid rgba(212, 175, 55, 0.25);
+      border-radius: 14px;
+      font-size: 1.9rem;
+      color: var(--gold);
+      transition: all 0.4s ease;
+    }
+
+    .payment-option:hover .icon-box {
+      background: rgba(212, 175, 55, 0.18);
+      border-color: var(--gold);
+      transform: scale(1.08) rotate(5deg);
+    }
+
+    .method-name {
+      font-weight: 600;
+      font-size: 1.25rem;
+      letter-spacing: 0.4px;
+    }
+
+    .arrow {
+      color: var(--muted);
+      font-size: 1.5rem;
+      transition: all 0.4s ease;
+    }
+
+    .payment-option:hover .arrow {
+      color: var(--gold);
+      transform: translateX(8px);
+    }
+
+    .footer-logos {
+      display: flex;
+      justify-content: center;
+      gap: 2.8rem;
+      margin-top: 5rem;
+      opacity: 0.9;
+      flex-wrap: wrap;
+    }
+
+    .footer-logos img {
+      height: 38px;
+      filter: grayscale(80%) brightness(1.1);
+      transition: all 0.4s ease;
+    }
+
+    .footer-logos img:hover {
+      filter: grayscale(0%) brightness(1);
+      transform: scale(1.12);
+    }
+
+    @media (max-width: 480px) {
+      .title { font-size: 2.8rem; }
+      .payment-option { padding: 1.3rem 1.4rem; }
+      .method-name { font-size: 1.1rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header">
+      <i class="fas fa-arrow-left back-arrow" id="backBtn"></i>
+      <h1 class="title">Payment Options</h1>
+    </div>
+
+    <!-- Order Summary -->
+    <div class="order-summary">
+      <h3>Order Summary</h3>
+      <div class="order-detail">
+        <span>Items</span>
+        <span id="orderItemCount">0</span>
+      </div>
+      <div class="order-detail">
+        <span>Subtotal</span>
+        <span id="orderSubtotal">₦0</span>
+      </div>
+      <div class="order-detail">
+        <span>Tax</span>
+        <span id="orderTax">₦0</span>
+      </div>
+      <div class="order-detail">
+        <span>Total</span>
+        <span id="orderTotal">₦0</span>
+      </div>
+    </div>
+
+    <div class="payment-grid">
+      <div class="payment-option" data-method="crypto">
+        <div class="method-left">
+          <div class="icon-box"><i class="fab fa-bitcoin"></i></div>
+          <span class="method-name">Crypto</span>
+        </div>
+        <i class="fas fa-chevron-right arrow"></i>
+      </div>
+
+      <div class="payment-option" data-method="bank-transfer">
+        <div class="method-left">
+          <div class="icon-box"><i class="fas fa-exchange-alt"></i></div>
+          <span class="method-name">Bank Transfer</span>
+        </div>
+        <i class="fas fa-chevron-right arrow"></i>
+      </div>
+
+      <div class="payment-option" data-method="card">
+        <div class="method-left">
+          <div class="icon-box"><i class="fas fa-credit-card"></i></div>
+          <span class="method-name">Card</span>
+        </div>
+        <i class="fas fa-chevron-right arrow"></i>
+      </div>
+
+      <div class="payment-option" data-method="paypal">
+        <div class="method-left">
+          <div class="icon-box"><i class="fab fa-paypal"></i></div>
+          <span class="method-name">PayPal</span>
+        </div>
+        <i class="fas fa-chevron-right arrow"></i>
+      </div>
+    </div>
+
+    <!-- Trusted payment logos -->
+    <div class="footer-logos">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/4/41/Visa_Logo.png" alt="Visa">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/Mastercard-logo.png" alt="Mastercard">
+      <img src="https://www.paypalobjects.com/webstatic/en_US/i/buttons/paypal-logo-large.png" alt="PayPal">
+    </div>
+  </div>
+
+  <script src="global-state.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // Load order summary
+    const checkoutSummary = JSON.parse(localStorage.getItem('checkoutSummary') || '{}');
+    document.getElementById('orderItemCount').textContent = checkoutSummary.itemCount || 0;
+    document.getElementById('orderSubtotal').textContent = `₦${(checkoutSummary.subtotal || 0).toLocaleString()}`;
+    document.getElementById('orderTax').textContent = `₦${(checkoutSummary.tax || 0).toLocaleString()}`;
+    document.getElementById('orderTotal').textContent = `₦${(checkoutSummary.total || 0).toLocaleString()}`;
+
+    // Back navigation
+    document.getElementById('backBtn').addEventListener('click', () => {
+      history.back();
+    });
+
+    // Payment selection
+    document.querySelectorAll('.payment-option').forEach(option => {
+      option.addEventListener('click', function() {
+        const method = this.dataset.method;
+
+        // Animation
+        this.style.transform = 'scale(0.97)';
+        setTimeout(() => { this.style.transform = 'scale(1)'; }, 140);
+
+        let message = '';
+        switch(method) {
+          case 'crypto':
+            message = 'Connecting to secure crypto gateway (BTC, ETH, USDT)...';
+            break;
+          case 'bank-transfer':
+            message = 'Displaying secure bank transfer instructions...';
+            break;
+          case 'card':
+            message = 'Redirecting to encrypted card payment (Visa/Mastercard)...';
+            break;
+          case 'paypal':
+            message = 'Opening PayPal secure checkout...';
+            break;
+        }
+
+        setTimeout(() => {
+          // Simulate payment processing
+          showToast('Processing payment...');
+          
+          setTimeout(() => {
+            // Clear Buy Now order if it exists
+            const isBuyNow = checkoutSummary.isBuyNow;
+            if (isBuyNow) {
+              localStorage.removeItem('buyNowOrder');
+              localStorage.removeItem('pendingBuyNowOrder');
+            } else {
+              // Clear regular cart
+              KickshausState.clearCart();
+            }
+            
+            // Clear checkout data
+            localStorage.removeItem('checkoutSummary');
+            localStorage.removeItem('deliveryDetails');
+            
+            showToast('✓ Payment successful! Thank you for your order.');
+            
+            // Redirect to success page or home
+            setTimeout(() => {
+              window.location.href = 'index.html';
+            }, 2000);
+          }, 1500);
+        }, 300);
+      });
+    });
+  });
+  </script>
+   <script src="global-state.js"></script>
+<script src="script.js"></script>
+
+</body>
+</html>
