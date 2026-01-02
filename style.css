@@ -2054,3 +2054,502 @@ body.dark-theme .hero {
 .product-card .add-cart:hover {
   background: var(--primary-dark);
 }
+
+/* ===============================================
+   KICKSHAUS ENHANCEMENTS - Footer Fix, Animations & Theme
+   =============================================== */
+
+/* ===== FOOTER MOBILE FIX - Keep Horizontal ===== */
+@media (max-width: 768px) {
+  .footer-content {
+    /* Keep horizontal layout - just make columns wrap */
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important;
+    gap: 24px !important;
+    font-size: 40px !important;
+  }
+
+  .footer-tagline{
+    font-size: 1.5rem;
+  }
+  
+  .footer-brand {
+    grid-column: 1 / -1; /* Full width for brand */
+    max-width: 100%;
+    margin-bottom: 12px;
+  }
+  
+  .footer-column h4 {
+    font-size: 1rem;
+    margin-bottom: 12px;
+  }
+  
+  .footer-column ul li {
+    margin-bottom: 8px;
+  }
+  
+  .footer-column ul li a {
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .footer-content {
+    /* Two-column horizontal layout on mobile */
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 20px !important;
+  }
+  
+  .footer-brand {
+    flex: 0 0 100%;
+    margin-bottom: 12px;
+  }
+  
+  .footer-column {
+    flex: 0 0 calc(50% - 10px); /* Two columns side by side */
+  }
+  
+  .footer-column h4 {
+    font-size: 0.95rem;
+  }
+  
+  .footer-column ul li a {
+    font-size: 0.8rem;
+  }
+}
+
+/* ===== ANIMATIONS ===== */
+
+/* Fade in from bottom */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Fade in from top */
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Fade in from left */
+@keyframes fadeInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Fade in from right */
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Scale in */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Bounce */
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+/* Shake */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  75% { transform: translateX(10px); }
+}
+
+/* Pulse */
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* Rotate */
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Slide in from bottom */
+@keyframes slideInUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Apply animations to page elements */
+.product-card {
+  animation: fadeInUp 0.6s ease forwards;
+  opacity: 0;
+}
+
+.product-card:nth-child(1) { animation-delay: 0.1s; }
+.product-card:nth-child(2) { animation-delay: 0.2s; }
+.product-card:nth-child(3) { animation-delay: 0.3s; }
+.product-card:nth-child(4) { animation-delay: 0.4s; }
+.product-card:nth-child(5) { animation-delay: 0.5s; }
+.product-card:nth-child(6) { animation-delay: 0.6s; }
+
+/* Header animation */
+.header {
+  animation: fadeInDown 0.5s ease;
+}
+
+/* Hero section animations */
+.hero-title {
+  animation: fadeInLeft 0.8s ease;
+}
+
+.hero-description {
+  animation: fadeInLeft 1s ease;
+}
+
+.hero-image {
+  animation: fadeInRight 1s ease;
+}
+
+/* Section titles */
+.section-title {
+  animation: fadeInUp 0.6s ease;
+}
+
+/* Button hover effects */
+.btn-primary, .btn-secondary, .btn-icon {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-primary:hover, .btn-secondary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 168, 232, 0.3);
+}
+
+.btn-primary:active, .btn-secondary:active {
+  transform: translateY(0);
+}
+
+/* Product card hover animations */
+.product-card {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.product-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+}
+
+.product-card:hover .product-image img {
+  transform: scale(1.1);
+}
+
+.product-image img {
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Badge animations */
+.badge {
+  animation: pulse 2s ease infinite;
+}
+
+/* Loading spinner */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+/* Toast notification slide in */
+.toast-notification {
+  animation: slideInUp 0.4s ease;
+}
+
+/* Modal fade in */
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modal {
+  animation: modalFadeIn 0.3s ease;
+}
+
+/* Back to top button */
+.back-to-top {
+  transition: all 0.3s ease;
+}
+
+.back-to-top:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 20px rgba(0, 168, 232, 0.4);
+}
+
+/* Favorite button animation */
+.favorite-btn.active i {
+  animation: heartBeat 0.5s ease;
+}
+
+@keyframes heartBeat {
+  0%, 100% { transform: scale(1); }
+  25% { transform: scale(1.3); }
+  50% { transform: scale(1.1); }
+  75% { transform: scale(1.2); }
+}
+
+/* Cart badge bounce */
+.badge-cart.updated {
+  animation: bounce 0.6s ease;
+}
+
+/* Search modal backdrop */
+@keyframes fadeInBackdrop {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.search-modal-backdrop {
+  animation: fadeInBackdrop 0.3s ease;
+}
+
+/* Smooth page transitions */
+body {
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ===== THEME TOGGLE IMPROVEMENTS ===== */
+
+/* Smooth theme transition for ALL elements */
+* {
+  transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease !important;
+}
+
+/* Don't apply transition to transforms and positions */
+*:not(.product-card):not(.btn-primary):not(.btn-secondary) {
+  transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease;
+}
+
+/* Theme toggle button animation */
+.theme-toggle {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.theme-toggle:hover {
+  transform: scale(1.1) rotate(20deg);
+}
+
+.theme-toggle:active {
+  transform: scale(0.95) rotate(20deg);
+}
+
+/* Dark theme icon swap animation */
+.theme-toggle i {
+  transition: transform 0.4s ease;
+}
+
+body.dark-theme .theme-toggle i {
+  transform: rotate(180deg);
+}
+
+/* ===== SCROLL ANIMATIONS ===== */
+
+/* Elements fade in on scroll */
+.animate-on-scroll {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.animate-on-scroll.animated {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ===== LOADING STATES ===== */
+
+/* Skeleton loading animation */
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--border-color) 0%,
+    var(--bg-primary) 50%,
+    var(--border-color) 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* ===== FORM ANIMATIONS ===== */
+
+/* Input focus animation */
+input:focus, textarea:focus, select:focus {
+  animation: inputFocus 0.3s ease;
+}
+
+@keyframes inputFocus {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+
+/* Error shake */
+input.error {
+  animation: shake 0.4s ease;
+}
+
+/* Success checkmark */
+@keyframes checkmark {
+  0% { transform: scale(0) rotate(45deg); }
+  50% { transform: scale(1.2) rotate(45deg); }
+  100% { transform: scale(1) rotate(45deg); }
+}
+
+.success-checkmark {
+  animation: checkmark 0.5s ease;
+}
+
+/* ===== RESPONSIVE ANIMATION ADJUSTMENTS ===== */
+
+@media (max-width: 768px) {
+  /* Reduce animation complexity on mobile */
+  .product-card {
+    animation-duration: 0.4s;
+  }
+  
+  .product-card:hover {
+    transform: translateY(-4px);
+  }
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ===== ADDITIONAL HOVER EFFECTS ===== */
+
+/* Nav links */
+.nav-link {
+  position: relative;
+  transition: color 0.3s ease;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--primary);
+  transition: width 0.3s ease;
+}
+
+.nav-link:hover::after,
+.nav-link.active::after {
+  width: 100%;
+}
+
+/* Social icons */
+.social-links a {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.social-links a:hover {
+  transform: translateY(-4px) rotate(10deg);
+}
+
+/* Image zoom on hover */
+.product-image {
+  overflow: hidden;
+}
+
+.product-image img {
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.product-card:hover .product-image img {
+  transform: scale(1.15);
+}
+
+/* Price highlight */
+.product-price {
+  transition: all 0.3s ease;
+}
+
+.product-card:hover .product-price {
+  color: var(--primary);
+  transform: scale(1.05);
+}
+
+.dashboard-section {
+  display: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.dashboard-section.active {
+  display: block;
+  opacity: 1;
+}

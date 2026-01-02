@@ -3,640 +3,220 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard - Kickshaus Admin</title>
+  <title>Admin Dashboard - Kickshaus</title>
+  
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="dashboard.css">
+  <link rel="stylesheet" href="mobile-dark-mode.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-</head>
-<body class="dashboard-body">
-
-  <!-- THEME TOGGLE -->
-  <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">
-    <i class="fas fa-moon"></i>
-  </button>
-
-  <!-- SIDEBAR -->
-  <aside class="dashboard-sidebar" id="sidebar">
-    <div class="sidebar-header">
-      <div class="sidebar-logo">
-        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='%2300A8E8' d='M50 10 L80 30 L80 70 L50 90 L20 70 L20 30 Z'/%3E%3Cpath fill='white' d='M35 40 Q50 35 65 40 L65 60 Q50 65 35 60 Z'/%3E%3C/svg%3E" alt="Kickshaus">
-        <span>Kickshaus</span>
-      </div>
-      <button class="sidebar-toggle" id="sidebarToggle">
-        <i class="fas fa-bars"></i>
-      </button>
-    </div>
-
-    <nav class="sidebar-nav">
-      <a href="#" class="nav-item active" data-section="overview">
-        <i class="fas fa-th-large"></i>
-        <span>Overview</span>
-      </a>
-      <a href="#" class="nav-item" data-section="orders">
-        <i class="fas fa-shopping-bag"></i>
-        <span>Orders</span>
-        <span class="nav-badge">12</span>
-      </a>
-      <a href="#" class="nav-item" data-section="products">
-        <i class="fas fa-box"></i>
-        <span>Products</span>
-      </a>
-      <a href="#" class="nav-item" data-section="customers">
-        <i class="fas fa-users"></i>
-        <span>Customers</span>
-      </a>
-      <a href="#" class="nav-item" data-section="analytics">
-        <i class="fas fa-chart-line"></i>
-        <span>Analytics</span>
-      </a>
-      <a href="#" class="nav-item" data-section="inventory">
-        <i class="fas fa-warehouse"></i>
-        <span>Inventory</span>
-      </a>
-      <a href="#" class="nav-item" data-section="reviews">
-        <i class="fas fa-star"></i>
-        <span>Reviews</span>
-      </a>
-      <a href="#" class="nav-item" data-section="settings">
-        <i class="fas fa-cog"></i>
-        <span>Settings</span>
-      </a>
-    </nav>
-
-    <div class="sidebar-footer">
-      <div class="user-profile">
-        <img src="https://i.pravatar.cc/100?img=68" alt="Admin" class="user-avatar">
-        <div class="user-info">
-          <strong>Admin User</strong>
-          <span>admin@kickshaus.com</span>
-        </div>
-      </div>
-      <button class="btn-logout">
-        <i class="fas fa-sign-out-alt"></i>
-        <span>Logout</span>
-      </button>
-    </div>
-  </aside>
-
-  <!-- MAIN CONTENT -->
-  <main class="dashboard-main">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Poppins', sans-serif; background: var(--bg-primary); color: var(--text-primary); }
+    .dashboard-container { display: flex; min-height: 100vh; }
     
-    <!-- TOP BAR -->
-    <header class="dashboard-header">
-      <div class="header-left">
-        <button class="mobile-menu-btn" id="mobileMenuBtn">
-          <i class="fas fa-bars"></i>
-        </button>
-        <h1 class="page-title" id="pageTitle">Overview</h1>
-      </div>
-      <div class="header-right">
-        <div class="search-box">
-          <i class="fas fa-search"></i>
-          <input type="text" placeholder="Search orders, products...">
+    /* Sidebar */
+    .sidebar { width: 280px; background: var(--bg-card); border-right: 1px solid var(--border-color); padding: 24px 0; position: fixed; height: 100vh; overflow-y: auto; transition: all 0.3s ease; z-index: 100; }
+    .sidebar-header { padding: 0 24px 24px; border-bottom: 1px solid var(--border-color); }
+    .sidebar-logo { display: flex; align-items: center; gap: 12px; font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 900; color: var(--primary); }
+    .sidebar-logo img { width: 40px; height: 40px; }
+    .sidebar-nav { padding: 24px 0; }
+    .nav-item { display: flex; align-items: center; gap: 12px; padding: 14px 24px; color: var(--text-secondary); text-decoration: none; transition: all 0.3s ease; cursor: pointer; border-left: 3px solid transparent; }
+    .nav-item:hover { background: var(--bg-primary); color: var(--primary); border-left-color: var(--primary); }
+    .nav-item.active { background: rgba(0, 168, 232, 0.1); color: var(--primary); border-left-color: var(--primary); font-weight: 600; }
+    .nav-item i { width: 20px; font-size: 1.1rem; }
+    .sidebar-footer { padding: 24px; border-top: 1px solid var(--border-color); margin-top: auto; }
+    .logout-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; }
+    .logout-btn:hover { background: #ff5252; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3); }
+    
+    /* Main Content */
+    .main-content { margin-left: 280px; flex: 1; padding: 32px; width: calc(100% - 280px); }
+    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 16px; }
+    .page-title { font-family: 'Playfair Display', serif; font-size: 2.5rem; font-weight: 900; color: var(--text-primary); }
+    .top-actions { display: flex; align-items: center; gap: 16px; }
+    .search-box { display: flex; align-items: center; gap: 8px; background: var(--bg-card); padding: 10px 16px; border-radius: 8px; border: 1px solid var(--border-color); }
+    .search-box input { border: none; background: none; outline: none; color: var(--text-primary); width: 200px; }
+    .search-box i { color: var(--text-muted); }
+    .notification-btn { position: relative; width: 44px; height: 44px; border-radius: 50%; background: var(--bg-card); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease; }
+    .notification-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
+    .notification-badge { position: absolute; top: -4px; right: -4px; background: var(--accent); color: white; width: 20px; height: 20px; border-radius: 50%; font-size: 0.7rem; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+    .admin-profile { display: flex; align-items: center; gap: 12px; padding: 8px 16px; background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border-color); cursor: pointer; transition: all 0.3s ease; }
+    .admin-profile:hover { border-color: var(--primary); }
+    .admin-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+    .admin-info { display: flex; flex-direction: column; }
+    .admin-name { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); }
+    .admin-role { font-size: 0.75rem; color: var(--text-muted); }
+    
+    /* Stats & Cards */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; margin-bottom: 32px; }
+    .stat-card { background: var(--bg-card); padding: 24px; border-radius: 16px; border: 1px solid var(--border-color); transition: all 0.3s ease; }
+    .stat-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+    .stat-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+    .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+    .stat-icon.blue { background: rgba(0, 168, 232, 0.1); color: var(--primary); }
+    .stat-icon.green { background: rgba(76, 175, 80, 0.1); color: #4CAF50; }
+    .stat-icon.orange { background: rgba(255, 152, 0, 0.1); color: #FF9800; }
+    .stat-icon.purple { background: rgba(156, 39, 176, 0.1); color: #9C27B0; }
+    .stat-trend { display: flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; }
+    .stat-trend.up { background: rgba(76, 175, 80, 0.1); color: #4CAF50; }
+    .stat-trend.down { background: rgba(244, 67, 54, 0.1); color: #F44336; }
+    .stat-value { font-size: 2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+    .stat-label { font-size: 0.9rem; color: var(--text-muted); }
+    
+    .card { background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border-color); padding: 24px; margin-bottom: 24px; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .card-title { font-size: 1.3rem; font-weight: 700; color: var(--text-primary); }
+    .card-action { color: var(--primary); text-decoration: none; font-size: 0.9rem; font-weight: 600; transition: all 0.3s ease; cursor: pointer; }
+    .card-action:hover { text-decoration: underline; }
+    
+    /* Tables */
+    .table-container { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; padding: 12px; background: var(--bg-primary); color: var(--text-primary); font-weight: 600; font-size: 0.9rem; border-bottom: 2px solid var(--border-color); }
+    td { padding: 16px 12px; border-bottom: 1px solid var(--border-color); color: var(--text-secondary); }
+    tr:hover { background: var(--bg-primary); }
+    .status-badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; }
+    .status-badge.pending { background: rgba(255, 152, 0, 0.1); color: #FF9800; }
+    .status-badge.completed { background: rgba(76, 175, 80, 0.1); color: #4CAF50; }
+    .status-badge.cancelled { background: rgba(244, 67, 54, 0.1); color: #F44336; }
+    .status-badge.processing { background: rgba(0, 168, 232, 0.1); color: var(--primary); }
+    
+    /* Buttons */
+    .btn { padding: 10px 20px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 8px; font-family: 'Poppins', sans-serif; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-dark); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0, 168, 232, 0.3); }
+    .btn-secondary { background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color); }
+    .btn-secondary:hover { background: var(--bg-card); border-color: var(--primary); }
+    
+    /* Mobile */
+    .sidebar-toggle { display: none; position: fixed; top: 20px; left: 20px; z-index: 1001; background: var(--bg-card); border: none; padding: 12px; border-radius: 8px; box-shadow: var(--shadow-md); cursor: pointer; color: var(--text-primary); font-size: 1.3rem; }
+    
+    @media (max-width: 768px) {
+      .sidebar-toggle { display: block; }
+      .sidebar { left: -280px; }
+      .sidebar.active { left: 0; box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3); }
+      .main-content { margin-left: 0; width: 100%; padding: 80px 20px 20px; }
+      .page-title { font-size: 2rem; }
+      .stats-grid { grid-template-columns: 1fr; }
+      .search-box, .admin-info { display: none; }
+    }
+    
+    /* Sections */
+    .dashboard-section { display: none; }
+    .dashboard-section.active { display: block; animation: fadeInUp 0.5s ease; }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+
+  <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme"><i class="fas fa-moon"></i></button>
+  <button class="sidebar-toggle" id="sidebarToggle"><i class="fas fa-bars"></i></button>
+
+  <div class="dashboard-container">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='%2300A8E8' d='M50 10 L80 30 L80 70 L50 90 L20 70 L20 30 Z'/%3E%3Cpath fill='white' d='M35 40 Q50 35 65 40 L65 60 Q50 65 35 60 Z'/%3E%3C/svg%3E" alt="Logo">
+          <span>Kickshaus</span>
         </div>
-        <button class="icon-btn notification-btn">
-          <i class="fas fa-bell"></i>
-          <span class="notification-badge">5</span>
-        </button>
-        <button class="btn btn-primary">
-          <i class="fas fa-plus"></i>
-          Add Product
-        </button>
       </div>
-    </header>
+      <nav class="sidebar-nav">
+        <a class="nav-item active" data-section="overview"><i class="fas fa-chart-line"></i><span>Overview</span></a>
+        <a class="nav-item" data-section="orders"><i class="fas fa-shopping-bag"></i><span>Orders</span></a>
+        <a class="nav-item" data-section="products"><i class="fas fa-box"></i><span>Products</span></a>
+        <a class="nav-item" data-section="customers"><i class="fas fa-users"></i><span>Customers</span></a>
+        <a class="nav-item" data-section="analytics"><i class="fas fa-chart-pie"></i><span>Analytics</span></a>
+        <a class="nav-item" data-section="inventory"><i class="fas fa-warehouse"></i><span>Inventory</span></a>
+        <a class="nav-item" data-section="reviews"><i class="fas fa-star"></i><span>Reviews</span></a>
+        <a class="nav-item" data-section="settings"><i class="fas fa-cog"></i><span>Settings</span></a>
+      </nav>
+      <div class="sidebar-footer">
+        <button class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i><span>Logout</span></button>
+      </div>
+    </aside>
 
-    <!-- CONTENT SECTIONS -->
-    <div class="dashboard-content">
+    <main class="main-content">
+      <div class="top-bar">
+        <h1 class="page-title" id="pageTitle">Overview</h1>
+        <div class="top-actions">
+          <div class="search-box"><i class="fas fa-search"></i><input type="text" placeholder="Search..."></div>
+          <button class="notification-btn"><i class="fas fa-bell"></i><span class="notification-badge">3</span></button>
+          <div class="admin-profile">
+            <div class="admin-avatar">A</div>
+            <div class="admin-info"><div class="admin-name">Admin</div><div class="admin-role">Super Admin</div></div>
+          </div>
+        </div>
+      </div>
 
-      <!-- ========== OVERVIEW SECTION ========== -->
-      <section class="content-section active" id="overview">
-        
-        <!-- STATS CARDS -->
+      <!-- OVERVIEW SECTION -->
+      <div class="dashboard-section active" id="overview-section">
         <div class="stats-grid">
           <div class="stat-card">
-            <div class="stat-icon" style="background: rgba(0, 168, 232, 0.1);">
-              <i class="fas fa-dollar-sign" style="color: #00A8E8;"></i>
+            <div class="stat-header">
+              <div class="stat-icon blue"><i class="fas fa-dollar-sign"></i></div>
+              <div class="stat-trend up"><i class="fas fa-arrow-up"></i>12.5%</div>
             </div>
-            <div class="stat-content">
-              <p class="stat-label">Total Revenue</p>
-              <h3 class="stat-value">₦12,450,000</h3>
-              <span class="stat-change positive">
-                <i class="fas fa-arrow-up"></i> +15.3%
-              </span>
-            </div>
+            <div class="stat-value">₦12.5M</div>
+            <div class="stat-label">Total Revenue</div>
           </div>
-
           <div class="stat-card">
-            <div class="stat-icon" style="background: rgba(255, 215, 0, 0.1);">
-              <i class="fas fa-shopping-bag" style="color: #FFD700;"></i>
+            <div class="stat-header">
+              <div class="stat-icon green"><i class="fas fa-shopping-cart"></i></div>
+              <div class="stat-trend up"><i class="fas fa-arrow-up"></i>8.3%</div>
             </div>
-            <div class="stat-content">
-              <p class="stat-label">Total Orders</p>
-              <h3 class="stat-value">1,845</h3>
-              <span class="stat-change positive">
-                <i class="fas fa-arrow-up"></i> +8.2%
-              </span>
-            </div>
+            <div class="stat-value">1,284</div>
+            <div class="stat-label">Total Orders</div>
           </div>
-
           <div class="stat-card">
-            <div class="stat-icon" style="background: rgba(255, 107, 107, 0.1);">
-              <i class="fas fa-users" style="color: #FF6B6B;"></i>
+            <div class="stat-header">
+              <div class="stat-icon orange"><i class="fas fa-users"></i></div>
+              <div class="stat-trend up"><i class="fas fa-arrow-up"></i>15.2%</div>
             </div>
-            <div class="stat-content">
-              <p class="stat-label">Total Customers</p>
-              <h3 class="stat-value">892</h3>
-              <span class="stat-change positive">
-                <i class="fas fa-arrow-up"></i> +12.5%
-              </span>
-            </div>
+            <div class="stat-value">8,429</div>
+            <div class="stat-label">Total Customers</div>
           </div>
-
           <div class="stat-card">
-            <div class="stat-icon" style="background: rgba(102, 187, 106, 0.1);">
-              <i class="fas fa-box" style="color: #66BB6A;"></i>
+            <div class="stat-header">
+              <div class="stat-icon purple"><i class="fas fa-box"></i></div>
+              <div class="stat-trend down"><i class="fas fa-arrow-down"></i>3.1%</div>
             </div>
-            <div class="stat-content">
-              <p class="stat-label">Products Sold</p>
-              <h3 class="stat-value">2,456</h3>
-              <span class="stat-change negative">
-                <i class="fas fa-arrow-down"></i> -3.1%
-              </span>
-            </div>
+            <div class="stat-value">234</div>
+            <div class="stat-label">Products</div>
           </div>
         </div>
 
-        <!-- CHARTS ROW -->
-        <div class="charts-row">
-          <!-- SALES CHART -->
-          <div class="chart-card">
-            <div class="chart-header">
-              <h3>Sales Overview</h3>
-              <select class="chart-select">
-                <option>Last 7 days</option>
-                <option>Last 30 days</option>
-                <option>Last 3 months</option>
-                <option>Last year</option>
-              </select>
-            </div>
-            <div class="chart-container">
-              <canvas id="salesChart"></canvas>
-            </div>
-          </div>
-
-          <!-- TOP PRODUCTS -->
-          <div class="top-products-card">
-            <div class="card-header">
-              <h3>Top Selling Products</h3>
-              <a href="#" class="view-all-link">View All</a>
-            </div>
-            <div class="top-products-list">
-              <div class="product-item-dash">
-                <img src="https://images.unsplash.com/photo-1614252232199-5d1c2e7d4a0a?w=100" alt="Product">
-                <div class="product-info-dash">
-                  <strong>Precious Oxford</strong>
-                  <span>142 sold</span>
-                </div>
-                <span class="product-revenue">₦25.4M</span>
-              </div>
-              <div class="product-item-dash">
-                <img src="https://images.unsplash.com/photo-1605733513502-9e425a13d08f?w=100" alt="Product">
-                <div class="product-info-dash">
-                  <strong>Imperial Brogue</strong>
-                  <span>128 sold</span>
-                </div>
-                <span class="product-revenue">₦21.8M</span>
-              </div>
-              <div class="product-item-dash">
-                <img src="https://images.unsplash.com/photo-1549298916-b41d501d3772?w=100" alt="Product">
-                <div class="product-info-dash">
-                  <strong>Monaco Loafer</strong>
-                  <span>96 sold</span>
-                </div>
-                <span class="product-revenue">₦18.2M</span>
-              </div>
-              <div class="product-item-dash">
-                <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=100" alt="Product">
-                <div class="product-info-dash">
-                  <strong>Urban Sneaker</strong>
-                  <span>84 sold</span>
-                </div>
-                <span class="product-revenue">₦12.1M</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- RECENT ORDERS TABLE -->
-        <div class="table-card">
+        <div class="card">
           <div class="card-header">
-            <h3>Recent Orders</h3>
-            <a href="#" class="view-all-link">View All</a>
+            <h2 class="card-title">Recent Orders</h2>
+            <a class="card-action" onclick="showSection('orders')">View All</a>
           </div>
-          <div class="table-responsive">
-            <table class="dashboard-table">
-              <thead>
-                <tr>
-                  <th>Order ID</th>
-                  <th>Customer</th>
-                  <th>Product</th>
-                  <th>Date</th>
-                  <th>Amount</th>
-                  <th>Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
+          <div class="table-container">
+            <table>
+              <thead><tr><th>Order ID</th><th>Customer</th><th>Product</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
               <tbody>
-                <tr>
-                  <td>#KH-1845</td>
-                  <td>
-                    <div class="customer-cell">
-                      <img src="https://i.pravatar.cc/40?img=12" alt="Customer">
-                      <span>Chidi Okonkwo</span>
-                    </div>
-                  </td>
-                  <td>Precious Oxford</td>
-                  <td>Dec 29, 2025</td>
-                  <td>₦180,000</td>
-                  <td><span class="status-badge pending">Pending</span></td>
-                  <td>
-                    <button class="action-btn"><i class="fas fa-eye"></i></button>
-                  </td>
-                </tr>
-                <tr>
-                  <td>#KH-1844</td>
-                  <td>
-                    <div class="customer-cell">
-                      <img src="https://i.pravatar.cc/40?img=33" alt="Customer">
-                      <span>Amina Hassan</span>
-                    </div>
-                  </td>
-                  <td>Imperial Brogue</td>
-                  <td>Dec 29, 2025</td>
-                  <td>₦195,000</td>
-                  <td><span class="status-badge delivered">Delivered</span></td>
-                  <td>
-                    <button class="action-btn"><i class="fas fa-eye"></i></button>
-                  </td>
-                </tr>
-                <tr>
-                  <td>#KH-1843</td>
-                  <td>
-                    <div class="customer-cell">
-                      <img src="https://i.pravatar.cc/40?img=45" alt="Customer">
-                      <span>Emeka Nwosu</span>
-                    </div>
-                  </td>
-                  <td>Monaco Loafer</td>
-                  <td>Dec 28, 2025</td>
-                  <td>₦210,000</td>
-                  <td><span class="status-badge processing">Processing</span></td>
-                  <td>
-                    <button class="action-btn"><i class="fas fa-eye"></i></button>
-                  </td>
-                </tr>
-                <tr>
-                  <td>#KH-1842</td>
-                  <td>
-                    <div class="customer-cell">
-                      <img src="https://i.pravatar.cc/40?img=67" alt="Customer">
-                      <span>Fatima Bello</span>
-                    </div>
-                  </td>
-                  <td>Urban Sneaker</td>
-                  <td>Dec 28, 2025</td>
-                  <td>₦145,000</td>
-                  <td><span class="status-badge delivered">Delivered</span></td>
-                  <td>
-                    <button class="action-btn"><i class="fas fa-eye"></i></button>
-                  </td>
-                </tr>
-                <tr>
-                  <td>#KH-1841</td>
-                  <td>
-                    <div class="customer-cell">
-                      <img src="https://i.pravatar.cc/40?img=51" alt="Customer">
-                      <span>Tunde Adebayo</span>
-                    </div>
-                  </td>
-                  <td>Heritage Derby</td>
-                  <td>Dec 27, 2025</td>
-                  <td>₦165,000</td>
-                  <td><span class="status-badge cancelled">Cancelled</span></td>
-                  <td>
-                    <button class="action-btn"><i class="fas fa-eye"></i></button>
-                  </td>
-                </tr>
+                <tr><td><strong>#ORD-001</strong></td><td>John Doe</td><td>Premium Leather Loafer</td><td><strong>₦180,000</strong></td><td><span class="status-badge completed">Completed</span></td><td>Dec 30, 2025</td></tr>
+                <tr><td><strong>#ORD-002</strong></td><td>Jane Smith</td><td>Urban Street Sneaker</td><td><strong>₦145,000</strong></td><td><span class="status-badge processing">Processing</span></td><td>Dec 30, 2025</td></tr>
+                <tr><td><strong>#ORD-003</strong></td><td>Mike Johnson</td><td>Executive Oxford Shoe</td><td><strong>₦195,000</strong></td><td><span class="status-badge pending">Pending</span></td><td>Dec 29, 2025</td></tr>
               </tbody>
             </table>
           </div>
         </div>
+      </div>
 
-      </section>
+      <!-- OTHER SECTIONS (Populated by JS) -->
+      <div class="dashboard-section" id="orders-section"></div>
+      <div class="dashboard-section" id="products-section"></div>
+      <div class="dashboard-section" id="customers-section"></div>
+      <div class="dashboard-section" id="analytics-section"></div>
+      <div class="dashboard-section" id="inventory-section"></div>
+      <div class="dashboard-section" id="reviews-section"></div>
+      <div class="dashboard-section" id="settings-section"></div>
+    </main>
+  </div>
 
-      <!-- ========== ORDERS SECTION ========== -->
-      <section class="content-section" id="orders">
-        <div class="section-header-dash">
-          <h2>All Orders</h2>
-          <div class="header-actions-dash">
-            <button class="btn-filter">
-              <i class="fas fa-filter"></i> Filter
-            </button>
-            <button class="btn-export">
-              <i class="fas fa-download"></i> Export
-            </button>
-          </div>
-        </div>
-
-        <div class="orders-filters">
-          <button class="filter-chip active">All (245)</button>
-          <button class="filter-chip">Pending (45)</button>
-          <button class="filter-chip">Processing (82)</button>
-          <button class="filter-chip">Delivered (98)</button>
-          <button class="filter-chip">Cancelled (20)</button>
-        </div>
-
-        <div class="table-card">
-          <div class="table-responsive">
-            <table class="dashboard-table">
-              <thead>
-                <tr>
-                  <th><input type="checkbox"></th>
-                  <th>Order ID</th>
-                  <th>Customer</th>
-                  <th>Products</th>
-                  <th>Date</th>
-                  <th>Amount</th>
-                  <th>Payment</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="ordersTableBody">
-                <!-- Will be populated by JavaScript -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <!-- ========== PRODUCTS SECTION ========== -->
-      <section class="content-section" id="products">
-        <div class="section-header-dash">
-          <h2>Product Management</h2>
-          <button class="btn btn-primary">
-            <i class="fas fa-plus"></i> Add New Product
-          </button>
-        </div>
-
-        <div class="products-grid-dash" id="productsGrid">
-          <!-- Will be populated by JavaScript -->
-        </div>
-      </section>
-
-      <!-- ========== CUSTOMERS SECTION ========== -->
-      <section class="content-section" id="customers">
-        <div class="section-header-dash">
-          <h2>Customer Management</h2>
-          <button class="btn btn-primary">
-            <i class="fas fa-user-plus"></i> Add Customer
-          </button>
-        </div>
-
-        <div class="table-card">
-          <div class="table-responsive">
-            <table class="dashboard-table">
-              <thead>
-                <tr>
-                  <th>Customer</th>
-                  <th>Email</th>
-                  <th>Location</th>
-                  <th>Orders</th>
-                  <th>Total Spent</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="customersTableBody">
-                <!-- Will be populated by JavaScript -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <!-- ========== ANALYTICS SECTION ========== -->
-      <section class="content-section" id="analytics">
-        <h2>Analytics & Reports</h2>
-        
-        <div class="analytics-cards">
-          <div class="analytics-card">
-            <h3>Revenue by Category</h3>
-            <canvas id="categoryChart"></canvas>
-          </div>
-          <div class="analytics-card">
-            <h3>Customer Growth</h3>
-            <canvas id="customerChart"></canvas>
-          </div>
-        </div>
-
-        <div class="analytics-stats">
-          <div class="analytics-stat">
-            <i class="fas fa-chart-line"></i>
-            <div>
-              <strong>Average Order Value</strong>
-              <p>₦186,500</p>
-            </div>
-          </div>
-          <div class="analytics-stat">
-            <i class="fas fa-shopping-cart"></i>
-            <div>
-              <strong>Conversion Rate</strong>
-              <p>3.2%</p>
-            </div>
-          </div>
-          <div class="analytics-stat">
-            <i class="fas fa-undo"></i>
-            <div>
-              <strong>Return Rate</strong>
-              <p>2.1%</p>
-            </div>
-          </div>
-          <div class="analytics-stat">
-            <i class="fas fa-star"></i>
-            <div>
-              <strong>Avg Rating</strong>
-              <p>4.8/5.0</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ========== INVENTORY SECTION ========== -->
-      <section class="content-section" id="inventory">
-        <div class="section-header-dash">
-          <h2>Inventory Management</h2>
-          <button class="btn btn-primary">
-            <i class="fas fa-plus"></i> Add Stock
-          </button>
-        </div>
-
-        <div class="inventory-alerts">
-          <div class="alert-card warning">
-            <i class="fas fa-exclamation-triangle"></i>
-            <div>
-              <strong>Low Stock Alert</strong>
-              <p>5 products are running low on stock</p>
-            </div>
-            <button class="btn-small">View</button>
-          </div>
-          <div class="alert-card danger">
-            <i class="fas fa-times-circle"></i>
-            <div>
-              <strong>Out of Stock</strong>
-              <p>3 products are out of stock</p>
-            </div>
-            <button class="btn-small">Restock</button>
-          </div>
-        </div>
-
-        <div class="table-card">
-          <div class="table-responsive">
-            <table class="dashboard-table">
-              <thead>
-                <tr>
-                  <th>Product</th>
-                  <th>SKU</th>
-                  <th>Category</th>
-                  <th>Stock</th>
-                  <th>Status</th>
-                  <th>Last Updated</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="inventoryTableBody">
-                <!-- Will be populated by JavaScript -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <!-- ========== REVIEWS SECTION ========== -->
-      <section class="content-section" id="reviews">
-        <div class="section-header-dash">
-          <h2>Customer Reviews</h2>
-          <div class="reviews-summary-dash">
-            <div class="overall-rating-dash">
-              <h3>4.8</h3>
-              <div class="stars">★★★★★</div>
-              <p>Based on 347 reviews</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="reviews-list-dash" id="reviewsList">
-          <!-- Will be populated by JavaScript -->
-        </div>
-      </section>
-
-      <!-- ========== SETTINGS SECTION ========== -->
-      <section class="content-section" id="settings">
-        <h2>Settings</h2>
-        
-        <div class="settings-grid">
-          <div class="settings-card">
-            <h3><i class="fas fa-store"></i> Store Settings</h3>
-            <div class="setting-item">
-              <label>Store Name</label>
-              <input type="text" value="Kickshaus" class="setting-input">
-            </div>
-            <div class="setting-item">
-              <label>Store Email</label>
-              <input type="email" value="contact@kickshaus.com" class="setting-input">
-            </div>
-            <div class="setting-item">
-              <label>Store Address</label>
-              <textarea class="setting-input">2 Prof. Ikechi Mgbeoji Street, Okun, Ajah, Lagos State, Nigeria</textarea>
-            </div>
-            <button class="btn btn-primary">Save Changes</button>
-          </div>
-
-          <div class="settings-card">
-            <h3><i class="fas fa-bell"></i> Notifications</h3>
-            <div class="setting-toggle">
-              <span>Email notifications</span>
-              <label class="switch">
-                <input type="checkbox" checked>
-                <span class="slider"></span>
-              </label>
-            </div>
-            <div class="setting-toggle">
-              <span>Order updates</span>
-              <label class="switch">
-                <input type="checkbox" checked>
-                <span class="slider"></span>
-              </label>
-            </div>
-            <div class="setting-toggle">
-              <span>Low stock alerts</span>
-              <label class="switch">
-                <input type="checkbox" checked>
-                <span class="slider"></span>
-              </label>
-            </div>
-            <div class="setting-toggle">
-              <span>Customer reviews</span>
-              <label class="switch">
-                <input type="checkbox">
-                <span class="slider"></span>
-              </label>
-            </div>
-          </div>
-
-          <div class="settings-card">
-            <h3><i class="fas fa-credit-card"></i> Payment Methods</h3>
-            <div class="payment-methods">
-              <div class="payment-method active">
-                <i class="fab fa-cc-paypal"></i>
-                <span>PayPal</span>
-                <span class="status-badge active">Active</span>
-              </div>
-              <div class="payment-method active">
-                <i class="fab fa-cc-stripe"></i>
-                <span>Stripe</span>
-                <span class="status-badge active">Active</span>
-              </div>
-              <div class="payment-method">
-                <i class="fas fa-money-bill-wave"></i>
-                <span>Bank Transfer</span>
-                <span class="status-badge inactive">Inactive</span>
-              </div>
-            </div>
-            <button class="btn btn-outline">Configure Payment</button>
-          </div>
-
-          <div class="settings-card">
-            <h3><i class="fas fa-lock"></i> Security</h3>
-            <div class="setting-item">
-              <label>Change Password</label>
-              <button class="btn btn-outline">Update Password</button>
-            </div>
-            <div class="setting-item">
-              <label>Two-Factor Authentication</label>
-              <button class="btn btn-primary">Enable 2FA</button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-    </div>
-  </main>
-
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="script.js"></script>
-  <script src="dashboard.js"></script>
   <script src="global-state.js"></script>
+  <script src="admin-auth.js"></script>
+  <script src="universal-theme.js"></script>
+  <script src="dashboard-functions.js"></script>
 </body>
 </html>

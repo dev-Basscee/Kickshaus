@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -8,7 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet"/>
 
   <style>
-    /* Same styles as signup for perfect consistency */
+ 
     :root {
       --bg: #f8f9fa;
       --card: #ffffff;
@@ -51,7 +51,7 @@
       color: var(--text);
     }
 
-    /* Reuse exact same form-group, input, btn-primary, etc. styles from signup */
+    
     .form-group { margin-bottom: 1.8rem; text-align: left; }
     label { display: block; margin-bottom: 0.6rem; font-weight: 500; color: var(--muted); font-size: 0.95rem; }
     input { width: 100%; padding: 1.1rem 1.3rem; border: 1px solid var(--border); border-radius: 10px; background: var(--input); font-size: 1rem; transition: all 0.3s ease; }
@@ -114,5 +114,451 @@
   <script src="global-state.js"></script>
 <script src="script.js"></script>
 
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login - Kickshaus</title>
+
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="mobile-dark-mode.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet"/>
+
+  <style>
+    .auth-page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      background: var(--bg-primary);
+    }
+
+    .auth-container {
+      background: var(--bg-card);
+      border-radius: 24px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border-color);
+      animation: fadeInUp 0.5s ease;
+    }
+
+    .auth-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 3rem;
+      font-weight: 900;
+      margin-bottom: 12px;
+      color: var(--text-primary);
+      text-align: center;
+    }
+
+    .auth-subtitle {
+      text-align: center;
+      color: var(--text-muted);
+      margin-bottom: 32px;
+      font-size: 1rem;
+    }
+
+    .form-group {
+      margin-bottom: 24px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: var(--text-primary);
+      font-size: 0.95rem;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
+      background: var(--bg-primary);
+      font-size: 1rem;
+      color: var(--text-primary);
+      transition: all 0.3s ease;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(0, 168, 232, 0.1);
+    }
+
+    .form-group input.error {
+      border-color: var(--accent);
+      animation: shake 0.4s ease;
+    }
+
+    .error-message {
+      color: var(--accent);
+      font-size: 0.85rem;
+      margin-top: 6px;
+      display: none;
+    }
+
+    .error-message.show {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .forgot-link {
+      display: block;
+      text-align: right;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin: -12px 0 24px;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+
+    .forgot-link:hover {
+      color: var(--primary);
+    }
+
+    .btn-auth {
+      width: 100%;
+      padding: 16px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-family: 'Poppins', sans-serif;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-auth::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+
+    .btn-auth:hover::before {
+      width: 300px;
+      height: 300px;
+    }
+
+    .btn-auth:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 168, 232, 0.3);
+    }
+
+    .btn-auth:active {
+      transform: translateY(0);
+    }
+
+    .btn-auth:disabled {
+      background: var(--text-muted);
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      margin: 32px 0;
+      color: var(--text-muted);
+    }
+
+    .divider::before,
+    .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border-color);
+    }
+
+    .divider span {
+      padding: 0 16px;
+      font-size: 0.9rem;
+    }
+
+    .social-buttons {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .social-btn {
+      flex: 1;
+      padding: 12px;
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
+      background: var(--bg-card);
+      font-size: 1.3rem;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .social-btn:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .social-btn.google { color: #4285F4; }
+    .social-btn.facebook { color: #1877F2; }
+
+    .toggle-auth {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .toggle-auth a {
+      color: var(--primary);
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .toggle-auth a:hover {
+      text-decoration: underline;
+    }
+
+    .back-home-link {
+      position: fixed;
+      top: 24px;
+      left: 24px;
+      z-index: 999;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.3s;
+      padding: 8px 16px;
+      border-radius: 8px;
+      background: var(--bg-card);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .back-home-link:hover {
+      color: var(--primary);
+      transform: translateX(-4px);
+    }
+
+    @media (max-width: 480px) {
+      .auth-container { padding: 36px 24px; }
+      .auth-title { font-size: 2.4rem; }
+      .back-home-link { 
+        top: 16px; 
+        left: 16px;
+        font-size: 0.9rem;
+      }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-10px); }
+      75% { transform: translateX(10px); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- THEME TOGGLE -->
+  <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">
+    <i class="fas fa-moon"></i>
+  </button>
+
+  <!-- Back to Home -->
+  <a href="index.html" class="back-home-link">
+    <i class="fas fa-arrow-left"></i>
+    <span>Back to Home</span>
+  </a>
+
+  <div class="auth-page">
+    <div class="auth-container">
+      <h1 class="auth-title">Login</h1>
+      <p class="auth-subtitle">Welcome back! Please login to your account</p>
+
+      <form id="loginForm" novalidate>
+        <div class="form-group">
+          <label for="email">Email Address *</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            placeholder="your@email.com"
+            required
+          />
+          <span class="error-message" id="emailError">Please enter a valid email address</span>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password *</label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            placeholder="••••••••"
+            required
+          />
+          <span class="error-message" id="passwordError">Password must be at least 6 characters</span>
+        </div>
+
+        <a href="#" class="forgot-link">Forgot password?</a>
+
+        <button type="submit" class="btn-auth">
+          Login
+        </button>
+      </form>
+
+      <div class="divider">
+        <span>Or continue with</span>
+      </div>
+
+      <div class="social-buttons">
+        <button class="social-btn google" type="button">
+          <i class="fab fa-google"></i>
+        </button>
+        <button class="social-btn facebook" type="button">
+          <i class="fab fa-facebook"></i>
+        </button>
+      </div>
+
+      <p class="toggle-auth">
+        Don't have an account? <a href="signup.html">Sign Up</a>
+      </p>
+    </div>
+  </div>
+
+  <script src="global-state.js"></script>
+  <script src="admin-auth.js"></script>
+  <script src="universal-theme.js"></script>
+  <script src="script.js"></script>
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const email = document.getElementById('email');
+      const password = document.getElementById('password');
+      const emailError = document.getElementById('emailError');
+      const passwordError = document.getElementById('passwordError');
+      
+      // Reset errors
+      email.classList.remove('error');
+      password.classList.remove('error');
+      emailError.classList.remove('show');
+      passwordError.classList.remove('show');
+      
+      let isValid = true;
+      
+      // Validate email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!email.value || !emailRegex.test(email.value)) {
+        email.classList.add('error');
+        emailError.classList.add('show');
+        isValid = false;
+      }
+      
+      // Validate password
+      if (!password.value || password.value.length < 6) {
+        password.classList.add('error');
+        passwordError.classList.add('show');
+        isValid = false;
+      }
+      
+      if (isValid) {
+        const btn = this.querySelector('.btn-auth');
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Logging in...';
+        
+        // Try admin login
+        setTimeout(() => {
+          const result = AdminAuth.login(email.value, password.value);
+          
+          if (result.success) {
+            showToast('✓ ' + result.message);
+            
+            // Check if there's a redirect URL
+            const redirectUrl = sessionStorage.getItem('redirectAfterLogin');
+            sessionStorage.removeItem('redirectAfterLogin');
+            
+            setTimeout(() => {
+              window.location.href = redirectUrl || 'dashboard.html';
+            }, 1000);
+          } else {
+            showToast('✗ ' + result.message, 'error');
+            btn.disabled = false;
+            btn.textContent = originalText;
+            password.classList.add('error');
+            passwordError.textContent = result.message;
+            passwordError.classList.add('show');
+          }
+        }, 800);
+      }
+    });
+
+    // Real-time validation
+    document.getElementById('email').addEventListener('blur', function() {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (this.value && !emailRegex.test(this.value)) {
+        this.classList.add('error');
+        document.getElementById('emailError').classList.add('show');
+      } else {
+        this.classList.remove('error');
+        document.getElementById('emailError').classList.remove('show');
+      }
+    });
+
+    document.getElementById('password').addEventListener('input', function() {
+      if (this.value.length > 0 && this.value.length < 6) {
+        this.classList.add('error');
+        document.getElementById('passwordError').classList.add('show');
+      } else {
+        this.classList.remove('error');
+        document.getElementById('passwordError').classList.remove('show');
+      }
+    });
+
+    // Show admin credentials hint
+    console.log('Admin Login: admin@kickshaus.com / Kickshaus2025!');
+  </script>
 </body>
 </html>

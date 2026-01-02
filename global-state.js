@@ -135,6 +135,7 @@ const PRODUCTS_DATABASE = [
   {
     id: 'precious-001',
     name: 'Precious Footwear',
+    brand: 'Kickshaus',
     category: 'dress',
     price: 180000,
     description: 'NIGERIAN LUXURY SHOES - Premium handcrafted footwear made with the finest materials.',
@@ -152,6 +153,7 @@ const PRODUCTS_DATABASE = [
   {
     id: 1,
     name: 'Nike Sneakers',
+    brand: 'Nike',
     category: 'Fashion',
     price: 1550,
     description: 'Classic Nike sneakers with superior comfort and style.',
@@ -169,6 +171,7 @@ const PRODUCTS_DATABASE = [
   {
     id: 2,
     name: 'Adforce Pumps',
+    brand: 'Adidas',
     category: 'Fashion',
     price: 2250,
     description: 'Elegant pumps perfect for any formal occasion.',
@@ -186,6 +189,7 @@ const PRODUCTS_DATABASE = [
   {
     id: 3,
     name: "Puma's Revenge",
+    brand: 'Puma',
     category: 'Fashion',
     price: 1850,
     description: 'Sporty and stylish Puma shoes for everyday wear.',

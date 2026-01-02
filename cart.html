@@ -10,9 +10,55 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Make form inputs readable in dark mode */
+    body.dark-theme .bg-gray-50,
+    body.dark-theme input,
+    body.dark-theme textarea {
+      background-color: #1f2937 !important;     /* gray-800 */
+      color: #f3f4f6 !important;               /* gray-100 light text */
+      border-color: #374151 !important;        /* gray-700 */
+    }
+
+    body.dark-theme label {
+      color: #d1d5db !important;               /* gray-300 */
+    }
+
+    body.dark-theme input::placeholder,
+    body.dark-theme textarea::placeholder {
+      color: #6b7280 !important;               /* gray-500 */
+    }
+
+    body.dark-theme input:focus,
+    body.dark-theme textarea:focus {
+      border-color: #c41e3a !important;
+      box-shadow: 0 0 0 3px rgba(196, 30, 58, 0.3) !important;
+    }
+
+    /* Protect red button from dark mode overrides */
+    body.dark-theme .bg-red-600,
+    body.dark-theme button.bg-red-600 {
+      background-color: #c41e3a !important;
+    }
+
+    body.dark-theme .bg-red-600:hover,
+    body.dark-theme button.bg-red-600:hover {
+      background-color: #a6172f !important;
+    }
+
+    /* Optional: Make white cards darker in dark mode, but exclude buttons */
+    body.dark-theme .bg-white:not(button):not(.bg-red-600) {
+      background-color: #111827 !important;
+      border-color: #374151 !important;
+    }
+  </style>
 </head>
 
-<body class="bg-gray-100">
+<body>
+
+ <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">
+    <i class="fas fa-moon"></i>
+  </button>
 
   <!-- HEADER -->
   <div class="max-w-6xl mx-auto px-4 py-6">
@@ -88,6 +134,30 @@
       const emptyCartState = document.getElementById('emptyCartState');
       const cartSummary = document.getElementById('cartSummary');
       const cartItemCount = document.getElementById('cartItemCount');
+
+               // ===== THEME TOGGLE =====
+    const themeToggle = document.getElementById('themeToggle');
+    const body = document.body;
+    const themeIcon = themeToggle.querySelector('i');
+
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    if (savedTheme === 'dark') {
+      body.classList.add('dark-theme');
+      themeIcon.classList.replace('fa-moon', 'fa-sun');
+    }
+
+    themeToggle.addEventListener('click', () => {
+      body.classList.toggle('dark-theme');
+      const isDark = body.classList.contains('dark-theme');
+      
+      if (isDark) {
+        themeIcon.classList.replace('fa-moon', 'fa-sun');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        themeIcon.classList.replace('fa-sun', 'fa-moon');
+        localStorage.setItem('theme', 'light');
+      }
+    });
 
       // Render cart items
       function renderCart() {
@@ -197,7 +267,8 @@
       console.log('✨ Cart page loaded with', KickshausState.getCartItemCount(), 'items');
     });
   </script>
-  <script src="global-state.js"></script>
 <script src="script.js"></script>
+ 
+  
 </body>
 </html>

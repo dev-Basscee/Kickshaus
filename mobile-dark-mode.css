@@ -1,0 +1,372 @@
+/* ==========================================
+   MOBILE MENU & DARK MODE ENHANCEMENTS
+   Add to all pages for consistent behavior
+   ========================================== */
+
+/* ===== DARK MODE VARIABLES ===== */
+:root {
+  /* Light theme (default) */
+  --bg-primary: #F5F5F7;
+  --bg-secondary: #FFFFFF;
+  --bg-card: #FFFFFF;
+  --text-primary: #1A1A1A;
+  --text-secondary: #4A4A4A;
+  --text-muted: #999999;
+  --border-color: #E5E5E5;
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+  --primary: #00A8E8;
+  --primary-dark: #0088BB;
+  --accent: #FF6B6B;
+  --secondary: #FFD700;
+}
+
+/* Dark theme */
+body.dark-theme {
+  --bg-primary: #0A0A0A;
+  --bg-secondary: #121212;
+  --bg-card: #1E1E1E;
+  --text-primary: #FFFFFF;
+  --text-secondary: #E0E0E0;
+  --text-muted: #999999;
+  --border-color: #333333;
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+/* Smooth transitions for theme switching */
+body {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* ===== MOBILE MENU STYLES ===== */
+
+/* Mobile menu toggle button */
+.mobile-menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: 8px;
+  transition: all 0.3s ease;
+  z-index: 1001;
+}
+
+.mobile-menu-toggle:hover {
+  color: var(--primary);
+  transform: scale(1.1);
+}
+
+.mobile-menu-toggle:active {
+  transform: scale(0.95);
+}
+
+/* Show mobile toggle on small screens */
+@media (max-width: 768px) {
+  .mobile-menu-toggle {
+    display: block;
+  }
+
+  /* Hide desktop menu by default on mobile */
+  .nav-menu {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 280px;
+    height: 100vh;
+    background: var(--bg-card);
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    padding: 80px 30px 30px;
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+    transition: right 0.3s ease;
+    z-index: 1000;
+    overflow-y: auto;
+  }
+
+  /* Show menu when active */
+  .nav-menu.active {
+    right: 0;
+  }
+
+  /* Mobile menu items */
+  .nav-menu li {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  .nav-link {
+    display: block;
+    width: 100%;
+    padding: 16px 20px;
+    font-size: 1.1rem;
+    border-bottom: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+  }
+
+  .nav-link:hover,
+  .nav-link.active {
+    background: var(--bg-primary);
+    color: var(--primary);
+    padding-left: 28px;
+  }
+
+  /* Mobile overlay */
+  .nav-menu.active::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 280px;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: -1;
+    animation: fadeIn 0.3s ease;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ===== FOOTER MOBILE FONT SIZE ===== */
+@media (max-width: 768px) {
+  .footer-column h4 {
+    font-size: 1.1rem !important;
+  }
+  
+  .footer-column ul li a {
+    font-size: 0.95rem !important;
+  }
+  
+  .footer-tagline {
+    font-size: 1.1rem !important;
+  }
+  
+  .footer-address {
+    font-size: 0.95rem !important;
+  }
+  
+  .footer-bottom {
+    font-size: 0.9rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .footer-column h4 {
+    font-size: 1rem !important;
+  }
+  
+  .footer-column ul li a {
+    font-size: 0.9rem !important;
+  }
+  
+  .footer-tagline {
+    font-size: 1rem !important;
+  }
+  
+  .footer-address {
+    font-size: 0.9rem !important;
+  }
+}
+
+/* ===== DASHBOARD SIDEBAR MENU (Mobile) ===== */
+@media (max-width: 768px) {
+  .sidebar-toggle {
+    display: block;
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 1001;
+    background: var(--bg-card);
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    box-shadow: var(--shadow-md);
+    cursor: pointer;
+    color: var(--text-primary);
+    font-size: 1.3rem;
+  }
+
+  .sidebar-toggle:hover {
+    background: var(--primary);
+    color: white;
+  }
+
+  .sidebar {
+    position: fixed;
+    left: -280px;
+    transition: left 0.3s ease;
+    z-index: 1000;
+  }
+
+  .sidebar.active {
+    left: 0;
+  }
+
+  /* Overlay for mobile sidebar */
+  .sidebar.active::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 280px;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: -1;
+  }
+
+  .main-content {
+    margin-left: 0 !important;
+    padding: 80px 20px 20px !important;
+  }
+}
+
+/* ===== THEME TOGGLE IMPROVEMENTS ===== */
+.theme-toggle {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: none;
+  color: white;
+  font-size: 1.3rem;
+  cursor: pointer;
+  box-shadow: var(--shadow-lg);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.theme-toggle:hover {
+  transform: scale(1.1) rotate(20deg);
+  box-shadow: 0 8px 32px rgba(0, 168, 232, 0.4);
+}
+
+.theme-toggle:active {
+  transform: scale(0.95) rotate(20deg);
+}
+
+.theme-toggle i {
+  transition: transform 0.4s ease;
+}
+
+body.dark-theme .theme-toggle {
+  background: #FFA500;
+}
+
+body.dark-theme .theme-toggle i {
+  transform: rotate(180deg);
+}
+
+@media (max-width: 480px) {
+  .theme-toggle {
+    bottom: 16px;
+    right: 16px;
+    width: 48px;
+    height: 48px;
+    font-size: 1.1rem;
+  }
+}
+
+/* ===== IMPROVED FORM INPUT STYLES (Dark Mode) ===== */
+input, textarea, select {
+  background: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 4px rgba(0, 168, 232, 0.1) !important;
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--text-muted) !important;
+}
+
+/* Form labels */
+label {
+  color: var(--text-primary) !important;
+}
+
+/* ===== IMPROVED CARD STYLES (Dark Mode) ===== */
+.card, .product-card, .order-card, .stat-card {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+/* ===== TABLE STYLES (Dark Mode) ===== */
+table {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+th {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+td {
+  border-color: var(--border-color);
+  color: var(--text-secondary);
+}
+
+tr:hover {
+  background: var(--bg-primary);
+}
+
+/* ===== MODAL STYLES (Dark Mode) ===== */
+.modal-content {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+.modal-backdrop {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+body.dark-theme .modal-backdrop {
+  background: rgba(0, 0, 0, 0.85);
+}
+
+/* ===== ENSURE ALL TEXT RESPECTS THEME ===== */
+h1, h2, h3, h4, h5, h6, p, span, div, a {
+  color: inherit;
+}
+
+/* Links */
+a {
+  color: var(--primary);
+}
+
+a:hover {
+  color: var(--primary-dark);
+}
+
+/* ===== SCROLLBAR DARK MODE ===== */
+body.dark-theme ::-webkit-scrollbar {
+  background: var(--bg-secondary);
+}
+
+body.dark-theme ::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+}
+
+body.dark-theme ::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}

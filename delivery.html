@@ -9,9 +9,78 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <script src="https://cdn.tailwindcss.com"></script>
+<style>
+
+   /* Force red button to stay red in dark mode */
+   .bg-red-600 {
+    background-color: #dc2626 !important; /* red-600 */
+  }
+  .hover\:bg-red-700:hover {
+    background-color: #b91c1c !important; /* red-700 */
+  }
+  .text-white {
+    color: white !important;
+  }
+
+   /* Optional: better shadow in dark mode */
+  body.dark-theme .shadow-lg {
+    box-shadow: 0 10px 25px rgba(196, 30, 58, 0.25) !important;
+  }
+
+  /* Make sure text stays white in dark mode */
+  body.dark-theme button.bg-red-600,
+  body.dark-theme button.bg-red-600:hover {
+    color: white !important;
+  }
+  /* Dark mode adjustments for form inputs */
+  body.dark-theme .bg-gray-50,
+  body.dark-theme input,
+  body.dark-theme textarea {
+    background-color: #1f2937 !important;     /* Tailwind gray-800 */
+    color: #f3f4f6 !important;               /* Tailwind gray-100 - light text */
+    border-color: #374151 !important;        /* Tailwind gray-700 */
+  }
+
+  /* Focus ring in dark mode */
+  body.dark-theme input:focus,
+  body.dark-theme textarea:focus {
+    border-color: #c41e3a !important;        /* your red */
+    box-shadow: 0 0 0 3px rgba(196, 30, 58, 0.3) !important;
+  }
+
+  /* Labels in dark mode */
+  body.dark-theme label {
+    color: #d1d5db !important;               /* Tailwind gray-300 */
+  }
+
+  /* Placeholder text in dark mode */
+  body.dark-theme input::placeholder,
+  body.dark-theme textarea::placeholder {
+    color: #6b7280 !important;               /* Tailwind gray-500 */
+  }
+
+  /* Optional: Make the whole form card darker */
+/* Change this: */
+body.dark-theme .bg-white,
+body.dark-theme .rounded-xl {
+  background-color: #111827 !important;
+  border-color: #374151 !important;
+}
+
+/* To this (only override pure white backgrounds): */
+body.dark-theme .bg-white {
+  background-color: #111827 !important;
+  border-color: #374151 !important;
+}
+
+</style>
 </head>
 
-<body class="bg-gray-100 min-h-screen">
+<body >
+
+    <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">
+    <i class="fas fa-moon"></i>
+  </button>
 
   <!-- HEADER -->
   <div class="flex items-center px-6 py-6 max-w-4xl mx-auto">
@@ -135,7 +204,7 @@
     <!-- BUTTON -->
     <button
       type="submit"
-      class="w-full bg-red-600 hover:bg-red-700 transition text-white font-bold py-4 rounded-xl text-xl shadow-lg">
+      class="w-full bg-red-600 hover:bg-red-700 transition text-white font-bold py-4 rounded-lg text-xl shadow-lg">
       Proceed to Payment <i class="fas fa-arrow-right ml-2"></i>
     </button>
 
@@ -143,6 +212,32 @@
 
   <script src="global-state.js"></script>
   <script>
+
+        // ===== THEME TOGGLE =====
+    const themeToggle = document.getElementById('themeToggle');
+    const body = document.body;
+    const themeIcon = themeToggle.querySelector('i');
+
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    if (savedTheme === 'dark') {
+      body.classList.add('dark-theme');
+      themeIcon.classList.replace('fa-moon', 'fa-sun');
+    }
+
+    themeToggle.addEventListener('click', () => {
+      body.classList.toggle('dark-theme');
+      const isDark = body.classList.contains('dark-theme');
+      
+      if (isDark) {
+        themeIcon.classList.replace('fa-moon', 'fa-sun');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        themeIcon.classList.replace('fa-sun', 'fa-moon');
+        localStorage.setItem('theme', 'light');
+      }
+    });
+
+
     document.addEventListener('DOMContentLoaded', () => {
       // Load order summary (handles both cart and Buy Now)
       const checkoutSummary = JSON.parse(localStorage.getItem('checkoutSummary') || '{}');

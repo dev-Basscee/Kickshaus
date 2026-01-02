@@ -71,6 +71,19 @@
               <option value="price-high">Price: High to Low</option>
               <option value="newest">Newest First</option>
               <option value="bestselling">Best Selling</option>
+              <option value="rating">Highest Rated</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <select class="filter-select" id="brandFilter">
+              <option value="all">All Brands</option>
+              <option value="nike">Nike</option>
+              <option value="adidas">Adidas</option>
+              <option value="puma">Puma</option>
+              <option value="reebok">Reebok</option>
+              <option value="newbalance">New Balance</option>
+              <option value="kickshaus">Kickshaus Original</option>
             </select>
           </div>
 
@@ -353,15 +366,25 @@
     // Apply filters
     function applyFilters() {
       const sortValue = document.getElementById('sortFilter').value;
+      const brandValue = document.getElementById('brandFilter').value;
       const categoryValue = document.getElementById('categoryFilter').value;
       const priceValue = document.getElementById('priceFilter').value;
 
       filteredProducts = [...PRODUCTS_DATABASE];
 
+      // Brand filter
+      if (brandValue !== 'all') {
+        filteredProducts = filteredProducts.filter(p => 
+          (p.brand && p.brand.toLowerCase() === brandValue.toLowerCase())
+        );
+      }
+
+      // Category filter
       if (categoryValue !== 'all') {
         filteredProducts = filteredProducts.filter(p => p.category.toLowerCase() === categoryValue.toLowerCase());
       }
 
+      // Price filter
       if (priceValue !== 'all') {
         if (priceValue === '0-150000') {
           filteredProducts = filteredProducts.filter(p => p.price <= 150000);
@@ -372,10 +395,13 @@
         }
       }
 
+      // Sorting
       if (sortValue === 'price-low') {
         filteredProducts.sort((a, b) => a.price - b.price);
       } else if (sortValue === 'price-high') {
         filteredProducts.sort((a, b) => b.price - a.price);
+      } else if (sortValue === 'rating') {
+        filteredProducts.sort((a, b) => (b.rating || 0) - (a.rating || 0));
       } else if (sortValue === 'newest') {
         filteredProducts = filteredProducts.filter(p => p.badge === 'new').concat(
           filteredProducts.filter(p => p.badge !== 'new')
@@ -391,11 +417,13 @@
     }
 
     document.getElementById('sortFilter')?.addEventListener('change', applyFilters);
+    document.getElementById('brandFilter')?.addEventListener('change', applyFilters);
     document.getElementById('categoryFilter')?.addEventListener('change', applyFilters);
     document.getElementById('priceFilter')?.addEventListener('change', applyFilters);
 
     function resetAllFilters() {
       document.getElementById('sortFilter').value = 'featured';
+      document.getElementById('brandFilter').value = 'all';
       document.getElementById('categoryFilter').value = 'all';
       document.getElementById('priceFilter').value = 'all';
       applyFilters();
@@ -409,7 +437,7 @@
       console.log('✨ Collections page loaded!');
     });
   </script>
-  <script src="global-state.js"></script>
+   <script src="global-state.js"></script>
 <script src="script.js"></script>
 </body>
 </html>
