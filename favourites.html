@@ -264,6 +264,11 @@
 </head>
 <body>
 
+  <!-- THEME TOGGLE -->
+  <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">
+    <i class="fas fa-moon"></i>
+  </button>
+
   <header class="header">
     <button class="back-btn" id="backBtn">
       <i class="fas fa-arrow-left"></i>
@@ -283,7 +288,7 @@
       Start adding products to your favorites by clicking the heart icon on any product.
       Your favorite items will appear here for easy access!
     </p>
-    <a href="index.html" class="btn-shop">
+    <a href="collection.html" class="btn-shop">
       <i class="fas fa-shopping-bag"></i> Start Shopping
     </a>
   </div>
@@ -299,6 +304,30 @@
       console.error('Element with id="favoritesGrid" not found!');
       return;
     }
+
+        // ===== THEME TOGGLE =====
+    const themeToggle = document.getElementById('themeToggle');
+    const body = document.body;
+    const themeIcon = themeToggle.querySelector('i');
+
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    if (savedTheme === 'dark') {
+      body.classList.add('dark-theme');
+      themeIcon.classList.replace('fa-moon', 'fa-sun');
+    }
+
+    themeToggle.addEventListener('click', () => {
+      body.classList.toggle('dark-theme');
+      const isDark = body.classList.contains('dark-theme');
+      
+      if (isDark) {
+        themeIcon.classList.replace('fa-moon', 'fa-sun');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        themeIcon.classList.replace('fa-sun', 'fa-moon');
+        localStorage.setItem('theme', 'light');
+      }
+    });
 
     // Render favorites
     function renderFavorites() {
@@ -378,6 +407,5 @@
     console.log('✨ Favorites page loaded with', KickshausState.favorites.length, 'items');
   });
   </script>
-  <script src="universal-theme.js"></script>
 </body>
 </html>
