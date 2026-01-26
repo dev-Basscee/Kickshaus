@@ -666,6 +666,7 @@
   </div>
 
   <script src="global-state.js"></script>
+  <script src="api-client.js"></script>
   <script src="script.js"></script>
   <script>
     // Password strength checker
@@ -707,7 +708,7 @@
     });
 
     // Form validation
-    document.getElementById('signupForm').addEventListener('submit', function(e) {
+    document.getElementById('signupForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       
       const fullName = document.getElementById('fullName');
@@ -758,17 +759,41 @@
       }
       
       if (isValid) {
-        // Simulate signup
+        // Call backend API for registration
         const btn = this.querySelector('.btn-auth');
+        const originalText = btn.textContent;
         btn.disabled = true;
         btn.textContent = 'Creating account...';
         
-        setTimeout(() => {
-          showToast('✓ Account created successfully! Welcome to Kickshaus.');
-          setTimeout(() => {
-            window.location.href = 'index.html';
-          }, 1000);
-        }, 1500);
+        try {
+          const response = await KickshausAPI.register(email.value, password.value);
+          
+          if (response.success) {
+            showToast('✓ Account created successfully! Welcome to Kickshaus.');
+            
+            // Check if there's a redirect URL
+            const redirectUrl = sessionStorage.getItem('redirectAfterLogin');
+            sessionStorage.removeItem('redirectAfterLogin');
+            
+            setTimeout(() => {
+              window.location.href = redirectUrl || 'index.html';
+            }, 1000);
+          } else {
+            throw new Error(response.error || 'Registration failed');
+          }
+        } catch (error) {
+          console.error('Registration error:', error);
+          showToast('✗ ' + (error.message || 'Registration failed. Please try again.'), 'error');
+          btn.disabled = false;
+          btn.textContent = originalText;
+          
+          // Show specific error for email if user already exists
+          if (error.message && error.message.toLowerCase().includes('email')) {
+            email.classList.add('error');
+            document.getElementById('emailError').textContent = error.message;
+            document.getElementById('emailError').classList.add('show');
+          }
+        }
       }
     });
 
