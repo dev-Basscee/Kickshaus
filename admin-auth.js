@@ -3,14 +3,17 @@
 // ==========================================
 
 const AdminAuth = {
-  // Admin credentials (in production, these should be hashed and stored securely)
-  credentials: {
-    email: 'admin@kickshaus.com',
-    password: 'Kickshaus2025!' // Strong password with uppercase, lowercase, number, special char
-  },
-
-  // Check if user is logged in
+  // Check if user is logged in (using API token or local session)
   isAuthenticated() {
+    // First check API token
+    if (typeof KickshausAPI !== 'undefined' && KickshausAPI.isAuthenticated()) {
+      const user = KickshausAPI.getUser();
+      if (user && user.role === 'admin') {
+        return true;
+      }
+    }
+    
+    // Fallback to local session check
     const session = localStorage.getItem('kickshaus_admin_session');
     if (!session) return false;
 
@@ -30,33 +33,31 @@ const AdminAuth = {
     }
   },
 
-  // Login admin
-  login(email, password) {
-    if (email === this.credentials.email && password === this.credentials.password) {
-      // Create session (expires in 24 hours)
-      const session = {
-        authenticated: true,
-        email: email,
-        loginTime: Date.now(),
-        expires: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
-      };
-
-      localStorage.setItem('kickshaus_admin_session', JSON.stringify(session));
-      return { success: true, message: 'Login successful!' };
-    } else {
-      return { success: false, message: 'Invalid email or password' };
-    }
-  },
-
   // Logout admin
   logout() {
     localStorage.removeItem('kickshaus_admin_session');
+    // Also logout from API if available
+    if (typeof KickshausAPI !== 'undefined') {
+      KickshausAPI.logout();
+    }
   },
 
   // Get current admin info
   getCurrentAdmin() {
     if (!this.isAuthenticated()) return null;
 
+    // First try to get from API
+    if (typeof KickshausAPI !== 'undefined') {
+      const user = KickshausAPI.getUser();
+      if (user && user.role === 'admin') {
+        return {
+          email: user.email,
+          loginTime: new Date().toISOString()
+        };
+      }
+    }
+
+    // Fallback to local session
     try {
       const session = JSON.parse(localStorage.getItem('kickshaus_admin_session'));
       return {

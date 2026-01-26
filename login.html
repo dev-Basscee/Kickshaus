@@ -468,10 +468,11 @@
   </div>
 
   <script src="global-state.js"></script>
+  <script src="api-client.js"></script>
   <script src="admin-auth.js"></script>
   <script src="script.js"></script>
   <script>
-    document.getElementById('loginForm').addEventListener('submit', function(e) {
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       
       const email = document.getElementById('email');
@@ -508,29 +509,42 @@
         btn.disabled = true;
         btn.textContent = 'Logging in...';
         
-        // Try admin login
-        setTimeout(() => {
-          const result = AdminAuth.login(email.value, password.value);
+        try {
+          // Call backend API for login
+          const response = await KickshausAPI.login(email.value, password.value);
           
-          if (result.success) {
-            showToast('✓ ' + result.message);
+          if (response.success) {
+            showToast('✓ Login successful!');
             
             // Check if there's a redirect URL
             const redirectUrl = sessionStorage.getItem('redirectAfterLogin');
             sessionStorage.removeItem('redirectAfterLogin');
             
+            // Redirect based on user type
+            const userType = response.data.type;
+            let destination = 'index.html';
+            
+            if (userType === 'admin') {
+              destination = 'dashboard.html';
+            } else if (redirectUrl) {
+              destination = redirectUrl;
+            }
+            
             setTimeout(() => {
-              window.location.href = redirectUrl || 'dashboard.html';
+              window.location.href = destination;
             }, 1000);
           } else {
-            showToast('✗ ' + result.message, 'error');
-            btn.disabled = false;
-            btn.textContent = originalText;
-            password.classList.add('error');
-            passwordError.textContent = result.message;
-            passwordError.classList.add('show');
+            throw new Error(response.error || 'Login failed');
           }
-        }, 800);
+        } catch (error) {
+          console.error('Login error:', error);
+          showToast('✗ ' + (error.message || 'Login failed. Please try again.'), 'error');
+          btn.disabled = false;
+          btn.textContent = originalText;
+          password.classList.add('error');
+          passwordError.textContent = error.message || 'Invalid email or password';
+          passwordError.classList.add('show');
+        }
       }
     });
 
@@ -555,9 +569,6 @@
         document.getElementById('passwordError').classList.remove('show');
       }
     });
-
-    // Show admin credentials hint
-    console.log('Admin Login: admin@kickshaus.com / Kickshaus2025!');
   </script>
 </body>
 </html>
