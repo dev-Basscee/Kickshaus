@@ -598,9 +598,12 @@
 
     /**
      * Get auth token from localStorage
+     * Checks multiple possible storage keys for compatibility
      */
     function getAuthToken() {
-      return localStorage.getItem('authToken') || null;
+      return localStorage.getItem('kickshaus_auth_token') || 
+             localStorage.getItem('token') || 
+             null;
     }
 
     /**

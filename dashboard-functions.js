@@ -9,35 +9,63 @@ function generateStars(rating) {
   return stars;
 }
 
-// Mock Data
+// Dashboard Data - Will be populated from API
+// Note: Backend admin API endpoints are required for full functionality
 const DashboardData = {
-  orders: [
-    { id: 'ORD-001', customer: 'John Doe', email: 'john@email.com', product: 'Premium Leather Loafer', quantity: 1, amount: 180000, status: 'completed', date: 'Dec 30, 2025', address: 'Lagos, Nigeria' },
-    { id: 'ORD-002', customer: 'Jane Smith', email: 'jane@email.com', product: 'Urban Street Sneaker', quantity: 2, amount: 290000, status: 'processing', date: 'Dec 30, 2025', address: 'Abuja, Nigeria' },
-    { id: 'ORD-003', customer: 'Mike Johnson', email: 'mike@email.com', product: 'Executive Oxford Shoe', quantity: 1, amount: 195000, status: 'pending', date: 'Dec 29, 2025', address: 'Port Harcourt, Nigeria' },
-    { id: 'ORD-004', customer: 'Sarah Williams', email: 'sarah@email.com', product: 'Adventure Chelsea Boot', quantity: 1, amount: 220000, status: 'completed', date: 'Dec 29, 2025', address: 'Ibadan, Nigeria' },
-    { id: 'ORD-005', customer: 'David Brown', email: 'david@email.com', product: 'Premium Leather Loafer', quantity: 1, amount: 180000, status: 'cancelled', date: 'Dec 28, 2025', address: 'Enugu, Nigeria' }
-  ],
-  customers: [
-    { id: 'CUST-001', name: 'John Doe', email: 'john@email.com', phone: '+234 801 234 5678', totalOrders: 5, totalSpent: 850000, joinDate: 'Jan 15, 2025', status: 'active' },
-    { id: 'CUST-002', name: 'Jane Smith', email: 'jane@email.com', phone: '+234 802 345 6789', totalOrders: 3, totalSpent: 520000, joinDate: 'Feb 20, 2025', status: 'active' },
-    { id: 'CUST-003', name: 'Mike Johnson', email: 'mike@email.com', phone: '+234 803 456 7890', totalOrders: 7, totalSpent: 1200000, joinDate: 'Mar 10, 2025', status: 'active' },
-    { id: 'CUST-004', name: 'Sarah Williams', email: 'sarah@email.com', phone: '+234 804 567 8901', totalOrders: 2, totalSpent: 380000, joinDate: 'Apr 5, 2025', status: 'inactive' },
-    { id: 'CUST-005', name: 'David Brown', email: 'david@email.com', phone: '+234 805 678 9012', totalOrders: 4, totalSpent: 690000, joinDate: 'May 12, 2025', status: 'active' }
-  ],
-  reviews: [
-    { id: 'REV-001', customer: 'John Doe', product: 'Premium Leather Loafer', rating: 5, comment: 'Excellent quality! Very comfortable and stylish.', date: 'Dec 28, 2025', status: 'approved' },
-    { id: 'REV-002', customer: 'Jane Smith', product: 'Urban Street Sneaker', rating: 4, comment: 'Great shoes, but sizing runs a bit small.', date: 'Dec 27, 2025', status: 'approved' },
-    { id: 'REV-003', customer: 'Mike Johnson', product: 'Executive Oxford Shoe', rating: 5, comment: 'Perfect for formal occasions. Highly recommend!', date: 'Dec 26, 2025', status: 'pending' },
-    { id: 'REV-004', customer: 'Sarah Williams', product: 'Adventure Chelsea Boot', rating: 3, comment: 'Good boots but a bit pricey.', date: 'Dec 25, 2025', status: 'approved' },
-    { id: 'REV-005', customer: 'David Brown', product: 'Premium Leather Loafer', rating: 2, comment: 'Not what I expected. Quality could be better.', date: 'Dec 24, 2025', status: 'pending' }
-  ],
+  orders: [],
+  customers: [],
+  reviews: [],
   inventory: typeof PRODUCTS_DATABASE !== 'undefined' ? PRODUCTS_DATABASE.map((product, index) => ({
     ...product,
     sku: `SKU-${String(index + 1).padStart(3, '0')}`,
     lowStockThreshold: 10
-  })) : []
+  })) : [],
+  isLoading: true,
+  hasError: false
 };
+
+/**
+ * Fetch dashboard data from API
+ * This function will be called on dashboard load
+ */
+async function fetchDashboardData() {
+  const apiClient = window.api || window.KickshausAPI;
+  if (!apiClient) {
+    console.warn('API client not available for dashboard');
+    DashboardData.isLoading = false;
+    return;
+  }
+
+  try {
+    // Fetch products for inventory
+    const productsResponse = await apiClient.getProducts();
+    if (productsResponse.success && productsResponse.data) {
+      const products = productsResponse.data.products || productsResponse.data;
+      if (Array.isArray(products)) {
+        DashboardData.inventory = products.map((product, index) => ({
+          id: product.id,
+          name: product.name,
+          category: product.category,
+          price: product.final_price || product.base_price || product.price,
+          stock: product.stock || 0,
+          images: product.images,
+          sku: `SKU-${String(index + 1).padStart(3, '0')}`,
+          lowStockThreshold: 10
+        }));
+      }
+    }
+    
+    DashboardData.isLoading = false;
+    console.log('✨ Dashboard data loaded from API');
+  } catch (error) {
+    console.error('Failed to fetch dashboard data:', error);
+    DashboardData.isLoading = false;
+    DashboardData.hasError = true;
+  }
+}
+
+// Initialize dashboard data on page load
+document.addEventListener('DOMContentLoaded', fetchDashboardData);
 
 // ===== NAVIGATION =====
 function showSection(sectionName) {
@@ -70,6 +98,8 @@ function showSection(sectionName) {
 // ===== ORDERS SECTION =====
 function renderOrdersSection() {
   const section = document.getElementById('orders-section');
+  const hasOrders = DashboardData.orders && DashboardData.orders.length > 0;
+  
   section.innerHTML = `
     <div style="display: flex; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
       <div style="display: flex; gap: 12px; flex-wrap: wrap;">
@@ -80,6 +110,7 @@ function renderOrdersSection() {
       </div>
     </div>
     <div class="card">
+      ${hasOrders ? `
       <div class="table-container">
         <table>
           <thead><tr><th>Order ID</th><th>Customer</th><th>Product</th><th>Qty</th><th>Amount</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
@@ -100,6 +131,13 @@ function renderOrdersSection() {
           `).join('')}</tbody>
         </table>
       </div>
+      ` : `
+      <div style="text-align: center; padding: 60px 20px; color: var(--text-muted);">
+        <i class="fas fa-shopping-bag" style="font-size: 3rem; margin-bottom: 16px; opacity: 0.5;"></i>
+        <h3 style="margin-bottom: 8px; color: var(--text-primary);">No Orders Yet</h3>
+        <p>Orders will appear here once customers make purchases through Solana Pay.</p>
+      </div>
+      `}
     </div>
   `;
 }
@@ -284,8 +322,11 @@ function deleteProduct(productId) {
 // ===== CUSTOMERS SECTION =====
 function renderCustomersSection() {
   const section = document.getElementById('customers-section');
+  const hasCustomers = DashboardData.customers && DashboardData.customers.length > 0;
+  
   section.innerHTML = `
     <div class="card">
+      ${hasCustomers ? `
       <div class="table-container">
         <table>
           <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Orders</th><th>Spent</th><th>Joined</th><th>Status</th><th>Actions</th></tr></thead>
@@ -304,6 +345,13 @@ function renderCustomersSection() {
           `).join('')}</tbody>
         </table>
       </div>
+      ` : `
+      <div style="text-align: center; padding: 60px 20px; color: var(--text-muted);">
+        <i class="fas fa-users" style="font-size: 3rem; margin-bottom: 16px; opacity: 0.5;"></i>
+        <h3 style="margin-bottom: 8px; color: var(--text-primary);">No Customers Yet</h3>
+        <p>Customer data will appear here once users register and make purchases.</p>
+      </div>
+      `}
     </div>
   `;
 }
@@ -330,21 +378,25 @@ function viewCustomerDetails(customerId) {
 function renderAnalyticsSection() {
   const section = document.getElementById('analytics-section');
   const products = typeof PRODUCTS_DATABASE !== 'undefined' ? PRODUCTS_DATABASE : [];
-  const totalRevenue = DashboardData.orders.filter(o => o.status === 'completed').reduce((sum, o) => sum + o.amount, 0);
-  const avgOrder = totalRevenue / DashboardData.orders.filter(o => o.status === 'completed').length || 0;
-  const topProduct = products.length > 0 ? products.reduce((prev, curr) => (prev.rating > curr.rating) ? prev : curr) : null;
+  const hasOrders = DashboardData.orders && DashboardData.orders.length > 0;
+  const totalRevenue = hasOrders ? DashboardData.orders.filter(o => o.status === 'completed').reduce((sum, o) => sum + o.amount, 0) : 0;
+  const completedOrders = hasOrders ? DashboardData.orders.filter(o => o.status === 'completed').length : 0;
+  const avgOrder = completedOrders > 0 ? totalRevenue / completedOrders : 0;
+  const topProduct = products.length > 0 ? products.reduce((prev, curr) => ((prev.rating || 0) > (curr.rating || 0)) ? prev : curr) : null;
+  const successRate = hasOrders ? Math.round((completedOrders / DashboardData.orders.length) * 100) : 0;
+  
   section.innerHTML = `
     <div class="stats-grid">
       <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-chart-line"></i></div><div class="stat-value">₦${totalRevenue.toLocaleString()}</div><div class="stat-label">Total Revenue</div></div>
       <div class="stat-card"><div class="stat-icon green"><i class="fas fa-shopping-cart"></i></div><div class="stat-value">₦${Math.round(avgOrder).toLocaleString()}</div><div class="stat-label">Avg Order Value</div></div>
       <div class="stat-card"><div class="stat-icon orange"><i class="fas fa-star"></i></div><div class="stat-value">${topProduct ? topProduct.name : 'N/A'}</div><div class="stat-label">Top Product</div></div>
-      <div class="stat-card"><div class="stat-icon purple"><i class="fas fa-percentage"></i></div><div class="stat-value">${Math.round((DashboardData.orders.filter(o => o.status === 'completed').length / DashboardData.orders.length) * 100)}%</div><div class="stat-label">Success Rate</div></div>
+      <div class="stat-card"><div class="stat-icon purple"><i class="fas fa-percentage"></i></div><div class="stat-value">${successRate}%</div><div class="stat-label">Success Rate</div></div>
     </div>
     <div class="card"><div class="card-header"><h2 class="card-title">Sales by Status</h2></div><div style="padding: 20px; display: flex; justify-content: space-around; text-align: center;">
-      <div><div style="font-size: 2rem; font-weight: 700; color: #4CAF50;">${DashboardData.orders.filter(o => o.status === 'completed').length}</div><div>Completed</div></div>
-      <div><div style="font-size: 2rem; font-weight: 700; color: var(--primary);">${DashboardData.orders.filter(o => o.status === 'processing').length}</div><div>Processing</div></div>
-      <div><div style="font-size: 2rem; font-weight: 700; color: #FF9800;">${DashboardData.orders.filter(o => o.status === 'pending').length}</div><div>Pending</div></div>
-      <div><div style="font-size: 2rem; font-weight: 700; color: #F44336;">${DashboardData.orders.filter(o => o.status === 'cancelled').length}</div><div>Cancelled</div></div>
+      <div><div style="font-size: 2rem; font-weight: 700; color: #4CAF50;">${hasOrders ? DashboardData.orders.filter(o => o.status === 'completed').length : 0}</div><div>Completed</div></div>
+      <div><div style="font-size: 2rem; font-weight: 700; color: var(--primary);">${hasOrders ? DashboardData.orders.filter(o => o.status === 'processing').length : 0}</div><div>Processing</div></div>
+      <div><div style="font-size: 2rem; font-weight: 700; color: #FF9800;">${hasOrders ? DashboardData.orders.filter(o => o.status === 'pending').length : 0}</div><div>Pending</div></div>
+      <div><div style="font-size: 2rem; font-weight: 700; color: #F44336;">${hasOrders ? DashboardData.orders.filter(o => o.status === 'cancelled').length : 0}</div><div>Cancelled</div></div>
     </div></div>
   `;
 }
@@ -393,7 +445,9 @@ function saveRestock(productId) {
 // ===== REVIEWS SECTION =====
 function renderReviewsSection() {
   const section = document.getElementById('reviews-section');
-  const avgRating = (DashboardData.reviews.reduce((sum, r) => sum + r.rating, 0) / DashboardData.reviews.length).toFixed(1);
+  const hasReviews = DashboardData.reviews && DashboardData.reviews.length > 0;
+  const avgRating = hasReviews ? (DashboardData.reviews.reduce((sum, r) => sum + r.rating, 0) / DashboardData.reviews.length).toFixed(1) : '0.0';
+  
   section.innerHTML = `
     <div class="stats-grid">
       <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-star"></i></div><div class="stat-value">${avgRating}</div><div class="stat-label">Avg Rating</div></div>
@@ -406,21 +460,31 @@ function renderReviewsSection() {
       <button class="btn btn-secondary" onclick="filterReviews('pending')">Pending</button>
       <button class="btn btn-secondary" onclick="filterReviews('approved')">Approved</button>
     </div>
-    <div class="card"><div class="table-container"><table><thead><tr><th>ID</th><th>Customer</th><th>Product</th><th>Rating</th><th>Comment</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="reviewsTableBody">${DashboardData.reviews.map(review => `
-      <tr>
-        <td><strong>${review.id}</strong></td>
-        <td>${review.customer}</td>
-        <td>${review.product}</td>
-        <td><div style="display: flex; align-items: center; gap: 4px;">${generateStars(review.rating)} <strong>${review.rating}</strong></div></td>
-        <td style="max-width: 300px;">${review.comment}</td>
-        <td>${review.date}</td>
-        <td><span class="status-badge ${review.status === 'approved' ? 'completed' : 'pending'}">${review.status}</span></td>
-        <td>
-          ${review.status === 'pending' ? `<button class="btn btn-primary" style="padding: 6px 12px; font-size: 0.85rem;" onclick="approveReview('${review.id}')"><i class="fas fa-check"></i></button>` : ''}
-          <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.85rem; margin-left: 4px; background: var(--accent);" onclick="deleteReview('${review.id}')"><i class="fas fa-trash"></i></button>
-        </td>
-      </tr>
-    `).join('')}</tbody></table></div></div>
+    <div class="card">
+      ${hasReviews ? `
+      <div class="table-container"><table><thead><tr><th>ID</th><th>Customer</th><th>Product</th><th>Rating</th><th>Comment</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="reviewsTableBody">${DashboardData.reviews.map(review => `
+        <tr>
+          <td><strong>${review.id}</strong></td>
+          <td>${review.customer}</td>
+          <td>${review.product}</td>
+          <td><div style="display: flex; align-items: center; gap: 4px;">${generateStars(review.rating)} <strong>${review.rating}</strong></div></td>
+          <td style="max-width: 300px;">${review.comment}</td>
+          <td>${review.date}</td>
+          <td><span class="status-badge ${review.status === 'approved' ? 'completed' : 'pending'}">${review.status}</span></td>
+          <td>
+            ${review.status === 'pending' ? `<button class="btn btn-primary" style="padding: 6px 12px; font-size: 0.85rem;" onclick="approveReview('${review.id}')"><i class="fas fa-check"></i></button>` : ''}
+            <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.85rem; margin-left: 4px; background: var(--accent);" onclick="deleteReview('${review.id}')"><i class="fas fa-trash"></i></button>
+          </td>
+        </tr>
+      `).join('')}</tbody></table></div>
+      ` : `
+      <div style="text-align: center; padding: 60px 20px; color: var(--text-muted);">
+        <i class="fas fa-star" style="font-size: 3rem; margin-bottom: 16px; opacity: 0.5;"></i>
+        <h3 style="margin-bottom: 8px; color: var(--text-primary);">No Reviews Yet</h3>
+        <p>Customer reviews will appear here once customers submit feedback on their purchases.</p>
+      </div>
+      `}
+    </div>
   `;
 }
 
