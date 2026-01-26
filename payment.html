@@ -541,13 +541,15 @@
   <script src="script.js"></script>
   <script>
   document.addEventListener('DOMContentLoaded', () => {
-    // Load order summary from localStorage or currentOrder
+    // Load order summary from localStorage
+    // currentOrder: Set by checkout.js when creating an order via API
+    //   Contains: { order_id, reference_key, total_fiat, total_sol, solana_pay_url, qr_code_data, expires_at }
+    // checkoutSummary: Set by checkout.html when calculating cart totals
+    //   Contains: { subtotal, tax, discount, total, itemCount, isBuyNow }
     const currentOrder = JSON.parse(localStorage.getItem('currentOrder') || '{}');
     const checkoutSummary = JSON.parse(localStorage.getItem('checkoutSummary') || '{}');
     
-    // Use current order if available (from API), otherwise fall back to checkout summary
-    // API returns: { order_id, reference_key, total_fiat, total_sol, solana_pay_url, ... }
-    // checkoutSummary has: { subtotal, tax, discount, total, itemCount, isBuyNow }
+    // Extract order data, preferring currentOrder when available
     const orderData = currentOrder.order || checkoutSummary;
     const itemCount = orderData.itemCount || checkoutSummary.itemCount || 0;
     const subtotal = orderData.subtotal || checkoutSummary.subtotal || 0;

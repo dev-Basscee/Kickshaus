@@ -10,7 +10,11 @@ function generateStars(rating) {
 }
 
 // Dashboard Data - Will be populated from API
-// Note: Backend admin API endpoints are required for full functionality
+// Note: The following backend admin API endpoints are needed for full functionality:
+// - GET /api/admin/orders - List all orders (currently not implemented)
+// - GET /api/admin/customers - List all customers (currently not implemented)
+// - GET /api/admin/reviews - List all reviews (currently not implemented)
+// Currently implemented: GET /api/products for inventory
 const DashboardData = {
   orders: [],
   customers: [],
