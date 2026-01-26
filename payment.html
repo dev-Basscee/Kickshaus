@@ -552,18 +552,23 @@
       ? 'http://localhost:3000/api' 
       : '/api';
     
-    // Flag to determine if backend API is available
-    // Set to true when backend is deployed and configured
-    const USE_BACKEND_API = false;
+    // Production mode: Uses backend API for secure Solana Pay transactions
+    // The backend reads the PLATFORM_WALLET_ADDRESS from the .env file and
+    // fetches real-time SOL prices from CoinGecko for accurate currency conversion
+    const USE_BACKEND_API = true;
 
-    // ⚠️ PRODUCTION WARNING: Replace this placeholder wallet address with your actual Solana merchant wallet.
-    // In production, use environment variables or secure configuration to manage this.
-    const MERCHANT_WALLET = 'DfMxre4cKmvPfN6YXmY5u5P9vJdAaJzfQQnfrGNPNkVE';
+    // =====================================================
+    // DEVELOPMENT FALLBACK CONFIGURATION
+    // ⚠️ SECURITY WARNING: These values are ONLY used when USE_BACKEND_API = false
+    // When USE_BACKEND_API = true (production), these are NEVER used - the backend
+    // provides the actual wallet address and exchange rates from secure server-side config
+    // =====================================================
     
-    // ⚠️ PRODUCTION WARNING: This is a PLACEHOLDER exchange rate for demonstration only.
-    // In production, fetch real-time NGN to SOL exchange rates from a reliable API
-    // (e.g., CoinGecko, CoinMarketCap, or your preferred price oracle).
-    const PLACEHOLDER_NGN_TO_SOL_RATE = 0.000001; // Example: 1 NGN ≈ 0.000001 SOL
+    // Development-only fallback wallet (not used in production)
+    const DEV_FALLBACK_WALLET = 'DfMxre4cKmvPfN6YXmY5u5P9vJdAaJzfQQnfrGNPNkVE';
+    
+    // Development-only fallback exchange rate (not used in production)
+    const DEV_FALLBACK_NGN_TO_SOL_RATE = 0.000001;
 
     // =====================================================
     // BACKEND API FUNCTIONS
@@ -889,19 +894,27 @@
 
     /**
      * Creates and displays the Solana Pay QR code modal
+     * ⚠️ DEVELOPMENT ONLY: This function is only used when USE_BACKEND_API = false
      * @param {number} amountInNGN - The total amount in Nigerian Naira
      */
     function showSolanaPayModal(amountInNGN) {
-      // Convert NGN to SOL (in production, use real-time exchange rate)
-      const amountInSOL = (amountInNGN * PLACEHOLDER_NGN_TO_SOL_RATE).toFixed(9);
+      // Runtime guard: Prevent execution in production mode
+      if (USE_BACKEND_API) {
+        console.warn('showSolanaPayModal should not be called when USE_BACKEND_API is true. Use showSolanaPayModalWithAPI instead.');
+        showSolanaPayModalWithAPI();
+        return;
+      }
+      
+      // Convert NGN to SOL (development fallback rate - not for production use)
+      const amountInSOL = (amountInNGN * DEV_FALLBACK_NGN_TO_SOL_RATE).toFixed(9);
       
       // Generate a unique reference for this transaction
       const reference = new Uint8Array(32);
       crypto.getRandomValues(reference);
       const referenceBase58 = base58Encode(reference);
       
-      // Create the Solana Pay URL
-      const solanaPayUrl = createSolanaPayUrl(MERCHANT_WALLET, amountInSOL, referenceBase58);
+      // Create the Solana Pay URL (using development fallback wallet)
+      const solanaPayUrl = createSolanaPayUrl(DEV_FALLBACK_WALLET, amountInSOL, referenceBase58);
       
       // Create modal element
       const modal = document.createElement('div');
@@ -1077,6 +1090,12 @@
      * @param {HTMLElement} modal - The modal element
      */
     function startPaymentPolling(reference, modal) {
+      // Runtime guard: This function should not be called in production mode
+      if (USE_BACKEND_API) {
+        console.warn('startPaymentPolling should not be called when USE_BACKEND_API is true. Use startPaymentPollingAPI instead.');
+        return;
+      }
+      
       const statusElement = document.getElementById('paymentStatus');
       pollingAttempts = 0;
       
@@ -1138,17 +1157,11 @@
          */
         
         /**
-         * ⚠️ DEMO MODE - REMOVE IN PRODUCTION ⚠️
-         * 
-         * The code below simulates payment confirmation for demonstration purposes only.
-         * In production, remove this simulation block and implement actual Solana RPC
-         * verification as documented above. Never auto-confirm payments without
-         * blockchain verification in a live environment.
+         * PRODUCTION MODE:
+         * The client-side fallback implementation is for demonstration/testing only.
+         * Real payment verification should be done via the backend API.
+         * When USE_BACKEND_API is true, this polling function is not used.
          */
-        const IS_DEMO_MODE = true; // Set to false in production
-        if (IS_DEMO_MODE && pollingAttempts >= 6) { // Demo: Simulate confirmation after ~30 seconds
-          handlePaymentConfirmed(modal);
-        }
         
         // Stop polling after max attempts (timeout)
         if (pollingAttempts >= MAX_POLLING_ATTEMPTS) {
