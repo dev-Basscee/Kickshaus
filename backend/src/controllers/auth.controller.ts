@@ -1,13 +1,17 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { authService } from '../services/auth.service';
 import { generateToken } from '../middleware/auth';
-import { AuthenticatedRequest } from '../types';
+import { AuthenticatedRequest, User } from '../types';
 import { sendSuccess } from '../utils/errors';
+import { config } from '../config/env';
 import { 
   RegisterUserInput, 
   LoginInput, 
   RegisterMerchantInput 
 } from '../utils/validators';
+
+// Type for the user attached by Passport during social auth
+type PassportUser = Omit<User, 'password_hash'>;
 
 export class AuthController {
   /**
@@ -55,6 +59,53 @@ export class AuthController {
       token,
       type,
     });
+  }
+
+  /**
+   * Handle social OAuth callback (Google/Facebook)
+   * Generates JWT and redirects to frontend with token
+   */
+  handleSocialCallback(req: Request, res: Response): void {
+    try {
+      // User is attached by passport after successful authentication
+      const user = req.user as PassportUser | undefined;
+
+      if (!user) {
+        // User denied access or authentication failed
+        return res.redirect(
+          `${config.social.frontendUrl}/login.html?error=auth_failed&message=Authentication%20failed`
+        );
+      }
+
+      // Generate JWT token for the authenticated user
+      const token = generateToken({
+        userId: user.id,
+        email: user.email,
+        role: user.role,
+        type: user.role === 'admin' ? 'admin' : 'user',
+      });
+
+      // Redirect to frontend with token
+      // The frontend will handle storing the token
+      res.redirect(
+        `${config.social.frontendUrl}/login.html?token=${encodeURIComponent(token)}&provider=${user.provider}`
+      );
+    } catch (error) {
+      console.error('Social callback error:', error);
+      res.redirect(
+        `${config.social.frontendUrl}/login.html?error=server_error&message=An%20unexpected%20error%20occurred`
+      );
+    }
+  }
+
+  /**
+   * Handle social OAuth failure
+   */
+  handleSocialFailure(req: Request, res: Response): void {
+    const errorMessage = (req.query.error as string) || 'Authentication failed';
+    res.redirect(
+      `${config.social.frontendUrl}/login.html?error=auth_failed&message=${encodeURIComponent(errorMessage)}`
+    );
   }
 
   /**

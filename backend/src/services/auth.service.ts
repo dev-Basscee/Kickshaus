@@ -1,8 +1,9 @@
 import { supabaseAdmin } from '../config/supabase';
-import { User, Merchant, UserRole, MerchantStatus } from '../types';
+import { User, Merchant, UserRole, MerchantStatus, AuthProvider } from '../types';
 import { hashPassword, verifyPassword } from '../utils/helpers';
 import { ConflictError, NotFoundError, UnauthorizedError, BadRequestError, AppError } from '../utils/errors';
 import { isSupabaseConfigured } from '../config/env';
+import type { SocialProfile } from '../config/passport';
 
 export class AuthService {
   /**
@@ -49,7 +50,7 @@ export class AuthService {
           password_hash: passwordHash,
           role: 'customer' as UserRole,
         })
-        .select('id, email, role, created_at, updated_at')
+        .select('id, email, role, provider, google_id, facebook_id, created_at, updated_at')
         .single();
 
       if (error) {
@@ -267,7 +268,7 @@ export class AuthService {
 
     const { data, error } = await supabaseAdmin
       .from('users')
-      .select('id, email, role, created_at, updated_at')
+      .select('id, email, role, provider, google_id, facebook_id, created_at, updated_at')
       .eq('id', userId)
       .single();
 
@@ -349,6 +350,104 @@ export class AuthService {
     }
 
     return data;
+  }
+
+  /**
+   * Find or create a user from social OAuth profile
+   * - If user exists with the same social provider ID: return user
+   * - If user exists with the same email but different provider: link accounts
+   * - If user doesn't exist: create new user
+   */
+  async findOrCreateSocialUser(profile: SocialProfile): Promise<Omit<User, 'password_hash'>> {
+    if (!isSupabaseConfigured()) {
+      throw new AppError(
+        'Social login is currently unavailable. Please try again later.',
+        503,
+        'SERVICE_UNAVAILABLE'
+      );
+    }
+
+    try {
+      const providerIdField = profile.provider === 'google' ? 'google_id' : 'facebook_id';
+
+      // First, try to find user by provider ID
+      const { data: existingByProvider, error: providerError } = await supabaseAdmin
+        .from('users')
+        .select('id, email, role, provider, google_id, facebook_id, created_at, updated_at')
+        .eq(providerIdField, profile.providerId)
+        .single();
+
+      if (!providerError && existingByProvider) {
+        // User found by provider ID
+        return existingByProvider;
+      }
+
+      // Check if user exists with the same email
+      const { data: existingByEmail, error: emailError } = await supabaseAdmin
+        .from('users')
+        .select('id, email, role, provider, google_id, facebook_id, created_at, updated_at')
+        .eq('email', profile.email)
+        .single();
+
+      if (!emailError && existingByEmail) {
+        // User exists with email, link the social account
+        const updateData: Record<string, string> = {
+          [providerIdField]: profile.providerId,
+        };
+
+        const { data: updatedUser, error: updateError } = await supabaseAdmin
+          .from('users')
+          .update(updateData)
+          .eq('id', existingByEmail.id)
+          .select('id, email, role, provider, google_id, facebook_id, created_at, updated_at')
+          .single();
+
+        if (updateError) {
+          console.error('Error linking social account:', updateError);
+          throw new AppError(
+            'Failed to link social account. Please try again.',
+            500,
+            'LINK_FAILED'
+          );
+        }
+
+        return updatedUser;
+      }
+
+      // Create new user with social provider
+      const { data: newUser, error: createError } = await supabaseAdmin
+        .from('users')
+        .insert({
+          email: profile.email,
+          password_hash: null, // Social users don't have passwords
+          role: 'customer' as UserRole,
+          provider: profile.provider as AuthProvider,
+          [providerIdField]: profile.providerId,
+        })
+        .select('id, email, role, provider, google_id, facebook_id, created_at, updated_at')
+        .single();
+
+      if (createError) {
+        console.error('Error creating social user:', createError);
+        throw new AppError(
+          'Failed to create account. Please try again.',
+          500,
+          'CREATE_FAILED'
+        );
+      }
+
+      return newUser;
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+      console.error('Unexpected error in findOrCreateSocialUser:', error);
+      throw new AppError(
+        'An unexpected error occurred. Please try again later.',
+        500,
+        'INTERNAL_ERROR'
+      );
+    }
   }
 }
 
