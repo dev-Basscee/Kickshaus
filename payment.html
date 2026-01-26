@@ -553,17 +553,22 @@
       : '/api';
     
     // Flag to determine if backend API is available
-    // Set to true when backend is deployed and configured
-    const USE_BACKEND_API = false;
+    // Set to true to use the production backend with real Solana Pay integration
+    const USE_BACKEND_API = true;
 
-    // ⚠️ PRODUCTION WARNING: Replace this placeholder wallet address with your actual Solana merchant wallet.
-    // In production, use environment variables or secure configuration to manage this.
+    // =====================================================
+    // CLIENT-SIDE FALLBACK CONFIGURATION (only used when USE_BACKEND_API = false)
+    // When USE_BACKEND_API is true, the wallet address and exchange rates
+    // are fetched from the backend which reads from the .env file
+    // =====================================================
+    
+    // Fallback wallet address (used only when backend is unavailable)
+    // This is overridden by PLATFORM_WALLET_ADDRESS in the backend .env file
     const MERCHANT_WALLET = 'DfMxre4cKmvPfN6YXmY5u5P9vJdAaJzfQQnfrGNPNkVE';
     
-    // ⚠️ PRODUCTION WARNING: This is a PLACEHOLDER exchange rate for demonstration only.
-    // In production, fetch real-time NGN to SOL exchange rates from a reliable API
-    // (e.g., CoinGecko, CoinMarketCap, or your preferred price oracle).
-    const PLACEHOLDER_NGN_TO_SOL_RATE = 0.000001; // Example: 1 NGN ≈ 0.000001 SOL
+    // Fallback exchange rate (used only when backend is unavailable)
+    // The backend fetches real-time SOL prices from CoinGecko
+    const PLACEHOLDER_NGN_TO_SOL_RATE = 0.000001;
 
     // =====================================================
     // BACKEND API FUNCTIONS
@@ -1138,17 +1143,11 @@
          */
         
         /**
-         * ⚠️ DEMO MODE - REMOVE IN PRODUCTION ⚠️
-         * 
-         * The code below simulates payment confirmation for demonstration purposes only.
-         * In production, remove this simulation block and implement actual Solana RPC
-         * verification as documented above. Never auto-confirm payments without
-         * blockchain verification in a live environment.
+         * PRODUCTION MODE:
+         * The client-side fallback implementation is for demonstration/testing only.
+         * Real payment verification should be done via the backend API.
+         * When USE_BACKEND_API is true, this polling function is not used.
          */
-        const IS_DEMO_MODE = true; // Set to false in production
-        if (IS_DEMO_MODE && pollingAttempts >= 6) { // Demo: Simulate confirmation after ~30 seconds
-          handlePaymentConfirmed(modal);
-        }
         
         // Stop polling after max attempts (timeout)
         if (pollingAttempts >= MAX_POLLING_ATTEMPTS) {
