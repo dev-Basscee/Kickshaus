@@ -27,6 +27,9 @@ const envSchema = z.object({
   // CoinGecko
   COINGECKO_API_URL: z.string().url().default('https://api.coingecko.com/api/v3'),
 
+  // Exchange Rate
+  NGN_USD_RATE: z.string().default('1600'),
+
   // Rate Limiting
   RATE_LIMIT_WINDOW_MS: z.string().default('900000'),
   RATE_LIMIT_MAX_REQUESTS: z.string().default('100'),
@@ -59,6 +62,7 @@ function validateEnv() {
           SOLANA_RPC_URL: process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com',
           PLATFORM_WALLET_ADDRESS: process.env.PLATFORM_WALLET_ADDRESS || '11111111111111111111111111111111',
           COINGECKO_API_URL: process.env.COINGECKO_API_URL || 'https://api.coingecko.com/api/v3',
+          NGN_USD_RATE: process.env.NGN_USD_RATE || '1600',
           RATE_LIMIT_WINDOW_MS: process.env.RATE_LIMIT_WINDOW_MS || '900000',
           RATE_LIMIT_MAX_REQUESTS: process.env.RATE_LIMIT_MAX_REQUESTS || '100',
           CORS_ORIGIN: process.env.CORS_ORIGIN || '*',
@@ -99,6 +103,9 @@ export const config = {
   coingecko: {
     apiUrl: env.COINGECKO_API_URL,
   },
+
+  // Exchange rate: 1 USD = NGN_USD_RATE NGN
+  ngnUsdRate: parseInt(env.NGN_USD_RATE, 10),
 
   rateLimit: {
     windowMs: parseInt(env.RATE_LIMIT_WINDOW_MS, 10),

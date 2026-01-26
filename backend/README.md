@@ -97,10 +97,10 @@ Production-ready REST API for the Kickshaus e-commerce platform, built with Expr
 |--------|----------|-------------|------|
 | POST | `/api/merchants/register` | Register merchant (pending) | No |
 | POST | `/api/merchants/login` | Login merchant | No |
-| GET | `/api/merchant/products` | Get merchant's products | Merchant |
-| POST | `/api/merchant/products` | Create product | Merchant |
-| PUT | `/api/merchant/products/:id` | Update product | Merchant |
-| DELETE | `/api/merchant/products/:id` | Delete product | Merchant |
+| GET | `/api/merchants/products` | Get merchant's products | Merchant |
+| POST | `/api/merchants/products` | Create product | Merchant |
+| PUT | `/api/merchants/products/:id` | Update product | Merchant |
+| DELETE | `/api/merchants/products/:id` | Delete product | Merchant |
 
 ### Products (Public)
 

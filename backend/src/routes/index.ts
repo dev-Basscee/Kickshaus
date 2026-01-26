@@ -22,8 +22,7 @@ router.get('/health', (req, res) => {
 
 // Mount routes
 router.use('/auth', authRoutes);
-router.use('/merchants', merchantRoutes);
-router.use('/merchant', merchantRoutes);
+router.use('/merchants', merchantRoutes); // Registration, login, and merchant-only operations
 router.use('/products', productRoutes);
 router.use('/admin', adminRoutes);
 router.use('/cart', cartRoutes);

@@ -17,10 +17,12 @@ import {
   PaymentError, 
   InsufficientStockError 
 } from '../utils/errors';
-import { generateReferenceKey } from '../utils/helpers';
 
 // Payment expiration time (15 minutes)
 const PAYMENT_EXPIRY_MS = 15 * 60 * 1000;
+
+// Default NGN to USD exchange rate (configurable via environment)
+const DEFAULT_NGN_USD_RATE = 1600;
 
 export class PaymentService {
   private connection: Connection;
@@ -60,9 +62,9 @@ export class PaymentService {
   async convertToSol(amountNGN: number): Promise<number> {
     const solPriceUSD = await this.getSolPrice();
     
-    // NGN to USD rate (should be fetched from an API in production)
-    // Using approximate rate: 1 USD = 1600 NGN
-    const NGN_TO_USD = 1 / 1600;
+    // Get NGN to USD rate from config or use default
+    const ngnUsdRate = config.ngnUsdRate || DEFAULT_NGN_USD_RATE;
+    const NGN_TO_USD = 1 / ngnUsdRate;
     
     const amountUSD = amountNGN * NGN_TO_USD;
     const amountSOL = amountUSD / solPriceUSD;
@@ -92,8 +94,9 @@ export class PaymentService {
     const totalSol = await this.convertToSol(totalFiat);
     
     // Generate unique reference key for this transaction
-    const referenceKey = generateReferenceKey();
+    // Use the PublicKey base58 string as the reference key for Solana Pay
     const reference = Keypair.generate().publicKey;
+    const referenceKey = reference.toBase58();
     
     // Calculate expiration time
     const expiresAt = new Date(Date.now() + PAYMENT_EXPIRY_MS);
@@ -201,11 +204,8 @@ export class PaymentService {
     }
 
     try {
-      // Generate reference public key from stored key
-      // In production, you'd store the actual reference PublicKey
-      const reference = new PublicKey(
-        Buffer.from(referenceKey.slice(0, 32), 'hex')
-      );
+      // Parse the reference public key from the stored base58 string
+      const reference = new PublicKey(referenceKey);
 
       // Find the transaction on Solana
       const signatureInfo = await findReference(this.connection, reference, {
