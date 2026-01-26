@@ -1,4 +1,4 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { paymentService } from '../services/payment.service';
 import { AuthenticatedRequest } from '../types';
 import { sendSuccess } from '../utils/errors';
@@ -26,6 +26,18 @@ export class PaymentController {
     const { reference_key } = req.query as VerifyPaymentInput;
     
     const result = await paymentService.verifyPayment(reference_key);
+
+    sendSuccess(res, result);
+  }
+
+  /**
+   * Verify payment status by path parameter (public endpoint)
+   * GET /api/payment/verify/:reference
+   */
+  async verifyPaymentByPath(req: Request, res: Response): Promise<void> {
+    const { reference } = req.params;
+    
+    const result = await paymentService.verifyPayment(reference);
 
     sendSuccess(res, result);
   }

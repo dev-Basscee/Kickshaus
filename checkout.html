@@ -139,11 +139,11 @@
 
         <!-- CTA BUTTONS -->
         <div class="space-y-3">
-          <!-- Proceed to Delivery -->
-          <a href="delivery.html" id="proceedBtn"
-             class="block w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-xl font-semibold text-center transition">
+          <!-- Validate & Proceed Button -->
+          <button id="proceedBtn" onclick="handleProceed()"
+             class="block w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-xl font-semibold text-center transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
             Proceed to Delivery
-          </a>
+          </button>
 
           <!-- Continue Shopping -->
           <a href="index.html"
@@ -154,10 +154,85 @@
 
         <!-- TRUST -->
         <p class="text-xs text-gray-500 text-center mt-4">
-          🔒 Secure checkout • All payments are encrypted
+          🔒 Secure checkout • Solana Pay powered
         </p>
       </div>
 
+    </div>
+  </div>
+
+  <!-- Payment Modal -->
+  <div id="paymentModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 relative">
+      <button onclick="closePaymentModal()" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+        <i class="fas fa-times text-xl"></i>
+      </button>
+      
+      <div id="paymentContent">
+        <!-- Loading State -->
+        <div id="paymentLoading" class="text-center py-8">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+          <p class="text-gray-600">Creating payment...</p>
+        </div>
+        
+        <!-- QR Code State -->
+        <div id="paymentQR" class="hidden text-center">
+          <h3 class="text-xl font-bold mb-2">Scan to Pay with Solana</h3>
+          <p class="text-gray-500 text-sm mb-4">Scan the QR code with your Solana wallet</p>
+          
+          <div id="qrCodeContainer" class="bg-gray-100 p-4 rounded-xl inline-block mb-4">
+            <canvas id="qrCanvas" class="mx-auto"></canvas>
+          </div>
+          
+          <div class="space-y-2 text-sm">
+            <p class="font-semibold">Amount: <span id="solAmount" class="text-red-600">0 SOL</span></p>
+            <p class="text-gray-500">≈ <span id="ngnAmount">₦0</span></p>
+          </div>
+          
+          <div class="mt-4 p-3 bg-yellow-50 rounded-lg">
+            <p class="text-yellow-700 text-sm">
+              <i class="fas fa-clock mr-1"></i>
+              Expires in: <span id="expiryTimer">15:00</span>
+            </p>
+          </div>
+          
+          <div id="paymentStatus" class="mt-4 p-3 bg-blue-50 rounded-lg">
+            <p class="text-blue-700 text-sm">
+              <i class="fas fa-spinner fa-spin mr-1"></i>
+              Waiting for payment...
+            </p>
+          </div>
+          
+          <a id="solanaPayLink" href="#" target="_blank" 
+             class="mt-4 inline-block bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-3 rounded-xl font-semibold hover:opacity-90 transition">
+            <i class="fas fa-wallet mr-2"></i>Open Wallet
+          </a>
+        </div>
+        
+        <!-- Success State -->
+        <div id="paymentSuccess" class="hidden text-center py-8">
+          <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i class="fas fa-check text-green-600 text-3xl"></i>
+          </div>
+          <h3 class="text-xl font-bold text-green-600 mb-2">Payment Confirmed!</h3>
+          <p class="text-gray-500 mb-4">Your order has been placed successfully.</p>
+          <a href="index.html" class="inline-block bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-semibold transition">
+            Continue Shopping
+          </a>
+        </div>
+        
+        <!-- Error State -->
+        <div id="paymentError" class="hidden text-center py-8">
+          <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i class="fas fa-exclamation-triangle text-red-600 text-3xl"></i>
+          </div>
+          <h3 class="text-xl font-bold text-red-600 mb-2">Payment Failed</h3>
+          <p id="errorMessage" class="text-gray-500 mb-4">Something went wrong with your payment.</p>
+          <button onclick="closePaymentModal()" class="inline-block bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-xl font-semibold transition">
+            Try Again
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -203,11 +278,13 @@
       const proceedBtn = document.getElementById('proceedBtn');
       
       // Check if this is a "Buy Now" order
+      // FIX: An empty array [] is truthy in JS, so we must check length > 0
       const buyNowOrder = JSON.parse(localStorage.getItem('buyNowOrder') || 'null');
-      const cart = buyNowOrder || KickshausState.cart;
+      const cart = (buyNowOrder && buyNowOrder.length > 0) ? buyNowOrder : KickshausState.cart;
       
       let itemCount;
-      if (buyNowOrder) {
+      // Use buyNowOrder for counting only if it has items
+      if (buyNowOrder && buyNowOrder.length > 0) {
         itemCount = buyNowOrder.reduce((sum, item) => sum + item.quantity, 0);
       } else {
         itemCount = KickshausState.getCartItemCount();
@@ -226,7 +303,7 @@
       emptyState.style.display = 'none';
       proceedBtn.style.opacity = '1';
       proceedBtn.style.pointerEvents = 'auto';
-      itemCountText.textContent = `${itemCount} ${itemCount === 1 ? 'item' : 'items'} ${buyNowOrder ? 'to purchase' : 'in cart'}`;
+      itemCountText.textContent = `${itemCount} ${itemCount === 1 ? 'item' : 'items'} ${(buyNowOrder && buyNowOrder.length > 0) ? 'to purchase' : 'in cart'}`;
 
       container.innerHTML = cart.map(item => `
         <div class="flex items-center gap-4 border-b pb-4">
@@ -248,7 +325,7 @@
         </div>
       `).join('');
 
-      updateCheckoutSummary(cart, buyNowOrder);
+      updateCheckoutSummary(cart, buyNowOrder && buyNowOrder.length > 0);
     }
 
     // Update checkout summary
@@ -291,7 +368,7 @@
       
       // Get current subtotal
       const buyNowOrder = JSON.parse(localStorage.getItem('buyNowOrder') || 'null');
-      const currentSubtotal = buyNowOrder ? 
+      const currentSubtotal = (buyNowOrder && buyNowOrder.length > 0) ? 
         buyNowOrder.reduce((sum, item) => sum + (item.price * item.quantity), 0) : 
         KickshausState.getCartTotal();
 
@@ -312,11 +389,294 @@
         discountRow.classList.add('hidden');
       }
 
-      const cart = buyNowOrder || KickshausState.cart;
-      updateCheckoutSummary(cart, buyNowOrder);
+      const cart = (buyNowOrder && buyNowOrder.length > 0) ? buyNowOrder : KickshausState.cart;
+      updateCheckoutSummary(cart, buyNowOrder && buyNowOrder.length > 0);
     }
+
+    // =====================================================
+    // SOLANA PAY INTEGRATION
+    // =====================================================
+    
+    // API Base URL - adjust based on your backend server
+    const API_BASE_URL = window.location.hostname === 'localhost' 
+      ? 'http://localhost:3000/api'
+      : '/api';
+    
+    let paymentPollingInterval = null;
+    let expiryInterval = null;
+    let currentReferenceKey = null;
+
+    // Handle proceed button click - validates cart and initiates payment
+    async function handleProceed() {
+      const buyNowOrder = JSON.parse(localStorage.getItem('buyNowOrder') || 'null');
+      const cart = (buyNowOrder && buyNowOrder.length > 0) ? buyNowOrder : KickshausState.cart;
+      
+      if (cart.length === 0) {
+        showToast('Your cart is empty', 'error');
+        return;
+      }
+      
+      // For now, redirect to delivery page for shipping info collection
+      // The payment flow will be triggered after delivery info is collected
+      window.location.href = 'delivery.html';
+    }
+
+    // Validate cart against backend (zero-trust validation)
+    async function validateCart() {
+      const buyNowOrder = JSON.parse(localStorage.getItem('buyNowOrder') || 'null');
+      const cart = (buyNowOrder && buyNowOrder.length > 0) ? buyNowOrder : KickshausState.cart;
+      
+      if (cart.length === 0) {
+        throw new Error('Cart is empty');
+      }
+      
+      // Transform cart items to API format
+      const items = cart.map(item => ({
+        product_id: item.id,
+        quantity: item.quantity
+      }));
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/cart/validate`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ items }),
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.error || 'Validation failed');
+        }
+        
+        return data.data;
+      } catch (error) {
+        console.error('Cart validation error:', error);
+        throw error;
+      }
+    }
+
+    // Create order and get Solana Pay URL
+    async function createSolanaPayOrder(items, authToken) {
+      const response = await fetch(`${API_BASE_URL}/payment/create-order`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({ items }),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create order');
+      }
+      
+      return data.data;
+    }
+
+    // Start payment verification polling
+    async function startPaymentPolling(referenceKey, authToken) {
+      currentReferenceKey = referenceKey;
+      
+      const checkPayment = async () => {
+        try {
+          // Use the public verification endpoint (path parameter)
+          const response = await fetch(
+            `${API_BASE_URL}/payment/verify/${encodeURIComponent(referenceKey)}`
+          );
+          
+          const data = await response.json();
+          
+          if (data.data?.status === 'confirmed') {
+            clearPolling();
+            showPaymentSuccess();
+            // Clear cart after successful payment
+            clearCartAfterPayment();
+          } else if (data.data?.status === 'failed') {
+            clearPolling();
+            showPaymentError('Payment failed or expired. Please try again.');
+          }
+        } catch (error) {
+          console.error('Payment verification error:', error);
+        }
+      };
+      
+      // Poll every 3 seconds
+      paymentPollingInterval = setInterval(checkPayment, 3000);
+      // Check immediately too
+      checkPayment();
+    }
+
+    // Clear polling intervals
+    function clearPolling() {
+      if (paymentPollingInterval) {
+        clearInterval(paymentPollingInterval);
+        paymentPollingInterval = null;
+      }
+      if (expiryInterval) {
+        clearInterval(expiryInterval);
+        expiryInterval = null;
+      }
+    }
+
+    // Show payment modal
+    function showPaymentModal() {
+      const modal = document.getElementById('paymentModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    // Close payment modal
+    function closePaymentModal() {
+      const modal = document.getElementById('paymentModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      clearPolling();
+      
+      // Reset modal state
+      document.getElementById('paymentLoading').classList.remove('hidden');
+      document.getElementById('paymentQR').classList.add('hidden');
+      document.getElementById('paymentSuccess').classList.add('hidden');
+      document.getElementById('paymentError').classList.add('hidden');
+    }
+
+    // Show QR code for payment
+    function showPaymentQR(orderData) {
+      document.getElementById('paymentLoading').classList.add('hidden');
+      document.getElementById('paymentQR').classList.remove('hidden');
+      
+      // Update amounts
+      document.getElementById('solAmount').textContent = `${orderData.total_sol.toFixed(4)} SOL`;
+      document.getElementById('ngnAmount').textContent = `₦${orderData.total_fiat.toLocaleString()}`;
+      
+      // Set Solana Pay deep link
+      const solanaPayLink = document.getElementById('solanaPayLink');
+      solanaPayLink.href = orderData.solana_pay_url;
+      
+      // Generate QR code (requires qrcode library or we can use an online API)
+      generateQRCode(orderData.qr_code_data);
+      
+      // Start expiry countdown
+      startExpiryTimer(orderData.expires_at);
+    }
+
+    // Generate QR code
+    async function generateQRCode(data) {
+      const canvas = document.getElementById('qrCanvas');
+      
+      // Using QRCode library if available, otherwise use placeholder
+      if (typeof QRCode !== 'undefined') {
+        QRCode.toCanvas(canvas, data, { width: 200 }, function (error) {
+          if (error) console.error('QR generation error:', error);
+        });
+      } else {
+        // Fallback: Use a canvas placeholder with instructions
+        const ctx = canvas.getContext('2d');
+        canvas.width = 200;
+        canvas.height = 200;
+        ctx.fillStyle = '#f3f4f6';
+        ctx.fillRect(0, 0, 200, 200);
+        ctx.fillStyle = '#374151';
+        ctx.font = '12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('QR Code', 100, 90);
+        ctx.fillText('(Use wallet link below)', 100, 110);
+      }
+    }
+
+    // Start expiry countdown timer
+    function startExpiryTimer(expiresAt) {
+      const expiryTime = new Date(expiresAt).getTime();
+      
+      const updateTimer = () => {
+        const now = Date.now();
+        const remaining = Math.max(0, expiryTime - now);
+        
+        if (remaining === 0) {
+          clearPolling();
+          showPaymentError('Payment expired. Please try again.');
+          return;
+        }
+        
+        const minutes = Math.floor(remaining / 60000);
+        const seconds = Math.floor((remaining % 60000) / 1000);
+        document.getElementById('expiryTimer').textContent = 
+          `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      };
+      
+      updateTimer();
+      expiryInterval = setInterval(updateTimer, 1000);
+    }
+
+    // Show payment success
+    function showPaymentSuccess() {
+      document.getElementById('paymentLoading').classList.add('hidden');
+      document.getElementById('paymentQR').classList.add('hidden');
+      document.getElementById('paymentSuccess').classList.remove('hidden');
+      document.getElementById('paymentError').classList.add('hidden');
+    }
+
+    // Show payment error
+    function showPaymentError(message) {
+      document.getElementById('paymentLoading').classList.add('hidden');
+      document.getElementById('paymentQR').classList.add('hidden');
+      document.getElementById('paymentSuccess').classList.add('hidden');
+      document.getElementById('paymentError').classList.remove('hidden');
+      document.getElementById('errorMessage').textContent = message;
+    }
+
+    // Clear cart after successful payment
+    function clearCartAfterPayment() {
+      // Clear buy now order
+      localStorage.removeItem('buyNowOrder');
+      // Clear regular cart
+      KickshausState.clearCart();
+      // Clear checkout summary
+      localStorage.removeItem('checkoutSummary');
+    }
+
+    // Initialize payment flow (called from payment.html or delivery.html after collecting info)
+    async function initializePayment(authToken) {
+      showPaymentModal();
+      
+      try {
+        // Get cart items
+        const buyNowOrder = JSON.parse(localStorage.getItem('buyNowOrder') || 'null');
+        const cart = (buyNowOrder && buyNowOrder.length > 0) ? buyNowOrder : KickshausState.cart;
+        
+        // Transform cart items
+        const items = cart.map(item => ({
+          product_id: item.id,
+          quantity: item.quantity
+        }));
+        
+        // Create order
+        const orderData = await createSolanaPayOrder(items, authToken);
+        
+        // Show QR code
+        showPaymentQR(orderData);
+        
+        // Start polling for payment confirmation
+        startPaymentPolling(orderData.reference_key, authToken);
+        
+      } catch (error) {
+        console.error('Payment initialization error:', error);
+        showPaymentError(error.message || 'Failed to initialize payment');
+      }
+    }
+
+    // Expose functions globally for use in other pages
+    window.KickshausCheckout = {
+      validateCart,
+      initializePayment,
+      showPaymentModal,
+      closePaymentModal,
+    };
   </script>
-   <script src="global-state.js"></script>
   <script src="script.js"></script>
   
 </body>

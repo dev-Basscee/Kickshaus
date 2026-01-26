@@ -34,8 +34,30 @@ router.post(
 );
 
 /**
+ * POST /api/payment/create
+ * Alias for create-order (matches API spec)
+ * (Requires authentication)
+ */
+router.post(
+  '/create',
+  authenticateUser,
+  validateBody(createOrderSchema),
+  asyncHandler(paymentController.createOrder.bind(paymentController))
+);
+
+/**
+ * GET /api/payment/verify/:reference
+ * Verify payment status by reference key (path parameter)
+ * (Public endpoint for frontend polling)
+ */
+router.get(
+  '/verify/:reference',
+  asyncHandler(paymentController.verifyPaymentByPath.bind(paymentController))
+);
+
+/**
  * GET /api/payment/verify
- * Verify payment status by reference key
+ * Verify payment status by reference key (query parameter)
  * (Requires authentication)
  */
 router.get(
