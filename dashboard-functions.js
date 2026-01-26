@@ -540,7 +540,9 @@ function approveMerchant(merchantId) {
 // ===== SETTINGS SECTION =====
 function renderSettingsSection() {
   const section = document.getElementById('settings-section');
-  const admin = typeof AdminAuth !== 'undefined' ? AdminAuth.getCurrentAdmin() : null;
+  // Use the centralized API client
+  const apiClient = window.api || window.KickshausAPI;
+  const admin = apiClient ? apiClient.getUser() : null;
   section.innerHTML = `
     <div style="max-width: 800px;">
       <div class="card" style="margin-bottom: 24px;"><div class="card-header"><h2 class="card-title">Account Settings</h2></div><div style="padding: 20px;">
@@ -606,7 +608,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
   document.getElementById('logoutBtn')?.addEventListener('click', function() {
     if (confirm('Logout?')) {
-      if (typeof AdminAuth !== 'undefined') AdminAuth.logout();
+      const apiClient = window.api || window.KickshausAPI;
+      if (apiClient) apiClient.logout();
       showToast('Logged out!');
       setTimeout(() => window.location.href = 'login.html', 1000);
     }

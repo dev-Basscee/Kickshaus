@@ -218,8 +218,10 @@
     <i class="fas fa-arrow-up"></i>
   </button>
 
-  <!-- IMPORTANT: Load global-state.js FIRST -->
+  <!-- IMPORTANT: Load js/api.js FIRST, then global-state.js -->
+  <script src="js/api.js"></script>
   <script src="global-state.js"></script>
+  <script src="api-client.js"></script>
   <script src="script.js"></script>
   <script>
     // Collection page specific functionality
@@ -437,7 +439,5 @@
       console.log('✨ Collections page loaded!');
     });
   </script>
-   <script src="global-state.js"></script>
-<script src="script.js"></script>
 </body>
 </html>
