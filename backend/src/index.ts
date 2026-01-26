@@ -3,7 +3,9 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import path from 'path';
+import passport from 'passport';
 import { config } from './config/env';
+import { initializePassport } from './config/passport';
 import routes from './routes';
 import { errorHandler, notFoundHandler } from './middleware/error';
 
@@ -53,6 +55,14 @@ app.use(limiter);
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// =====================================================
+// PASSPORT INITIALIZATION
+// =====================================================
+
+// Initialize Passport strategies for social auth
+initializePassport();
+app.use(passport.initialize());
 
 // =====================================================
 // STATIC FILES (Frontend)
