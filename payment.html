@@ -8,6 +8,11 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  
+  <!-- Solana Pay Dependencies -->
+  <script src="https://unpkg.com/@solana/web3.js@1.87.6/lib/index.iife.min.js"></script>
+  <script src="https://unpkg.com/@solana/pay@0.2.5/dist/index.iife.js"></script>
+  <script src="https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js"></script>
 
   <style>
     /* Payment page specific styles */
@@ -182,6 +187,141 @@
         height: 48px;
         font-size: 1.5rem;
       }
+    }
+
+    /* Solana Pay Modal Styles */
+    .solana-pay-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10001;
+      padding: 20px;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .solana-pay-content {
+      background: var(--bg-card, white);
+      padding: 40px;
+      border-radius: 24px;
+      max-width: 420px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      animation: slideUp 0.4s ease;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(30px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .solana-pay-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .solana-pay-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary, #1A1A1A);
+    }
+
+    .solana-pay-close {
+      font-size: 2rem;
+      border: none;
+      background: none;
+      cursor: pointer;
+      color: var(--text-muted, #999);
+      transition: color 0.3s ease;
+    }
+
+    .solana-pay-close:hover {
+      color: var(--text-primary, #1A1A1A);
+    }
+
+    .solana-pay-qr {
+      background: white;
+      padding: 24px;
+      border-radius: 16px;
+      margin-bottom: 24px;
+      display: inline-block;
+    }
+
+    .solana-pay-qr canvas {
+      display: block;
+    }
+
+    .solana-pay-amount {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--primary, #00A8E8);
+      margin-bottom: 8px;
+    }
+
+    .solana-pay-note {
+      font-size: 0.9rem;
+      color: var(--text-muted, #999);
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+
+    .solana-pay-status {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 16px;
+      background: rgba(0, 168, 232, 0.1);
+      border-radius: 12px;
+      color: var(--primary, #00A8E8);
+      font-weight: 600;
+    }
+
+    .solana-pay-spinner {
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(0, 168, 232, 0.3);
+      border-top-color: var(--primary, #00A8E8);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .solana-pay-wallet-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 16px;
+      padding: 12px 24px;
+      background: linear-gradient(135deg, #9945FF 0%, #14F195 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .solana-pay-wallet-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(153, 69, 255, 0.4);
     }
   </style>
 </head>
@@ -398,12 +538,359 @@
   <script src="script.js"></script>
   <script>
   document.addEventListener('DOMContentLoaded', () => {
-    // Load order summary
+    // Load order summary from localStorage
     const checkoutSummary = JSON.parse(localStorage.getItem('checkoutSummary') || '{}');
     document.getElementById('orderItemCount').textContent = checkoutSummary.itemCount || 0;
     document.getElementById('orderSubtotal').textContent = `₦${(checkoutSummary.subtotal || 0).toLocaleString()}`;
     document.getElementById('orderTax').textContent = `₦${(checkoutSummary.tax || 0).toLocaleString()}`;
     document.getElementById('orderTotal').textContent = `₦${(checkoutSummary.total || 0).toLocaleString()}`;
+
+    // ⚠️ PRODUCTION WARNING: Replace this placeholder wallet address with your actual Solana merchant wallet.
+    // In production, use environment variables or secure configuration to manage this.
+    const MERCHANT_WALLET = 'DfMxre4cKmvPfN6YXmY5u5P9vJdAaJzfQQnfrGNPNkVE';
+    
+    // ⚠️ PRODUCTION WARNING: This is a PLACEHOLDER exchange rate for demonstration only.
+    // In production, fetch real-time NGN to SOL exchange rates from a reliable API
+    // (e.g., CoinGecko, CoinMarketCap, or your preferred price oracle).
+    const PLACEHOLDER_NGN_TO_SOL_RATE = 0.000001; // Example: 1 NGN ≈ 0.000001 SOL
+
+    /**
+     * Creates and displays the Solana Pay QR code modal
+     * @param {number} amountInNGN - The total amount in Nigerian Naira
+     */
+    function showSolanaPayModal(amountInNGN) {
+      // Convert NGN to SOL (in production, use real-time exchange rate)
+      const amountInSOL = (amountInNGN * PLACEHOLDER_NGN_TO_SOL_RATE).toFixed(9);
+      
+      // Generate a unique reference for this transaction
+      const reference = new Uint8Array(32);
+      crypto.getRandomValues(reference);
+      const referenceBase58 = base58Encode(reference);
+      
+      // Create the Solana Pay URL
+      const solanaPayUrl = createSolanaPayUrl(MERCHANT_WALLET, amountInSOL, referenceBase58);
+      
+      // Create modal element
+      const modal = document.createElement('div');
+      modal.className = 'solana-pay-modal';
+      modal.innerHTML = `
+        <div class="solana-pay-content">
+          <div class="solana-pay-header">
+            <h3 class="solana-pay-title">
+              <i class="fas fa-coins" style="color: #9945FF;"></i>
+              Pay with Solana
+            </h3>
+            <button class="solana-pay-close">&times;</button>
+          </div>
+          
+          <div class="solana-pay-qr" id="solanaQrContainer"></div>
+          
+          <div class="solana-pay-amount">${amountInSOL} SOL</div>
+          <p class="solana-pay-note">
+            Scan the QR code with your Solana wallet app (Phantom, Solflare, etc.) to complete the payment.
+            <br><br>
+            <strong>Order Total:</strong> ₦${amountInNGN.toLocaleString()}
+          </p>
+          
+          <div class="solana-pay-status" id="paymentStatus">
+            <div class="solana-pay-spinner"></div>
+            <span>Waiting for payment...</span>
+          </div>
+          
+          <button class="solana-pay-wallet-btn" id="openWalletBtn">
+            <i class="fas fa-wallet"></i>
+            Open in Wallet
+          </button>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+      
+      // Generate QR code
+      const qrContainer = document.getElementById('solanaQrContainer');
+      if (typeof QRCode !== 'undefined') {
+        QRCode.toCanvas(qrContainer, solanaPayUrl, {
+          width: 250,
+          margin: 2,
+          color: {
+            dark: '#000000',
+            light: '#FFFFFF'
+          }
+        }, function(error) {
+          if (error) {
+            console.error('QR Code generation error:', error);
+            qrContainer.innerHTML = '<p style="color: red;">Error generating QR code</p>';
+          }
+        });
+      } else {
+        // Fallback if QRCode library not loaded
+        qrContainer.innerHTML = `
+          <p style="color: var(--text-muted); padding: 40px;">
+            <i class="fas fa-qrcode" style="font-size: 3rem; display: block; margin-bottom: 12px;"></i>
+            QR Code Loading...
+          </p>
+        `;
+      }
+      
+      // Handle close button
+      const closeBtn = modal.querySelector('.solana-pay-close');
+      closeBtn.addEventListener('click', () => {
+        stopPaymentPolling();
+        modal.remove();
+      });
+      
+      // Handle click outside modal
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          stopPaymentPolling();
+          modal.remove();
+        }
+      });
+      
+      // Handle "Open in Wallet" button
+      const openWalletBtn = document.getElementById('openWalletBtn');
+      openWalletBtn.addEventListener('click', () => {
+        window.open(solanaPayUrl, '_blank');
+      });
+      
+      // Start polling for payment confirmation
+      startPaymentPolling(referenceBase58, modal);
+    }
+    
+    /**
+     * Creates a Solana Pay URL with the specified parameters
+     * @param {string} recipient - The merchant's Solana wallet address
+     * @param {string} amount - The amount in SOL
+     * @param {string} reference - A unique reference for this transaction
+     * @returns {string} - The Solana Pay URL
+     */
+    function createSolanaPayUrl(recipient, amount, reference) {
+      // Construct the Solana Pay URL according to the specification
+      // Format: solana:<recipient>?amount=<amount>&reference=<reference>&label=<label>&message=<message>
+      const baseUrl = `solana:${recipient}`;
+      const params = new URLSearchParams({
+        amount: amount,
+        reference: reference,
+        label: 'Kickshaus',
+        message: 'Payment for your Kickshaus order',
+        memo: `Order-${Date.now()}`
+      });
+      
+      return `${baseUrl}?${params.toString()}`;
+    }
+    
+    /**
+     * Simple Base58 encoding for the reference
+     * @param {Uint8Array} bytes - The bytes to encode
+     * @returns {string} - Base58 encoded string
+     */
+    function base58Encode(bytes) {
+      const ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+      const BASE = ALPHABET.length;
+      
+      if (bytes.length === 0) return '';
+      
+      // Convert bytes to a big integer
+      let num = BigInt(0);
+      for (let i = 0; i < bytes.length; i++) {
+        num = num * BigInt(256) + BigInt(bytes[i]);
+      }
+      
+      // Convert to base58
+      let encoded = '';
+      while (num > 0) {
+        const remainder = Number(num % BigInt(BASE));
+        num = num / BigInt(BASE);
+        encoded = ALPHABET[remainder] + encoded;
+      }
+      
+      // Add leading '1's for leading zero bytes
+      for (let i = 0; i < bytes.length && bytes[i] === 0; i++) {
+        encoded = '1' + encoded;
+      }
+      
+      return encoded;
+    }
+    
+    // Payment polling variables
+    let pollingInterval = null;
+    let pollingAttempts = 0;
+    const MAX_POLLING_ATTEMPTS = 120; // 10 minutes at 5-second intervals
+    const POLLING_INTERVAL_MS = 5000; // 5 seconds
+    
+    /**
+     * Starts polling for payment confirmation
+     * 
+     * VERIFICATION IMPLEMENTATION GUIDE:
+     * 
+     * In production, you would implement verification by:
+     * 
+     * 1. BACKEND APPROACH (Recommended):
+     *    - Send the transaction reference to your backend server
+     *    - Backend uses @solana/web3.js to connect to Solana RPC
+     *    - Query for transactions with the reference using:
+     *      const signatures = await connection.getSignaturesForAddress(referencePublicKey);
+     *    - Verify the transaction details (amount, recipient) match the expected values
+     *    - Return confirmation status to frontend
+     * 
+     * 2. FRONTEND APPROACH (For development/testing):
+     *    - Use @solana/web3.js Connection class
+     *    - Poll using: connection.getSignaturesForAddress(referencePublicKey)
+     *    - When signature found, get transaction details with:
+     *      connection.getParsedTransaction(signature)
+     *    - Verify transaction amount matches expected payment
+     * 
+     * @param {string} reference - The unique reference for this transaction
+     * @param {HTMLElement} modal - The modal element
+     */
+    function startPaymentPolling(reference, modal) {
+      const statusElement = document.getElementById('paymentStatus');
+      pollingAttempts = 0;
+      
+      console.log('Starting payment polling for reference:', reference);
+      console.log('In production, connect to Solana RPC to verify payment.');
+      
+      pollingInterval = setInterval(() => {
+        pollingAttempts++;
+        
+        // Update status to show polling is active
+        if (statusElement) {
+          const dots = '.'.repeat((pollingAttempts % 3) + 1);
+          statusElement.innerHTML = `
+            <div class="solana-pay-spinner"></div>
+            <span>Checking payment status${dots}</span>
+          `;
+        }
+        
+        /**
+         * PRODUCTION IMPLEMENTATION:
+         * 
+         * Replace the simulated check below with actual Solana RPC calls:
+         * 
+         * async function checkPaymentStatus(reference) {
+         *   try {
+         *     // Connect to Solana cluster (mainnet-beta, devnet, or testnet)
+         *     const connection = new solanaWeb3.Connection(
+         *       'https://api.mainnet-beta.solana.com',
+         *       'confirmed'
+         *     );
+         *     
+         *     // Convert reference to PublicKey
+         *     const referencePublicKey = new solanaWeb3.PublicKey(reference);
+         *     
+         *     // Find transactions with this reference
+         *     const signatures = await connection.getSignaturesForAddress(
+         *       referencePublicKey,
+         *       { limit: 1 }
+         *     );
+         *     
+         *     if (signatures.length > 0) {
+         *       const signature = signatures[0].signature;
+         *       
+         *       // Get and verify transaction details
+         *       const transaction = await connection.getParsedTransaction(signature);
+         *       
+         *       // Verify amount and recipient match expected values
+         *       if (verifyTransactionDetails(transaction, expectedAmount, merchantWallet)) {
+         *         return { confirmed: true, signature };
+         *       }
+         *     }
+         *     
+         *     return { confirmed: false };
+         *   } catch (error) {
+         *     console.error('Error checking payment:', error);
+         *     return { confirmed: false, error };
+         *   }
+         * }
+         */
+        
+        /**
+         * ⚠️ DEMO MODE - REMOVE IN PRODUCTION ⚠️
+         * 
+         * The code below simulates payment confirmation for demonstration purposes only.
+         * In production, remove this simulation block and implement actual Solana RPC
+         * verification as documented above. Never auto-confirm payments without
+         * blockchain verification in a live environment.
+         */
+        const IS_DEMO_MODE = true; // Set to false in production
+        if (IS_DEMO_MODE && pollingAttempts >= 6) { // Demo: Simulate confirmation after ~30 seconds
+          handlePaymentConfirmed(modal);
+        }
+        
+        // Stop polling after max attempts (timeout)
+        if (pollingAttempts >= MAX_POLLING_ATTEMPTS) {
+          stopPaymentPolling();
+          if (statusElement) {
+            statusElement.innerHTML = `
+              <i class="fas fa-exclamation-triangle" style="color: #FF9800;"></i>
+              <span>Payment timeout. Please try again.</span>
+            `;
+            statusElement.style.background = 'rgba(255, 152, 0, 0.1)';
+            statusElement.style.color = '#FF9800';
+          }
+        }
+      }, POLLING_INTERVAL_MS);
+    }
+    
+    /**
+     * Stops the payment polling interval
+     */
+    function stopPaymentPolling() {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+        pollingInterval = null;
+      }
+      pollingAttempts = 0;
+    }
+    
+    /**
+     * Handles successful payment confirmation
+     * @param {HTMLElement} modal - The modal element to close
+     */
+    function handlePaymentConfirmed(modal) {
+      stopPaymentPolling();
+      
+      const statusElement = document.getElementById('paymentStatus');
+      if (statusElement) {
+        statusElement.innerHTML = `
+          <i class="fas fa-check-circle" style="font-size: 1.5rem;"></i>
+          <span>Payment confirmed!</span>
+        `;
+        statusElement.style.background = 'rgba(76, 175, 80, 0.1)';
+        statusElement.style.color = '#4CAF50';
+      }
+      
+      // Hide the Open Wallet button
+      const walletBtn = document.getElementById('openWalletBtn');
+      if (walletBtn) {
+        walletBtn.style.display = 'none';
+      }
+      
+      // Clear cart and checkout data
+      setTimeout(() => {
+        const isBuyNow = checkoutSummary.isBuyNow;
+        if (isBuyNow) {
+          localStorage.removeItem('buyNowOrder');
+          localStorage.removeItem('pendingBuyNowOrder');
+        } else {
+          KickshausState.clearCart();
+        }
+        
+        localStorage.removeItem('checkoutSummary');
+        localStorage.removeItem('deliveryDetails');
+        
+        // Close modal
+        modal.remove();
+        
+        // Show success toast
+        showToast('✓ Payment successful! Thank you for your order.');
+        
+        // Redirect to home
+        setTimeout(() => {
+          window.location.href = 'index.html';
+        }, 2000);
+      }, 1500);
+    }
 
     // Payment selection with animation
     document.querySelectorAll('.payment-option').forEach(option => {
@@ -414,7 +901,22 @@
         this.style.transform = 'scale(0.97)';
         setTimeout(() => { this.style.transform = ''; }, 140);
 
-        // Show processing
+        // Handle Cryptocurrency (Solana Pay) differently
+        if (method === 'crypto') {
+          // Get the total amount from checkoutSummary
+          const totalAmount = checkoutSummary.total || 0;
+          
+          if (totalAmount <= 0) {
+            showToast('No items in your order. Please add items first.', 'error');
+            return;
+          }
+          
+          // Show Solana Pay modal instead of default flow
+          showSolanaPayModal(totalAmount);
+          return;
+        }
+
+        // Default flow for other payment methods (Card, Bank Transfer, PayPal)
         showToast('Processing payment...');
         
         setTimeout(() => {
