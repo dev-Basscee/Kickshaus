@@ -489,6 +489,19 @@
             `${API_BASE_URL}/payment/verify/${encodeURIComponent(referenceKey)}`
           );
           
+          // Handle HTTP error responses
+          if (!response.ok) {
+            if (response.status === 404) {
+              console.error('Payment reference not found');
+              clearPolling();
+              showPaymentError('Payment reference not found. Please try again.');
+              return;
+            }
+            // For other errors, continue polling (may be temporary issue)
+            console.warn(`Payment verification returned status ${response.status}`);
+            return;
+          }
+          
           const data = await response.json();
           
           if (data.data?.status === 'confirmed') {
@@ -502,6 +515,7 @@
           }
         } catch (error) {
           console.error('Payment verification error:', error);
+          // Continue polling on network errors - they may be temporary
         }
       };
       

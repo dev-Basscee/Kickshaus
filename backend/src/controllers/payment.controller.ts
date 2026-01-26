@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { paymentService } from '../services/payment.service';
 import { AuthenticatedRequest } from '../types';
-import { sendSuccess } from '../utils/errors';
+import { sendSuccess, BadRequestError } from '../utils/errors';
 import { CreateOrderInput, VerifyPaymentInput } from '../utils/validators';
 
 export class PaymentController {
@@ -36,6 +36,17 @@ export class PaymentController {
    */
   async verifyPaymentByPath(req: Request, res: Response): Promise<void> {
     const { reference } = req.params;
+    
+    // Validate reference parameter exists and has valid format (Solana public key base58)
+    if (!reference || reference.length < 32 || reference.length > 44) {
+      throw new BadRequestError('Invalid reference key format');
+    }
+    
+    // Solana public key base58 character validation
+    const base58Regex = /^[1-9A-HJ-NP-Za-km-z]+$/;
+    if (!base58Regex.test(reference)) {
+      throw new BadRequestError('Invalid reference key format');
+    }
     
     const result = await paymentService.verifyPayment(reference);
 
