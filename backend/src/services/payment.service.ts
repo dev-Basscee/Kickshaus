@@ -18,6 +18,49 @@ import {
   InsufficientStockError 
 } from '../utils/errors';
 
+/**
+ * ============================================================================
+ * SOLANA PAY PAYMENT SERVICE
+ * ============================================================================
+ * 
+ * SECURITY ARCHITECTURE:
+ * ----------------------
+ * This service implements the official Solana Pay specification for secure
+ * cryptocurrency payment processing. Key security measures include:
+ * 
+ * 1. SERVER-SIDE VERIFICATION (Critical)
+ *    - All payment verification happens on the backend using `findReference()`
+ *      and `validateTransfer()` from @solana/pay
+ *    - Frontend NEVER verifies payments directly - it only polls this API
+ *    - This prevents transaction spoofing and amount manipulation
+ * 
+ * 2. CRYPTOGRAPHIC REFERENCE TRACKING
+ *    - Each order generates a unique Keypair reference
+ *    - The reference PublicKey is embedded in the Solana Pay URL
+ *    - `findReference()` locates the on-chain transaction by this reference
+ *    - `validateTransfer()` cryptographically verifies recipient, amount, and reference
+ * 
+ * 3. ATOMIC DATABASE UPDATES
+ *    - Order confirmation uses Supabase RPC functions for atomic updates
+ *    - Prevents race conditions and double-confirmation attacks
+ * 
+ * 4. ZERO-TRUST CART VALIDATION
+ *    - Cart prices are re-validated server-side before order creation
+ *    - Client-submitted prices are NEVER trusted
+ * 
+ * FLOW:
+ * -----
+ * 1. Client calls POST /api/payment/create-order with cart items
+ * 2. Server validates cart, generates reference, creates order in DB
+ * 3. Server returns Solana Pay URL (encoded with @solana/pay encodeURL())
+ * 4. Client displays QR code and polls GET /api/payment/verify
+ * 5. Server uses findReference() to locate transaction on-chain
+ * 6. Server uses validateTransfer() to verify payment matches order
+ * 7. On success, server confirms order and returns status to client
+ * 
+ * ============================================================================
+ */
+
 // Payment expiration time (15 minutes)
 const PAYMENT_EXPIRY_MS = 15 * 60 * 1000;
 
@@ -165,6 +208,20 @@ export class PaymentService {
 
   /**
    * Verify payment status for an order
+   * 
+   * SECURITY: This is the critical verification endpoint that validates payments
+   * on the Solana blockchain. The frontend MUST call this endpoint - it should
+   * NEVER attempt to verify payments client-side.
+   * 
+   * Verification Process:
+   * 1. findReference() - Locates the transaction on-chain by reference PublicKey
+   * 2. validateTransfer() - Cryptographically verifies:
+   *    - Recipient matches our platform wallet
+   *    - Amount matches the order's SOL amount
+   *    - Reference PublicKey is embedded in the transaction
+   * 
+   * @param referenceKey - The base58-encoded reference PublicKey from order creation
+   * @returns VerifyPaymentResponse with status: 'pending' | 'confirmed' | 'failed'
    */
   async verifyPayment(referenceKey: string): Promise<VerifyPaymentResponse> {
     // Get order from database
