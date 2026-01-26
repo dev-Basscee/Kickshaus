@@ -12,6 +12,7 @@
   <!-- Solana Pay Dependencies -->
   <script src="https://unpkg.com/@solana/web3.js@1.87.6/lib/index.iife.min.js"></script>
   <script src="https://unpkg.com/@solana/pay@0.2.5/dist/index.iife.js"></script>
+  <script src="https://unpkg.com/bignumber.js@9.1.2/bignumber.min.js"></script>
   <script src="https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js"></script>
 
   <style>
@@ -597,9 +598,13 @@
 
     /**
      * Get auth token from localStorage
+     * Checks all possible token keys for compatibility
      */
     function getAuthToken() {
-      return localStorage.getItem('authToken') || null;
+      return localStorage.getItem('kickshaus_auth_token') 
+        || localStorage.getItem('token') 
+        || localStorage.getItem('authToken') 
+        || null;
     }
 
     /**
@@ -791,6 +796,17 @@
 
     /**
      * Start polling for payment confirmation via API
+     * 
+     * SECURITY: This function polls the BACKEND API for payment status.
+     * The frontend NEVER directly queries the Solana blockchain.
+     * 
+     * Why this matters:
+     * - Backend uses findReference() and validateTransfer() from @solana/pay
+     * - Backend cryptographically verifies recipient, amount, and reference
+     * - Client-side verification could be spoofed or manipulated
+     * - Backend has access to RPC endpoint and service role keys
+     * 
+     * Flow: Frontend asks "Did you get the money?" -> Backend checks blockchain -> Returns status
      */
     function startPaymentPollingAPI(referenceKey, authToken, modal) {
       const statusElement = document.getElementById('paymentStatus');
@@ -914,10 +930,10 @@
       // Convert NGN to SOL (development fallback rate - not for production use)
       const amountInSOL = (amountInNGN * DEV_FALLBACK_NGN_TO_SOL_RATE).toFixed(9);
       
-      // Generate a unique reference for this transaction
-      const reference = new Uint8Array(32);
-      crypto.getRandomValues(reference);
-      const referenceBase58 = base58Encode(reference);
+      // Generate a unique reference keypair for this transaction
+      // Using solanaWeb3.Keypair ensures a valid PublicKey for on-chain reference tracking
+      const referenceKeypair = solanaWeb3.Keypair.generate();
+      const referenceBase58 = referenceKeypair.publicKey.toBase58();
       
       // Create the Solana Pay URL (using development fallback wallet)
       const solanaPayUrl = createSolanaPayUrl(DEV_FALLBACK_WALLET, amountInSOL, referenceBase58);
@@ -1010,25 +1026,47 @@
     }
     
     /**
-     * Creates a Solana Pay URL with the specified parameters
-     * @param {string} recipient - The merchant's Solana wallet address
-     * @param {string} amount - The amount in SOL
-     * @param {string} reference - A unique reference for this transaction
-     * @returns {string} - The Solana Pay URL
+     * Creates a Solana Pay URL using the official @solana/pay SDK
+     * 
+     * SECURITY: Uses SolanaPay.encodeURL() for cryptographically correct URL generation.
+     * This ensures proper encoding of all parameters per the Solana Pay specification.
+     * 
+     * @param {string} recipient - The merchant's Solana wallet address (base58)
+     * @param {string} amount - The amount in SOL (string to preserve decimal precision)
+     * @param {string} reference - A unique reference public key for transaction tracking (base58)
+     * @returns {string} - The properly encoded Solana Pay URL
      */
     function createSolanaPayUrl(recipient, amount, reference) {
-      // Construct the Solana Pay URL according to the specification
-      // Format: solana:<recipient>?amount=<amount>&reference=<reference>&label=<label>&message=<message>
-      const baseUrl = `solana:${recipient}`;
-      const params = new URLSearchParams({
-        amount: amount,
-        reference: reference,
-        label: 'Kickshaus',
-        message: 'Payment for your Kickshaus order',
-        memo: `Order-${Date.now()}`
-      });
+      // Use the official Solana Pay SDK for secure URL generation
+      // SolanaPay global is provided by @solana/pay CDN script
+      // solanaWeb3 global is provided by @solana/web3.js CDN script
+      // BigNumber global is provided by bignumber.js CDN script
       
-      return `${baseUrl}?${params.toString()}`;
+      try {
+        const url = SolanaPay.encodeURL({
+          recipient: new solanaWeb3.PublicKey(recipient),
+          amount: new BigNumber(amount),
+          reference: new solanaWeb3.PublicKey(reference),
+          label: 'Kickshaus',
+          message: 'Payment for your Kickshaus order',
+          memo: `Order-${Date.now()}`
+        });
+        
+        return url.toString();
+      } catch (error) {
+        console.error('Error encoding Solana Pay URL:', error);
+        // Fallback to manual construction only if SDK fails
+        // This maintains compatibility but logs the error for debugging
+        const baseUrl = `solana:${recipient}`;
+        const params = new URLSearchParams({
+          amount: amount,
+          reference: reference,
+          label: 'Kickshaus',
+          message: 'Payment for your Kickshaus order',
+          memo: `Order-${Date.now()}`
+        });
+        return `${baseUrl}?${params.toString()}`;
+      }
     }
     
     /**

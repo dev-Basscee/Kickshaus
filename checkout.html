@@ -236,25 +236,33 @@
       const isBuyNow = buyNowOrder && buyNowOrder.length > 0;
       itemCountText.textContent = `${itemCount} ${itemCount === 1 ? 'item' : 'items'} ${isBuyNow ? 'to purchase' : 'in cart'}`;
 
-      container.innerHTML = cart.map(item => `
+      container.innerHTML = cart.map(item => {
+        // Get image from various formats
+        const imageUrl = item.image 
+          || (Array.isArray(item.images) && item.images[0]) 
+          || (item.images && item.images.main) 
+          || 'https://via.placeholder.com/80x80?text=No+Image';
+        
+        return `
         <div class="flex items-center gap-4 border-b pb-4">
           <div class="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden shrink-0">
             <img 
-              src="${item.image || (item.images && item.images[0]) || ''}"
+              src="${imageUrl}"
               alt="${item.name}"
               class="w-full h-full object-contain"
+              onerror="this.src='https://via.placeholder.com/80x80?text=No+Image'"
             />
           </div>
 
           <div class="flex-1">
             <p class="font-semibold">${item.name}</p>
-            <p class="text-sm text-gray-500">Size: ${item.size} • Color: ${item.color}</p>
+            <p class="text-sm text-gray-500">Size: ${item.size || 'N/A'} • Color: ${item.color || 'N/A'}</p>
             <p class="text-sm text-gray-600 mt-1">Qty: ${item.quantity}</p>
           </div>
 
-          <p class="font-bold">₦${(item.price * item.quantity).toLocaleString()}</p>
+          <p class="font-bold">₦${((item.price || 0) * item.quantity).toLocaleString()}</p>
         </div>
-      `).join('');
+      `}).join('');
 
       updateCheckoutSummary(cart, isBuyNow);
     }

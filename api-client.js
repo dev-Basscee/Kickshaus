@@ -10,20 +10,25 @@ const KickshausAPI = {
   TOKEN_KEY: 'kickshaus_auth_token',
   USER_KEY: 'kickshaus_user',
   
-  // Get stored auth token
+  // Get stored auth token (checks all possible keys for compatibility)
   getToken() {
-    return localStorage.getItem(this.TOKEN_KEY);
+    return localStorage.getItem(this.TOKEN_KEY) 
+      || localStorage.getItem('token') 
+      || localStorage.getItem('authToken');
   },
   
-  // Set auth token
+  // Set auth token (sets both keys for compatibility)
   setToken(token) {
     localStorage.setItem(this.TOKEN_KEY, token);
+    localStorage.setItem('token', token);
   },
   
   // Remove auth token
   removeToken() {
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.USER_KEY);
+    localStorage.removeItem('token');
+    localStorage.removeItem('authToken');
   },
   
   // Get stored user data

@@ -148,10 +148,11 @@ const api = {
 
   /**
    * Check if user is authenticated
+   * Checks all possible token keys for compatibility
    * @returns {boolean}
    */
   isAuthenticated() {
-    return !!localStorage.getItem(AUTH_TOKEN_KEY);
+    return !!(localStorage.getItem(AUTH_TOKEN_KEY) || localStorage.getItem('token') || localStorage.getItem('authToken'));
   },
 
   /**
@@ -165,10 +166,11 @@ const api = {
 
   /**
    * Get auth token
+   * Checks all possible token keys for compatibility
    * @returns {string|null}
    */
   getToken() {
-    return localStorage.getItem(AUTH_TOKEN_KEY);
+    return localStorage.getItem(AUTH_TOKEN_KEY) || localStorage.getItem('token') || localStorage.getItem('authToken');
   },
 
   /**

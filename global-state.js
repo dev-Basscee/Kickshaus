@@ -52,6 +52,23 @@ const KickshausState = {
     return this.favorites.some(item => item.id === productId);
   },
   
+  // Helper to extract image URL from various formats
+  getProductImage(product) {
+    // Direct image property
+    if (product.image && typeof product.image === 'string') {
+      return product.image;
+    }
+    // Images as array
+    if (Array.isArray(product.images) && product.images.length > 0) {
+      return product.images[0];
+    }
+    // Images as object with main property
+    if (product.images && typeof product.images === 'object' && product.images.main) {
+      return product.images.main;
+    }
+    return '';
+  },
+  
   // Add to cart
   addToCart(product) {
     const existingItem = this.cart.find(item => 
@@ -63,11 +80,14 @@ const KickshausState = {
     if (existingItem) {
       existingItem.quantity++;
     } else {
+      // Ensure price is a valid number
+      const price = Number(product.price) || Number(product.base_price) || 0;
+      
       this.cart.push({
         id: product.id,
         name: product.name,
-        price: product.price,
-        image: product.image || (product.images && product.images[0]) || '',
+        price: price,
+        image: this.getProductImage(product),
         size: product.size || 'N/A',
         color: product.color || 'N/A',
         quantity: 1
@@ -104,7 +124,7 @@ const KickshausState = {
   
   // Get cart total
   getCartTotal() {
-    return this.cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+    return this.cart.reduce((total, item) => total + ((Number(item.price) || 0) * (item.quantity || 1)), 0);
   },
   
   // Get cart item count
