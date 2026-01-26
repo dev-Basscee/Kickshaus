@@ -2,8 +2,76 @@ import { supabaseAdmin } from '../config/supabase';
 import { Product, ProductStatus, ProductImages } from '../types';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { PaginationInput } from '../utils/validators';
+import { demoProducts, getDemoProductById, isDemoProduct } from './demo-products';
+import { config } from '../config/env';
 
 export class ProductService {
+  /**
+   * Check if Supabase is properly configured
+   */
+  private isSupabaseConfigured(): boolean {
+    return (
+      config.supabase.url !== 'https://placeholder.supabase.co' &&
+      config.supabase.serviceRoleKey !== 'placeholder-service-key'
+    );
+  }
+
+  /**
+   * Get demo products with pagination and filtering
+   */
+  private getDemoProducts(pagination: PaginationInput): {
+    products: Product[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  } {
+    const { page, limit, category, search, sort } = pagination;
+    let filtered = [...demoProducts];
+
+    // Apply category filter
+    if (category) {
+      filtered = filtered.filter(p => p.category.toLowerCase() === category.toLowerCase());
+    }
+
+    // Apply search filter
+    if (search) {
+      const searchLower = search.toLowerCase();
+      filtered = filtered.filter(p => 
+        p.name.toLowerCase().includes(searchLower) ||
+        (p.description && p.description.toLowerCase().includes(searchLower))
+      );
+    }
+
+    // Apply sorting
+    switch (sort) {
+      case 'price_asc':
+        filtered.sort((a, b) => a.base_price - b.base_price);
+        break;
+      case 'price_desc':
+        filtered.sort((a, b) => b.base_price - a.base_price);
+        break;
+      case 'name_asc':
+        filtered.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case 'name_desc':
+        filtered.sort((a, b) => b.name.localeCompare(a.name));
+        break;
+    }
+
+    const total = filtered.length;
+    const offset = (page - 1) * limit;
+    const paginatedProducts = filtered.slice(offset, offset + limit);
+
+    return {
+      products: paginatedProducts,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
   /**
    * Get all live products with pagination and filtering
    */
@@ -14,96 +82,151 @@ export class ProductService {
     limit: number;
     totalPages: number;
   }> {
+    // If Supabase is not configured, return demo products
+    if (!this.isSupabaseConfigured()) {
+      console.log('📦 Supabase not configured, serving demo products');
+      return this.getDemoProducts(pagination);
+    }
+
     const { page, limit, category, search, sort } = pagination;
     const offset = (page - 1) * limit;
 
-    // Build query for count
-    let countQuery = supabaseAdmin
-      .from('products')
-      .select('id', { count: 'exact', head: true })
-      .eq('status', 'live');
+    try {
+      // Build query for count
+      let countQuery = supabaseAdmin
+        .from('products')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'live');
 
-    // Build query for data
-    let dataQuery = supabaseAdmin
-      .from('products')
-      .select('*')
-      .eq('status', 'live');
+      // Build query for data
+      let dataQuery = supabaseAdmin
+        .from('products')
+        .select('*')
+        .eq('status', 'live');
 
-    // Apply category filter
-    if (category) {
-      countQuery = countQuery.eq('category', category);
-      dataQuery = dataQuery.eq('category', category);
+      // Apply category filter
+      if (category) {
+        countQuery = countQuery.eq('category', category);
+        dataQuery = dataQuery.eq('category', category);
+      }
+
+      // Apply search filter
+      if (search) {
+        const searchFilter = `name.ilike.%${search}%,description.ilike.%${search}%`;
+        countQuery = countQuery.or(searchFilter);
+        dataQuery = dataQuery.or(searchFilter);
+      }
+
+      // Get total count
+      const { count, error: countError } = await countQuery;
+      
+      if (countError) {
+        console.error('Database count error, falling back to demo products:', countError);
+        return this.getDemoProducts(pagination);
+      }
+      
+      const total = count || 0;
+
+      // Apply sorting
+      switch (sort) {
+        case 'price_asc':
+          dataQuery = dataQuery.order('base_price', { ascending: true });
+          break;
+        case 'price_desc':
+          dataQuery = dataQuery.order('base_price', { ascending: false });
+          break;
+        case 'name_asc':
+          dataQuery = dataQuery.order('name', { ascending: true });
+          break;
+        case 'name_desc':
+          dataQuery = dataQuery.order('name', { ascending: false });
+          break;
+        case 'newest':
+        default:
+          dataQuery = dataQuery.order('created_at', { ascending: false });
+      }
+
+      // Apply pagination
+      dataQuery = dataQuery.range(offset, offset + limit - 1);
+
+      const { data, error } = await dataQuery;
+
+      if (error) {
+        console.error('Database query error, falling back to demo products:', error);
+        return this.getDemoProducts(pagination);
+      }
+
+      // If no products in database, fallback to demo products
+      if (!data || data.length === 0) {
+        console.log('📦 No products in database, serving demo products');
+        return this.getDemoProducts(pagination);
+      }
+
+      return {
+        products: data,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
+    } catch (error) {
+      console.error('Failed to fetch products from database, using demo products:', error);
+      return this.getDemoProducts(pagination);
     }
-
-    // Apply search filter
-    if (search) {
-      const searchFilter = `name.ilike.%${search}%,description.ilike.%${search}%`;
-      countQuery = countQuery.or(searchFilter);
-      dataQuery = dataQuery.or(searchFilter);
-    }
-
-    // Get total count
-    const { count } = await countQuery;
-    const total = count || 0;
-
-    // Apply sorting
-    switch (sort) {
-      case 'price_asc':
-        dataQuery = dataQuery.order('base_price', { ascending: true });
-        break;
-      case 'price_desc':
-        dataQuery = dataQuery.order('base_price', { ascending: false });
-        break;
-      case 'name_asc':
-        dataQuery = dataQuery.order('name', { ascending: true });
-        break;
-      case 'name_desc':
-        dataQuery = dataQuery.order('name', { ascending: false });
-        break;
-      case 'newest':
-      default:
-        dataQuery = dataQuery.order('created_at', { ascending: false });
-    }
-
-    // Apply pagination
-    dataQuery = dataQuery.range(offset, offset + limit - 1);
-
-    const { data, error } = await dataQuery;
-
-    if (error) {
-      throw new Error(`Failed to fetch products: ${error.message}`);
-    }
-
-    return {
-      products: data || [],
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
   }
 
   /**
    * Get a single product by ID
    */
   async getProductById(productId: string): Promise<Product> {
-    const { data, error } = await supabaseAdmin
-      .from('products')
-      .select('*')
-      .eq('id', productId)
-      .single();
-
-    if (error || !data) {
+    // Check for demo product first
+    if (isDemoProduct(productId)) {
+      const demoProduct = getDemoProductById(productId);
+      if (demoProduct) {
+        return demoProduct;
+      }
       throw new NotFoundError('Product not found');
     }
 
-    return data;
+    // If Supabase is not configured, check demo products
+    if (!this.isSupabaseConfigured()) {
+      const demoProduct = getDemoProductById(productId);
+      if (demoProduct) {
+        return demoProduct;
+      }
+      throw new NotFoundError('Product not found');
+    }
+
+    try {
+      const { data, error } = await supabaseAdmin
+        .from('products')
+        .select('*')
+        .eq('id', productId)
+        .single();
+
+      if (error || !data) {
+        throw new NotFoundError('Product not found');
+      }
+
+      return data;
+    } catch (error) {
+      // If database error, try demo products as fallback
+      const demoProduct = getDemoProductById(productId);
+      if (demoProduct) {
+        return demoProduct;
+      }
+      throw error;
+    }
   }
 
   /**
    * Get products by merchant (merchant only)
    */
   async getMerchantProducts(merchantId: string, status?: ProductStatus): Promise<Product[]> {
+    if (!this.isSupabaseConfigured()) {
+      return []; // Cannot list merchant products without database
+    }
+
     let query = supabaseAdmin
       .from('products')
       .select('*')
