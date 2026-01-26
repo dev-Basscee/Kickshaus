@@ -898,6 +898,13 @@
      * @param {number} amountInNGN - The total amount in Nigerian Naira
      */
     function showSolanaPayModal(amountInNGN) {
+      // Runtime guard: Prevent execution in production mode
+      if (USE_BACKEND_API) {
+        console.warn('showSolanaPayModal should not be called when USE_BACKEND_API is true. Use showSolanaPayModalWithAPI instead.');
+        showSolanaPayModalWithAPI();
+        return;
+      }
+      
       // Convert NGN to SOL (development fallback rate - not for production use)
       const amountInSOL = (amountInNGN * DEV_FALLBACK_NGN_TO_SOL_RATE).toFixed(9);
       
@@ -1083,6 +1090,12 @@
      * @param {HTMLElement} modal - The modal element
      */
     function startPaymentPolling(reference, modal) {
+      // Runtime guard: This function should not be called in production mode
+      if (USE_BACKEND_API) {
+        console.warn('startPaymentPolling should not be called when USE_BACKEND_API is true. Use startPaymentPollingAPI instead.');
+        return;
+      }
+      
       const statusElement = document.getElementById('paymentStatus');
       pollingAttempts = 0;
       
