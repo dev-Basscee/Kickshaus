@@ -14,16 +14,24 @@ const MerchantDashboard = {
   },
   
   init() {
-    MerchantAuth.protectPage();
-    this.merchant = MerchantAuth.getCurrentMerchant();
-    if (!this.merchant) {
+    // Check authentication using the centralized API
+    const apiClient = window.api || window.KickshausAPI;
+    if (!apiClient || !apiClient.isAuthenticated()) {
+      sessionStorage.setItem('redirectAfterLogin', window.location.href);
       window.location.href = 'merchant-login.html';
       return;
     }
     
-    document.getElementById('merchantName').textContent = this.merchant.businessName;
+    // Get current user
+    this.merchant = apiClient.getUser();
+    if (!this.merchant || this.merchant.type !== 'merchant') {
+      window.location.href = 'merchant-login.html';
+      return;
+    }
+    
+    document.getElementById('merchantName').textContent = this.merchant.businessName || this.merchant.business_name || 'Merchant';
     document.getElementById('merchantEmail').textContent = this.merchant.email;
-    document.getElementById('merchantAvatar').textContent = this.merchant.businessName.charAt(0).toUpperCase();
+    document.getElementById('merchantAvatar').textContent = (this.merchant.businessName || this.merchant.business_name || 'M').charAt(0).toUpperCase();
     
     this.loadProducts();
     
@@ -36,9 +44,20 @@ const MerchantDashboard = {
     this.renderOverview();
   },
   
-  loadProducts() {
-    const allProducts = JSON.parse(localStorage.getItem('merchantProducts') || '[]');
-    this.products = allProducts.filter(p => p.merchantId === this.merchant.id);
+  async loadProducts() {
+    try {
+      const apiClient = window.api || window.KickshausAPI;
+      const response = await apiClient.getMerchantProducts();
+      
+      if (response.success && response.data) {
+        // Handle both response formats
+        this.products = response.data.products || response.data || [];
+      }
+    } catch (error) {
+      console.error('Failed to load products from API:', error);
+      showToast('Could not load products. Please try again.', 'error');
+      this.products = [];
+    }
   },
   
   showSection(sectionName) {
@@ -480,7 +499,7 @@ const MerchantDashboard = {
     this.renderAdditionalPreviews();
   },
   
-  submitProduct() {
+  async submitProduct() {
     const name = document.getElementById('productName').value.trim();
     const description = document.getElementById('productDescription').value.trim();
     const category = document.getElementById('productCategory').value;
@@ -497,57 +516,41 @@ const MerchantDashboard = {
       return;
     }
     
-    const product = {
-      id: 'PROD-' + Date.now(),
-      merchantId: this.merchant.id,
-      merchantName: this.merchant.businessName,
-      merchantEmail: this.merchant.email,
+    // Construct the payload matching the Backend's "CreateProductInput"
+    const productData = {
       name,
       description,
       category,
-      basePrice,
-      finalPrice: null,
+      base_price: basePrice,
+      stock: 100, // Default stock
       images: {
         main: this.uploadedImages.main,
         top: this.uploadedImages.top,
         left: this.uploadedImages.left,
         right: this.uploadedImages.right,
         additional: this.uploadedImages.additional
-      },
-      status: 'pending',
-      submittedAt: new Date().toISOString(),
-      approvedAt: null,
-      rejectedAt: null,
-      rejectionReason: null
+      }
     };
     
-    let allProducts = JSON.parse(localStorage.getItem('merchantProducts') || '[]');
-    allProducts.push(product);
-    localStorage.setItem('merchantProducts', JSON.stringify(allProducts));
-    
-    let notifications = JSON.parse(localStorage.getItem('adminNotifications') || '[]');
-    notifications.unshift({
-      id: 'NOTIF-' + Date.now(),
-      type: 'product_submission',
-      title: `New product submitted by ${this.merchant.businessName}`,
-      message: `Product: ${name}`,
-      productId: product.id,
-      merchantId: this.merchant.id,
-      read: false,
-      timestamp: new Date().toISOString()
-    });
-    localStorage.setItem('adminNotifications', JSON.stringify(notifications));
-    
-    showToast('✅ Product submitted successfully!');
-    this.loadProducts();
-    this.showSection('my-products');
+    try {
+      // Send to Backend API
+      const apiClient = window.api || window.KickshausAPI;
+      await apiClient.createProduct(productData);
+      
+      showToast('✅ Product submitted successfully!');
+      await this.loadProducts(); // Reload products from server
+      this.showSection('my-products');
+    } catch (error) {
+      console.error('Failed to submit product:', error);
+      showToast(error.message || 'Failed to submit product. Please try again.', 'error');
+    }
   },
   
   // Keep all other methods the same (renderMyProducts, renderSettings, etc.)
   // ... (copy from original file)
   
-  renderMyProducts() {
-    this.loadProducts();
+  async renderMyProducts() {
+    await this.loadProducts();
     
     document.getElementById('my-products-section').innerHTML = `
       <div style="display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;">
@@ -788,14 +791,10 @@ const MerchantDashboard = {
       return;
     }
     
-    const result = MerchantAuth.changePassword(this.merchant.email, current, newPass);
-    
-    if (result.success) {
-      showToast('✅ Password updated successfully!');
-      document.getElementById('changePasswordForm').reset();
-    } else {
-      showToast(result.message, 'error');
-    }
+    // Password change should be done via API in production
+    // For now, just show success message
+    showToast('✅ Password update feature coming soon', 'info');
+    document.getElementById('changePasswordForm').reset();
   },
   
   handleEmailChange() {
@@ -872,7 +871,8 @@ document.addEventListener('DOMContentLoaded', () => {
   
   document.getElementById('logoutBtn')?.addEventListener('click', () => {
     if (confirm('Are you sure you want to logout?')) {
-      MerchantAuth.logout();
+      const apiClient = window.api || window.KickshausAPI;
+      if (apiClient) apiClient.logout();
       showToast('Logged out successfully');
       setTimeout(() => window.location.href = 'merchant-login.html', 1000);
     }

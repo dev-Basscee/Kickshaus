@@ -467,9 +467,9 @@
     </div>
   </div>
 
+  <script src="js/api.js"></script>
   <script src="global-state.js"></script>
   <script src="api-client.js"></script>
-  <script src="admin-auth.js"></script>
   <script src="script.js"></script>
   <script>
     document.getElementById('loginForm').addEventListener('submit', async function(e) {
@@ -510,22 +510,30 @@
         btn.textContent = 'Logging in...';
         
         try {
-          // Call backend API for login
-          const response = await KickshausAPI.login(email.value, password.value);
+          // Use the centralized API client (prefer api over KickshausAPI)
+          const apiClient = window.api || window.KickshausAPI;
+          const response = await apiClient.login(email.value, password.value);
           
           if (response.success) {
             showToast('✓ Login successful!');
+            
+            // Store authentication data
+            localStorage.setItem('token', response.data.token);
+            localStorage.setItem('user', JSON.stringify(response.data.user));
+            localStorage.setItem('userType', response.data.type || 'user');
             
             // Check if there's a redirect URL
             const redirectUrl = sessionStorage.getItem('redirectAfterLogin');
             sessionStorage.removeItem('redirectAfterLogin');
             
-            // Redirect based on user type
+            // Redirect based on user type/role
             const userType = response.data.type;
             let destination = 'index.html';
             
             if (userType === 'admin') {
               destination = 'dashboard.html';
+            } else if (userType === 'merchant') {
+              destination = 'merchant-dashboard.html';
             } else if (redirectUrl) {
               destination = redirectUrl;
             }
