@@ -534,6 +534,10 @@
           }, 1000);
         } catch (e) {
           console.error('Error parsing token:', e);
+          // Clear potentially malformed token data
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          localStorage.removeItem('userType');
           showToast('✗ Authentication error. Please try again.', 'error');
         }
 

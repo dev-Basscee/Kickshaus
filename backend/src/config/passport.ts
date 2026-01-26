@@ -37,9 +37,9 @@ export function initializePassport(): void {
           try {
             // Extract email from profile
             const email = profile.emails?.[0]?.value;
-            // The verified field can be boolean or string depending on provider version
+            // The verified field can be boolean or string 'true' depending on provider version
             const verifiedValue = profile.emails?.[0]?.verified;
-            const emailVerified = verifiedValue === true || verifiedValue === 'true' as unknown;
+            const emailVerified = verifiedValue === true || String(verifiedValue) === 'true';
 
             if (!email) {
               return done(new Error('No email provided by Google'));
