@@ -6,15 +6,46 @@ export type MerchantStatus = 'pending' | 'approved' | 'rejected';
 export type ProductStatus = 'pending_approval' | 'live' | 'rejected';
 export type PaymentStatus = 'pending' | 'confirmed' | 'failed';
 export type FulfillmentStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+export type AuthProvider = 'email' | 'google' | 'facebook';
 
 // Database entities
 export interface User {
   id: string;
   email: string;
-  password_hash: string;
+  password_hash: string | null;
   role: UserRole;
+  provider: AuthProvider;
+  google_id: string | null;
+  facebook_id: string | null;
   created_at: string;
   updated_at: string;
+}
+
+// Auth types
+export interface JwtPayload {
+  userId: string;
+  email: string;
+  role: UserRole;
+  type: 'user' | 'merchant' | 'admin';
+  merchantId?: string;
+}
+
+// Passport user type - used when authenticated via social OAuth
+export type PassportUser = Omit<User, 'password_hash'>;
+
+// Extend Express namespace to handle both JWT and Passport auth
+/* eslint-disable @typescript-eslint/no-namespace */
+declare global {
+  namespace Express {
+    // Use a union type to support both JwtPayload (for JWT auth) and PassportUser (for social OAuth)
+    // eslint-disable-next-line @typescript-eslint/no-empty-interface
+    interface User extends JwtPayload {}
+  }
+}
+/* eslint-enable @typescript-eslint/no-namespace */
+
+export interface AuthenticatedRequest extends Request {
+  user?: JwtPayload;
 }
 
 export interface Merchant {
@@ -70,19 +101,6 @@ export interface OrderItem {
   product_id: string;
   quantity: number;
   price_at_purchase: number;
-}
-
-// Auth types
-export interface JwtPayload {
-  userId: string;
-  email: string;
-  role: UserRole;
-  type: 'user' | 'merchant' | 'admin';
-  merchantId?: string;
-}
-
-export interface AuthenticatedRequest extends Request {
-  user?: JwtPayload;
 }
 
 // API Request/Response types

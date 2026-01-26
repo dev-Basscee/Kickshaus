@@ -453,10 +453,10 @@
       </div>
 
       <div class="social-buttons">
-        <button class="social-btn google" type="button">
+        <button class="social-btn google" type="button" onclick="loginWithGoogle()">
           <i class="fab fa-google"></i>
         </button>
-        <button class="social-btn facebook" type="button">
+        <button class="social-btn facebook" type="button" onclick="loginWithFacebook()">
           <i class="fab fa-facebook"></i>
         </button>
       </div>
@@ -472,6 +472,83 @@
   <script src="api-client.js"></script>
   <script src="script.js"></script>
   <script>
+    // Social Auth URL (defaults to same origin)
+    const API_BASE_URL = window.location.origin;
+
+    // Social login functions
+    function loginWithGoogle() {
+      window.location.href = `${API_BASE_URL}/api/auth/google`;
+    }
+
+    function loginWithFacebook() {
+      window.location.href = `${API_BASE_URL}/api/auth/facebook`;
+    }
+
+    // Handle OAuth callback (token in URL)
+    function handleOAuthCallback() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token');
+      const provider = urlParams.get('provider');
+      const error = urlParams.get('error');
+      const errorMessage = urlParams.get('message');
+
+      if (error) {
+        // Show error message
+        showToast('✗ ' + (errorMessage || 'Authentication failed. Please try again.'), 'error');
+        // Clean up URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+        return;
+      }
+
+      if (token) {
+        // Store the token
+        localStorage.setItem('token', token);
+
+        // Decode token to get user info (basic JWT decode)
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          localStorage.setItem('user', JSON.stringify({
+            id: payload.userId,
+            email: payload.email,
+            role: payload.role,
+          }));
+          localStorage.setItem('userType', payload.type || 'user');
+          
+          showToast(`✓ Logged in with ${provider || 'social account'}!`);
+          
+          // Redirect based on user type
+          const redirectUrl = sessionStorage.getItem('redirectAfterLogin');
+          sessionStorage.removeItem('redirectAfterLogin');
+          
+          let destination = 'index.html';
+          if (payload.type === 'admin') {
+            destination = 'dashboard.html';
+          } else if (payload.type === 'merchant') {
+            destination = 'merchant-dashboard.html';
+          } else if (redirectUrl) {
+            destination = redirectUrl;
+          }
+          
+          setTimeout(() => {
+            window.location.href = destination;
+          }, 1000);
+        } catch (e) {
+          console.error('Error parsing token:', e);
+          // Clear potentially malformed token data
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          localStorage.removeItem('userType');
+          showToast('✗ Authentication error. Please try again.', 'error');
+        }
+
+        // Clean up URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+
+    // Check for OAuth callback on page load
+    handleOAuthCallback();
+
     document.getElementById('loginForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       

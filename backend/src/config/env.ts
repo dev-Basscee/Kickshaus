@@ -36,6 +36,15 @@ const envSchema = z.object({
 
   // CORS
   CORS_ORIGIN: z.string().default('*'),
+
+  // Social OAuth (optional in development, required in production)
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+  FACEBOOK_APP_ID: z.string().optional(),
+  FACEBOOK_APP_SECRET: z.string().optional(),
+  SOCIAL_CALLBACK_URL: z.string().default('http://localhost:3000/api/auth'),
+  FRONTEND_URL: z.string().default('http://localhost:3000'),
+  SESSION_SECRET: z.string().optional(),
 });
 
 // Parse and validate environment
@@ -66,6 +75,13 @@ function validateEnv() {
           RATE_LIMIT_WINDOW_MS: process.env.RATE_LIMIT_WINDOW_MS || '900000',
           RATE_LIMIT_MAX_REQUESTS: process.env.RATE_LIMIT_MAX_REQUESTS || '100',
           CORS_ORIGIN: process.env.CORS_ORIGIN || '*',
+          GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+          GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+          FACEBOOK_APP_ID: process.env.FACEBOOK_APP_ID,
+          FACEBOOK_APP_SECRET: process.env.FACEBOOK_APP_SECRET,
+          SOCIAL_CALLBACK_URL: process.env.SOCIAL_CALLBACK_URL || 'http://localhost:3000/api/auth',
+          FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:3000',
+          SESSION_SECRET: process.env.SESSION_SECRET,
         };
       }
       
@@ -119,6 +135,21 @@ export const config = {
   cors: {
     origin: env.CORS_ORIGIN,
   },
+
+  // Social OAuth configuration
+  social: {
+    google: {
+      clientId: env.GOOGLE_CLIENT_ID,
+      clientSecret: env.GOOGLE_CLIENT_SECRET,
+    },
+    facebook: {
+      appId: env.FACEBOOK_APP_ID,
+      appSecret: env.FACEBOOK_APP_SECRET,
+    },
+    callbackUrl: env.SOCIAL_CALLBACK_URL,
+    frontendUrl: env.FRONTEND_URL,
+    sessionSecret: env.SESSION_SECRET || env.JWT_SECRET,
+  },
 };
 
 /**
@@ -130,4 +161,20 @@ export function isSupabaseConfigured(): boolean {
     config.supabase.url !== PLACEHOLDER_SUPABASE_URL &&
     config.supabase.serviceRoleKey !== PLACEHOLDER_SERVICE_KEY
   );
+}
+
+/**
+ * Check if Google OAuth is configured
+ * @returns {boolean} True if Google OAuth is properly configured
+ */
+export function isGoogleAuthConfigured(): boolean {
+  return !!(config.social.google.clientId && config.social.google.clientSecret);
+}
+
+/**
+ * Check if Facebook OAuth is configured
+ * @returns {boolean} True if Facebook OAuth is properly configured
+ */
+export function isFacebookAuthConfigured(): boolean {
+  return !!(config.social.facebook.appId && config.social.facebook.appSecret);
 }
