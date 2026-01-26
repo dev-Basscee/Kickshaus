@@ -98,7 +98,12 @@ const KickshausAPI = {
         this.setToken(response.data.token);
       }
       if (response.data.user) {
-        this.setUser(response.data.user);
+        // Add type from response or default to 'user'
+        const userData = { 
+          ...response.data.user, 
+          type: response.data.type || 'user' 
+        };
+        this.setUser(userData);
       }
     }
     
@@ -123,7 +128,12 @@ const KickshausAPI = {
         this.setToken(response.data.token);
       }
       if (response.data.user) {
-        this.setUser(response.data.user);
+        // Add type from response or default to 'user'
+        const userData = { 
+          ...response.data.user, 
+          type: response.data.type || 'user' 
+        };
+        this.setUser(userData);
       }
     }
     

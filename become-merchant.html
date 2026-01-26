@@ -450,7 +450,7 @@
         business_name: document.getElementById('businessName').value.trim(),
         email: document.getElementById('email').value.trim(),
         password: password,
-        phone: phone || undefined,
+        phone: phone.length >= 10 ? phone : undefined,
         wallet_address: walletAddress,
         businessAddress: document.getElementById('businessAddress').value.trim(),
         website: document.getElementById('website').value.trim(),
