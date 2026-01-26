@@ -8,6 +8,10 @@ const API_URL = window.location.hostname === 'localhost' || window.location.host
   ? 'http://localhost:3000/api'
   : window.location.origin + '/api';
 
+// Storage keys for authentication
+const AUTH_TOKEN_KEY = 'kickshaus_auth_token';
+const USER_DATA_KEY = 'kickshaus_user';
+
 const api = {
   /**
    * Make an API request
@@ -21,7 +25,7 @@ const api = {
     const headers = { 'Content-Type': 'application/json' };
     
     // Use provided token or get from localStorage
-    const authToken = token || localStorage.getItem('kickshaus_auth_token');
+    const authToken = token || localStorage.getItem(AUTH_TOKEN_KEY);
     if (authToken) {
       headers['Authorization'] = `Bearer ${authToken}`;
     }
@@ -61,7 +65,7 @@ const api = {
     
     if (response.success && response.data) {
       if (response.data.token) {
-        localStorage.setItem('kickshaus_auth_token', response.data.token);
+        localStorage.setItem(AUTH_TOKEN_KEY, response.data.token);
         localStorage.setItem('token', response.data.token);
       }
       if (response.data.user) {
@@ -69,7 +73,7 @@ const api = {
           ...response.data.user, 
           type: response.data.type || 'user' 
         };
-        localStorage.setItem('kickshaus_user', JSON.stringify(userData));
+        localStorage.setItem(USER_DATA_KEY, JSON.stringify(userData));
         localStorage.setItem('user', JSON.stringify(userData));
         localStorage.setItem('userType', response.data.type || 'user');
       }
@@ -89,12 +93,12 @@ const api = {
     
     if (response.success && response.data) {
       if (response.data.token) {
-        localStorage.setItem('kickshaus_auth_token', response.data.token);
+        localStorage.setItem(AUTH_TOKEN_KEY, response.data.token);
         localStorage.setItem('token', response.data.token);
       }
       if (response.data.merchant) {
         const merchantData = { ...response.data.merchant, type: 'merchant' };
-        localStorage.setItem('kickshaus_user', JSON.stringify(merchantData));
+        localStorage.setItem(USER_DATA_KEY, JSON.stringify(merchantData));
         localStorage.setItem('user', JSON.stringify(merchantData));
         localStorage.setItem('userType', 'merchant');
       }
@@ -114,7 +118,7 @@ const api = {
     
     if (response.success && response.data) {
       if (response.data.token) {
-        localStorage.setItem('kickshaus_auth_token', response.data.token);
+        localStorage.setItem(AUTH_TOKEN_KEY, response.data.token);
         localStorage.setItem('token', response.data.token);
       }
       if (response.data.user) {
@@ -122,7 +126,7 @@ const api = {
           ...response.data.user, 
           type: response.data.type || 'user' 
         };
-        localStorage.setItem('kickshaus_user', JSON.stringify(userData));
+        localStorage.setItem(USER_DATA_KEY, JSON.stringify(userData));
         localStorage.setItem('user', JSON.stringify(userData));
         localStorage.setItem('userType', response.data.type || 'user');
       }
@@ -135,8 +139,8 @@ const api = {
    * Logout user
    */
   logout() {
-    localStorage.removeItem('kickshaus_auth_token');
-    localStorage.removeItem('kickshaus_user');
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+    localStorage.removeItem(USER_DATA_KEY);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('userType');
@@ -147,7 +151,7 @@ const api = {
    * @returns {boolean}
    */
   isAuthenticated() {
-    return !!localStorage.getItem('kickshaus_auth_token');
+    return !!localStorage.getItem(AUTH_TOKEN_KEY);
   },
 
   /**
@@ -155,7 +159,7 @@ const api = {
    * @returns {Object|null}
    */
   getUser() {
-    const userData = localStorage.getItem('kickshaus_user');
+    const userData = localStorage.getItem(USER_DATA_KEY);
     return userData ? JSON.parse(userData) : null;
   },
 
@@ -164,7 +168,7 @@ const api = {
    * @returns {string|null}
    */
   getToken() {
-    return localStorage.getItem('kickshaus_auth_token');
+    return localStorage.getItem(AUTH_TOKEN_KEY);
   },
 
   /**

@@ -4,6 +4,24 @@
 
 // This file depends on global-state.js being loaded first
 
+// ===== HELPER FUNCTIONS =====
+/**
+ * Get the primary image URL for a product
+ * @param {Object} product - Product object
+ * @returns {string} - Image URL or placeholder
+ */
+function getProductImageUrl(product) {
+  const placeholder = 'https://via.placeholder.com/300x300?text=No+Image';
+  if (!product || !product.images) return placeholder;
+  if (Array.isArray(product.images) && product.images.length > 0) {
+    return product.images[0];
+  }
+  if (typeof product.images === 'object' && product.images.main) {
+    return product.images.main;
+  }
+  return placeholder;
+}
+
 // ===== THEME TOGGLE =====
 const themeToggle = document.getElementById('themeToggle');
 if (themeToggle) {
@@ -160,7 +178,7 @@ function renderProducts() {
   grid.innerHTML = products.map(product => `
     <div class="product-card" data-id="${product.id}">
       <div class="product-image" onclick="window.location.href='product-detail.html?id=${product.id}'" style="cursor: pointer;">
-        <img src="${product.images && product.images[0] ? product.images[0] : 'https://via.placeholder.com/300x300?text=No+Image'}" alt="${product.name}">
+        <img src="${getProductImageUrl(product)}" alt="${product.name}">
         <div class="product-actions" style="opacity: 1; transform: translateX(0);">
           <button class="action-btn favorite-btn ${KickshausState.isFavorited(product.id) ? 'active' : ''}" 
                   data-id="${product.id}" 
@@ -216,7 +234,7 @@ function renderFeatured() {
   grid.innerHTML = featuredProducts.map(product => `
     <div class="featured-card" data-id="${product.id}" onclick="window.location.href='product-detail.html?id=${product.id}'" style="cursor:pointer;">
       <div class="featured-image">
-        <img src="${product.images && product.images[0] ? product.images[0] : 'https://via.placeholder.com/300x300?text=No+Image'}" alt="${product.name}">
+        <img src="${getProductImageUrl(product)}" alt="${product.name}">
         <div class="product-actions" style="position:absolute; top:12px; right:12px; display:flex; flex-direction:column; gap:8px;">
           <button class="action-btn favorite-btn ${KickshausState.isFavorited(product.id) ? 'active' : ''}" 
                   data-id="${product.id}" 
@@ -262,7 +280,7 @@ function renderBestsellers() {
   grid.innerHTML = bestSellers.map(product => `
     <div class="product-card featured" data-id="${product.id}" onclick="window.location.href='product-detail.html?id=${product.id}'" style="cursor:pointer;">
       <div class="product-image">
-        <img src="${product.images && product.images[0] ? product.images[0] : 'https://via.placeholder.com/300x300?text=No+Image'}" alt="${product.name}">
+        <img src="${getProductImageUrl(product)}" alt="${product.name}">
         <div class="product-actions">
           <button class="action-btn favorite-btn ${KickshausState.isFavorited(product.id) ? 'active' : ''}" 
                   data-id="${product.id}" 
