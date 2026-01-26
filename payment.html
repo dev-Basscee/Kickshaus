@@ -12,6 +12,7 @@
   <!-- Solana Pay Dependencies -->
   <script src="https://unpkg.com/@solana/web3.js@1.87.6/lib/index.iife.min.js"></script>
   <script src="https://unpkg.com/@solana/pay@0.2.5/dist/index.iife.js"></script>
+  <script src="https://unpkg.com/bignumber.js@9.1.2/bignumber.min.js"></script>
   <script src="https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js"></script>
 
   <style>
@@ -1010,25 +1011,25 @@
     }
     
     /**
-     * Creates a Solana Pay URL with the specified parameters
+     * Creates a Solana Pay URL with the specified parameters using the official library
      * @param {string} recipient - The merchant's Solana wallet address
      * @param {string} amount - The amount in SOL
-     * @param {string} reference - A unique reference for this transaction
+     * @param {string} reference - A unique reference for this transaction (base58 encoded)
      * @returns {string} - The Solana Pay URL
      */
     function createSolanaPayUrl(recipient, amount, reference) {
-      // Construct the Solana Pay URL according to the specification
-      // Format: solana:<recipient>?amount=<amount>&reference=<reference>&label=<label>&message=<message>
-      const baseUrl = `solana:${recipient}`;
-      const params = new URLSearchParams({
-        amount: amount,
-        reference: reference,
+      // Use the official Solana Pay SDK encodeURL function for secure URL generation
+      // This ensures compliance with the Solana Pay specification
+      const url = SolanaPay.encodeURL({
+        recipient: new solanaWeb3.PublicKey(recipient),
+        amount: new BigNumber(amount),
+        reference: new solanaWeb3.PublicKey(reference),
         label: 'Kickshaus',
         message: 'Payment for your Kickshaus order',
         memo: `Order-${Date.now()}`
       });
       
-      return `${baseUrl}?${params.toString()}`;
+      return url.toString();
     }
     
     /**
