@@ -2,9 +2,14 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import path from 'path';
 import { config } from './config/env';
 import routes from './routes';
 import { errorHandler, notFoundHandler } from './middleware/error';
+
+// Frontend static files directory (parent of backend folder)
+// __dirname = /workspaces/Kickshaus/backend/src -> go up 2 levels to /workspaces/Kickshaus
+const FRONTEND_DIR = path.join(__dirname, '../..');
 
 // Create Express app
 const app = express();
@@ -13,8 +18,11 @@ const app = express();
 // SECURITY MIDDLEWARE
 // =====================================================
 
-// Helmet for security headers
-app.use(helmet());
+// Helmet for security headers - modified for serving static content
+app.use(helmet({
+  contentSecurityPolicy: false, // Disable CSP for frontend assets
+  crossOriginEmbedderPolicy: false,
+}));
 
 // CORS configuration
 app.use(cors({
@@ -47,24 +55,48 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // =====================================================
+// STATIC FILES (Frontend)
+// =====================================================
+
+// Serve static files from the frontend directory
+app.use(express.static(FRONTEND_DIR, {
+  extensions: ['html', 'htm'],
+}));
+
+// Serve images folder
+app.use('/images', express.static(path.join(FRONTEND_DIR, 'images')));
+
+// =====================================================
 // ROUTES
 // =====================================================
 
 // Mount API routes
 app.use('/api', routes);
 
-// Root endpoint
-app.get('/', (req, res) => {
-  res.json({
-    success: true,
-    data: {
-      name: 'Kickshaus API',
-      version: '1.0.0',
-      description: 'Production-ready REST API for Kickshaus e-commerce platform',
-      documentation: '/api/docs',
-      health: '/api/health',
-    },
+// =====================================================
+// FRONTEND HTML PAGES
+// =====================================================
+
+// Serve HTML pages for specific routes (before catch-all)
+const htmlPages = [
+  'index', 'login', 'signup', 'cart', 'checkout', 'payment',
+  'product-detail', 'collection', 'favourites', 'delivery',
+  'dashboard', 'merchant-dashboard', 'merchant-login',
+  'become-merchant'
+];
+
+htmlPages.forEach(page => {
+  app.get(`/${page}`, (req, res) => {
+    res.sendFile(path.join(FRONTEND_DIR, `${page}.html`));
   });
+  app.get(`/${page}.html`, (req, res) => {
+    res.sendFile(path.join(FRONTEND_DIR, `${page}.html`));
+  });
+});
+
+// Root serves index.html
+app.get('/', (req, res) => {
+  res.sendFile(path.join(FRONTEND_DIR, 'index.html'));
 });
 
 // =====================================================
@@ -87,11 +119,14 @@ app.listen(PORT, () => {
   console.log(`
 ╔════════════════════════════════════════════════════╗
 ║                                                    ║
-║   🚀 Kickshaus API Server                          ║
+║   🚀 Kickshaus Server                              ║
 ║                                                    ║
 ║   Environment: ${config.nodeEnv.padEnd(33)}║
 ║   Port: ${PORT.toString().padEnd(40)}║
 ║   URL: http://localhost:${PORT.toString().padEnd(25)}║
+║                                                    ║
+║   📦 Frontend: Serving static files                ║
+║   🔌 Backend API: /api/*                           ║
 ║                                                    ║
 ╚════════════════════════════════════════════════════╝
   `);
