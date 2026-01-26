@@ -1,4 +1,4 @@
--- =====================================================
+--- =====================================================
 -- KICKSHAUS E-COMMERCE DATABASE SCHEMA
 -- =====================================================
 -- This migration creates all the necessary tables for
@@ -104,7 +104,7 @@ CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
 CREATE INDEX IF NOT EXISTS idx_order_items_product_id ON order_items(product_id);
 
 -- =====================================================
--- UPDATED_AT TRIGGER FUNCTION
+-- UPDATED_AT TRIGGER FUNCTION (FIXED)
 -- =====================================================
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -113,6 +113,12 @@ BEGIN
   RETURN NEW;
 END;
 $$ language 'plpgsql';
+
+-- Safely drop existing triggers before recreating them
+DROP TRIGGER IF EXISTS update_users_updated_at ON users;
+DROP TRIGGER IF EXISTS update_merchants_updated_at ON merchants;
+DROP TRIGGER IF EXISTS update_products_updated_at ON products;
+DROP TRIGGER IF EXISTS update_orders_updated_at ON orders;
 
 -- Apply updated_at triggers
 CREATE TRIGGER update_users_updated_at
@@ -147,10 +153,12 @@ ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
 
 -- Users can read their own data
+DROP POLICY IF EXISTS "Users can view their own profile" ON users;
 CREATE POLICY "Users can view their own profile" ON users
   FOR SELECT USING (auth.uid()::text = id::text);
 
 -- Admins can view all users
+DROP POLICY IF EXISTS "Admins can view all users" ON users;
 CREATE POLICY "Admins can view all users" ON users
   FOR ALL USING (
     EXISTS (
@@ -159,18 +167,22 @@ CREATE POLICY "Admins can view all users" ON users
   );
 
 -- Anyone can view approved merchants (for public display)
+DROP POLICY IF EXISTS "Public can view approved merchants" ON merchants;
 CREATE POLICY "Public can view approved merchants" ON merchants
   FOR SELECT USING (status = 'approved');
 
 -- Merchants can view/update their own data
+DROP POLICY IF EXISTS "Merchants can manage their own data" ON merchants;
 CREATE POLICY "Merchants can manage their own data" ON merchants
   FOR ALL USING (id::text = auth.uid()::text);
 
 -- Anyone can view live products
+DROP POLICY IF EXISTS "Public can view live products" ON products;
 CREATE POLICY "Public can view live products" ON products
   FOR SELECT USING (status = 'live');
 
 -- Merchants can manage their own products
+DROP POLICY IF EXISTS "Merchants can manage their products" ON products;
 CREATE POLICY "Merchants can manage their products" ON products
   FOR ALL USING (
     EXISTS (
@@ -179,10 +191,12 @@ CREATE POLICY "Merchants can manage their products" ON products
   );
 
 -- Users can view their own orders
+DROP POLICY IF EXISTS "Users can view their own orders" ON orders;
 CREATE POLICY "Users can view their own orders" ON orders
   FOR SELECT USING (user_id::text = auth.uid()::text);
 
 -- Users can view their own order items
+DROP POLICY IF EXISTS "Users can view their own order items" ON order_items;
 CREATE POLICY "Users can view their own order items" ON order_items
   FOR SELECT USING (
     EXISTS (

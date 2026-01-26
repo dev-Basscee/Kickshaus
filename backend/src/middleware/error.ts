@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 import { AppError, ValidationError, sendError } from '../utils/errors';
 import { config } from '../config/env';
+import Logger from '../config/logger';
 
 /**
  * Central error handling middleware
@@ -13,10 +14,8 @@ export function errorHandler(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _next: NextFunction
 ): void {
-  // Log error in development
-  if (config.isDevelopment) {
-    console.error('Error:', err);
-  }
+  // Log error
+  Logger.error(err);
 
   // Handle Zod validation errors
   if (err instanceof ZodError) {

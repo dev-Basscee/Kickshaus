@@ -14,6 +14,9 @@ const FRONTEND_DIR = path.join(__dirname, '../..');
 // Create Express app
 const app = express();
 
+// Trust the first proxy (Required for rate-limiting behind load balancers/proxies)
+app.set('trust proxy', 1);
+
 // =====================================================
 // SECURITY MIDDLEWARE
 // =====================================================
