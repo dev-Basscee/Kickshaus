@@ -1026,6 +1026,7 @@
     }
     
     /**
+<<<<<<< HEAD
      * Creates a Solana Pay URL using the official @solana/pay SDK
      * 
      * SECURITY: Uses SolanaPay.encodeURL() for cryptographically correct URL generation.
@@ -1067,6 +1068,27 @@
         });
         return `${baseUrl}?${params.toString()}`;
       }
+=======
+     * Creates a Solana Pay URL with the specified parameters using the official library
+     * @param {string} recipient - The merchant's Solana wallet address
+     * @param {string} amount - The amount in SOL
+     * @param {string} reference - A unique reference for this transaction (base58 encoded)
+     * @returns {string} - The Solana Pay URL
+     */
+    function createSolanaPayUrl(recipient, amount, reference) {
+      // Use the official Solana Pay SDK encodeURL function for secure URL generation
+      // This ensures compliance with the Solana Pay specification
+      const url = SolanaPay.encodeURL({
+        recipient: new solanaWeb3.PublicKey(recipient),
+        amount: new BigNumber(amount),
+        reference: new solanaWeb3.PublicKey(reference),
+        label: 'Kickshaus',
+        message: 'Payment for your Kickshaus order',
+        memo: `Order-${Date.now()}`
+      });
+      
+      return url.toString();
+>>>>>>> 348c9f1328e86cc4f160ceb8f36ba427c9d676d2
     }
     
     /**
