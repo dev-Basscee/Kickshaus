@@ -77,6 +77,10 @@ function validateEnv() {
 
 export const env = validateEnv();
 
+// Placeholder values used when Supabase is not configured
+const PLACEHOLDER_SUPABASE_URL = 'https://placeholder.supabase.co';
+const PLACEHOLDER_SERVICE_KEY = 'placeholder-service-key';
+
 export const config = {
   port: parseInt(env.PORT, 10),
   nodeEnv: env.NODE_ENV,
@@ -116,3 +120,14 @@ export const config = {
     origin: env.CORS_ORIGIN,
   },
 };
+
+/**
+ * Check if Supabase is properly configured (not using placeholder values)
+ * @returns {boolean} True if Supabase is configured with real values
+ */
+export function isSupabaseConfigured(): boolean {
+  return (
+    config.supabase.url !== PLACEHOLDER_SUPABASE_URL &&
+    config.supabase.serviceRoleKey !== PLACEHOLDER_SERVICE_KEY
+  );
+}

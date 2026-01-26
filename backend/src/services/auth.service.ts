@@ -1,68 +1,127 @@
 import { supabaseAdmin } from '../config/supabase';
 import { User, Merchant, UserRole, MerchantStatus } from '../types';
 import { hashPassword, verifyPassword } from '../utils/helpers';
-import { ConflictError, NotFoundError, UnauthorizedError, BadRequestError } from '../utils/errors';
+import { ConflictError, NotFoundError, UnauthorizedError, BadRequestError, AppError } from '../utils/errors';
+import { isSupabaseConfigured } from '../config/env';
 
 export class AuthService {
   /**
    * Register a new customer
    */
   async registerUser(email: string, password: string): Promise<Omit<User, 'password_hash'>> {
-    // Check if user already exists
-    const { data: existing } = await supabaseAdmin
-      .from('users')
-      .select('id')
-      .eq('email', email)
-      .single();
-
-    if (existing) {
-      throw new ConflictError('User with this email already exists');
+    // Check if Supabase is configured
+    if (!isSupabaseConfigured()) {
+      throw new AppError(
+        'Registration is currently unavailable. Please contact support or try again later.',
+        503,
+        'SERVICE_UNAVAILABLE'
+      );
     }
 
-    const passwordHash = hashPassword(password);
+    try {
+      // Check if user already exists
+      const { data: existing, error: existingError } = await supabaseAdmin
+        .from('users')
+        .select('id')
+        .eq('email', email)
+        .single();
 
-    const { data, error } = await supabaseAdmin
-      .from('users')
-      .insert({
-        email,
-        password_hash: passwordHash,
-        role: 'customer' as UserRole,
-      })
-      .select('id, email, role, created_at, updated_at')
-      .single();
+      if (existingError && existingError.code !== 'PGRST116') {
+        // PGRST116 = no rows found, which is expected for new users
+        console.error('Database error checking existing user:', existingError);
+        throw new AppError(
+          'Registration service temporarily unavailable. Please try again later.',
+          503,
+          'SERVICE_UNAVAILABLE'
+        );
+      }
 
-    if (error) {
-      throw new Error(`Failed to create user: ${error.message}`);
+      if (existing) {
+        throw new ConflictError('User with this email already exists');
+      }
+
+      const passwordHash = hashPassword(password);
+
+      const { data, error } = await supabaseAdmin
+        .from('users')
+        .insert({
+          email,
+          password_hash: passwordHash,
+          role: 'customer' as UserRole,
+        })
+        .select('id, email, role, created_at, updated_at')
+        .single();
+
+      if (error) {
+        console.error('Database error creating user:', error);
+        throw new AppError(
+          'Unable to complete registration. Please try again later.',
+          503,
+          'SERVICE_UNAVAILABLE'
+        );
+      }
+
+      return data;
+    } catch (error) {
+      // If it's already an AppError, rethrow it
+      if (error instanceof AppError) {
+        throw error;
+      }
+      console.error('Unexpected error during registration:', error);
+      throw new AppError(
+        'An unexpected error occurred during registration. Please try again later.',
+        500,
+        'INTERNAL_ERROR'
+      );
     }
-
-    return data;
   }
 
   /**
    * Login user (customer or admin)
    */
   async loginUser(email: string, password: string): Promise<{ user: Omit<User, 'password_hash'>; type: 'user' | 'admin' }> {
-    const { data: user, error } = await supabaseAdmin
-      .from('users')
-      .select('*')
-      .eq('email', email)
-      .single();
-
-    if (error || !user) {
-      throw new UnauthorizedError('Invalid email or password');
+    // Check if Supabase is configured
+    if (!isSupabaseConfigured()) {
+      throw new AppError(
+        'Login is currently unavailable. Please try again later.',
+        503,
+        'SERVICE_UNAVAILABLE'
+      );
     }
 
-    const isValid = verifyPassword(password, user.password_hash);
-    if (!isValid) {
-      throw new UnauthorizedError('Invalid email or password');
-    }
+    try {
+      const { data: user, error } = await supabaseAdmin
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .single();
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password_hash: _passwordHash, ...userData } = user;
-    return {
-      user: userData,
-      type: user.role === 'admin' ? 'admin' : 'user',
-    };
+      if (error || !user) {
+        throw new UnauthorizedError('Invalid email or password');
+      }
+
+      const isValid = verifyPassword(password, user.password_hash);
+      if (!isValid) {
+        throw new UnauthorizedError('Invalid email or password');
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password_hash: _passwordHash, ...userData } = user;
+      return {
+        user: userData,
+        type: user.role === 'admin' ? 'admin' : 'user',
+      };
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+      console.error('Unexpected error during login:', error);
+      throw new AppError(
+        'An unexpected error occurred during login. Please try again later.',
+        500,
+        'INTERNAL_ERROR'
+      );
+    }
   }
 
   /**
@@ -75,86 +134,137 @@ export class AuthService {
     password: string;
     wallet_address: string;
   }): Promise<Omit<Merchant, 'password_hash'>> {
-    // Check if merchant already exists
-    const { data: existing } = await supabaseAdmin
-      .from('merchants')
-      .select('id')
-      .eq('email', data.email)
-      .single();
-
-    if (existing) {
-      throw new ConflictError('Merchant with this email already exists');
+    // Check if Supabase is configured
+    if (!isSupabaseConfigured()) {
+      throw new AppError(
+        'Merchant registration is currently unavailable. Please try again later.',
+        503,
+        'SERVICE_UNAVAILABLE'
+      );
     }
 
-    // Also check in users table
-    const { data: existingUser } = await supabaseAdmin
-      .from('users')
-      .select('id')
-      .eq('email', data.email)
-      .single();
+    try {
+      // Check if merchant already exists
+      const { data: existing } = await supabaseAdmin
+        .from('merchants')
+        .select('id')
+        .eq('email', data.email)
+        .single();
 
-    if (existingUser) {
-      throw new ConflictError('An account with this email already exists');
+      if (existing) {
+        throw new ConflictError('Merchant with this email already exists');
+      }
+
+      // Also check in users table
+      const { data: existingUser } = await supabaseAdmin
+        .from('users')
+        .select('id')
+        .eq('email', data.email)
+        .single();
+
+      if (existingUser) {
+        throw new ConflictError('An account with this email already exists');
+      }
+
+      const passwordHash = hashPassword(data.password);
+
+      const { data: merchant, error } = await supabaseAdmin
+        .from('merchants')
+        .insert({
+          business_name: data.business_name,
+          email: data.email,
+          phone: data.phone,
+          password_hash: passwordHash,
+          wallet_address: data.wallet_address,
+          status: 'pending' as MerchantStatus,
+        })
+        .select('id, business_name, email, phone, status, wallet_address, created_at, updated_at')
+        .single();
+
+      if (error) {
+        console.error('Database error creating merchant:', error);
+        throw new AppError(
+          'Unable to complete merchant registration. Please try again later.',
+          503,
+          'SERVICE_UNAVAILABLE'
+        );
+      }
+
+      return merchant;
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+      console.error('Unexpected error during merchant registration:', error);
+      throw new AppError(
+        'An unexpected error occurred during registration. Please try again later.',
+        500,
+        'INTERNAL_ERROR'
+      );
     }
-
-    const passwordHash = hashPassword(data.password);
-
-    const { data: merchant, error } = await supabaseAdmin
-      .from('merchants')
-      .insert({
-        business_name: data.business_name,
-        email: data.email,
-        phone: data.phone,
-        password_hash: passwordHash,
-        wallet_address: data.wallet_address,
-        status: 'pending' as MerchantStatus,
-      })
-      .select('id, business_name, email, phone, status, wallet_address, created_at, updated_at')
-      .single();
-
-    if (error) {
-      throw new Error(`Failed to create merchant: ${error.message}`);
-    }
-
-    return merchant;
   }
 
   /**
    * Login merchant
    */
   async loginMerchant(email: string, password: string): Promise<Omit<Merchant, 'password_hash'>> {
-    const { data: merchant, error } = await supabaseAdmin
-      .from('merchants')
-      .select('*')
-      .eq('email', email)
-      .single();
-
-    if (error || !merchant) {
-      throw new UnauthorizedError('Invalid email or password');
+    // Check if Supabase is configured
+    if (!isSupabaseConfigured()) {
+      throw new AppError(
+        'Merchant login is currently unavailable. Please try again later.',
+        503,
+        'SERVICE_UNAVAILABLE'
+      );
     }
 
-    const isValid = verifyPassword(password, merchant.password_hash);
-    if (!isValid) {
-      throw new UnauthorizedError('Invalid email or password');
-    }
+    try {
+      const { data: merchant, error } = await supabaseAdmin
+        .from('merchants')
+        .select('*')
+        .eq('email', email)
+        .single();
 
-    if (merchant.status === 'pending') {
-      throw new BadRequestError('Your merchant account is pending approval');
-    }
+      if (error || !merchant) {
+        throw new UnauthorizedError('Invalid email or password');
+      }
 
-    if (merchant.status === 'rejected') {
-      throw new BadRequestError('Your merchant application has been rejected');
-    }
+      const isValid = verifyPassword(password, merchant.password_hash);
+      if (!isValid) {
+        throw new UnauthorizedError('Invalid email or password');
+      }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password_hash: _passwordHash, ...merchantData } = merchant;
-    return merchantData;
+      if (merchant.status === 'pending') {
+        throw new BadRequestError('Your merchant account is pending approval');
+      }
+
+      if (merchant.status === 'rejected') {
+        throw new BadRequestError('Your merchant application has been rejected');
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password_hash: _passwordHash, ...merchantData } = merchant;
+      return merchantData;
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+      console.error('Unexpected error during merchant login:', error);
+      throw new AppError(
+        'An unexpected error occurred during login. Please try again later.',
+        500,
+        'INTERNAL_ERROR'
+      );
+    }
   }
 
   /**
    * Get user by ID
    */
   async getUserById(userId: string): Promise<Omit<User, 'password_hash'> | null> {
+    if (!isSupabaseConfigured()) {
+      return null;
+    }
+
     const { data, error } = await supabaseAdmin
       .from('users')
       .select('id, email, role, created_at, updated_at')
@@ -172,6 +282,10 @@ export class AuthService {
    * Get merchant by ID
    */
   async getMerchantById(merchantId: string): Promise<Omit<Merchant, 'password_hash'> | null> {
+    if (!isSupabaseConfigured()) {
+      return null;
+    }
+
     const { data, error } = await supabaseAdmin
       .from('merchants')
       .select('id, business_name, email, phone, status, wallet_address, created_at, updated_at')
@@ -189,6 +303,10 @@ export class AuthService {
    * List all merchants (admin only)
    */
   async listMerchants(status?: MerchantStatus): Promise<Omit<Merchant, 'password_hash'>[]> {
+    if (!isSupabaseConfigured()) {
+      return [];
+    }
+
     let query = supabaseAdmin
       .from('merchants')
       .select('id, business_name, email, phone, status, wallet_address, created_at, updated_at')
@@ -211,6 +329,14 @@ export class AuthService {
    * Update merchant status (admin only)
    */
   async updateMerchantStatus(merchantId: string, status: MerchantStatus): Promise<Omit<Merchant, 'password_hash'>> {
+    if (!isSupabaseConfigured()) {
+      throw new AppError(
+        'Admin operations are currently unavailable. Please try again later.',
+        503,
+        'SERVICE_UNAVAILABLE'
+      );
+    }
+
     const { data, error } = await supabaseAdmin
       .from('merchants')
       .update({ status })
