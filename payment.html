@@ -545,6 +545,17 @@
     document.getElementById('orderTax').textContent = `₦${(checkoutSummary.tax || 0).toLocaleString()}`;
     document.getElementById('orderTotal').textContent = `₦${(checkoutSummary.total || 0).toLocaleString()}`;
 
+    // =====================================================
+    // API CONFIGURATION
+    // =====================================================
+    const API_BASE_URL = window.location.hostname === 'localhost' 
+      ? 'http://localhost:3000/api' 
+      : '/api';
+    
+    // Flag to determine if backend API is available
+    // Set to true when backend is deployed and configured
+    const USE_BACKEND_API = false;
+
     // ⚠️ PRODUCTION WARNING: Replace this placeholder wallet address with your actual Solana merchant wallet.
     // In production, use environment variables or secure configuration to manage this.
     const MERCHANT_WALLET = 'DfMxre4cKmvPfN6YXmY5u5P9vJdAaJzfQQnfrGNPNkVE';
@@ -553,6 +564,328 @@
     // In production, fetch real-time NGN to SOL exchange rates from a reliable API
     // (e.g., CoinGecko, CoinMarketCap, or your preferred price oracle).
     const PLACEHOLDER_NGN_TO_SOL_RATE = 0.000001; // Example: 1 NGN ≈ 0.000001 SOL
+
+    // =====================================================
+    // BACKEND API FUNCTIONS
+    // =====================================================
+
+    /**
+     * Get cart items formatted for API
+     * Returns array of { product_id, quantity }
+     */
+    function getCartItemsForAPI() {
+      const buyNowOrder = JSON.parse(localStorage.getItem('buyNowOrder') || 'null');
+      const isBuyNow = buyNowOrder && buyNowOrder.length > 0;
+      const cart = isBuyNow ? buyNowOrder : KickshausState.cart;
+      
+      return cart.map(item => ({
+        product_id: item.id,
+        quantity: item.quantity
+      }));
+    }
+
+    /**
+     * Get auth token from localStorage
+     */
+    function getAuthToken() {
+      return localStorage.getItem('authToken') || null;
+    }
+
+    /**
+     * Create order with Solana Pay via backend API
+     * Calls POST /api/payment/create-order
+     * Returns Solana Pay URL and reference key
+     */
+    async function createPaymentOrderAPI(authToken) {
+      const items = getCartItemsForAPI();
+      
+      if (items.length === 0) {
+        return { success: false, error: 'Cart is empty' };
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/payment/create-order`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({ items }),
+        });
+
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to create payment order');
+        }
+
+        return data;
+      } catch (error) {
+        console.error('Create order error:', error);
+        return { 
+          success: false, 
+          error: error.message || 'Network error during order creation'
+        };
+      }
+    }
+
+    /**
+     * Verify payment status via backend API
+     * Calls GET /api/payment/verify?reference_key=xxx
+     * Returns payment status (pending, confirmed, failed)
+     */
+    async function verifyPaymentAPI(referenceKey, authToken) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/payment/verify?reference_key=${encodeURIComponent(referenceKey)}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          },
+        });
+
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to verify payment');
+        }
+
+        return data;
+      } catch (error) {
+        console.error('Verify payment error:', error);
+        return { 
+          success: false, 
+          error: error.message || 'Network error during payment verification'
+        };
+      }
+    }
+
+    /**
+     * Creates and displays the Solana Pay QR code modal using backend API
+     */
+    async function showSolanaPayModalWithAPI() {
+      const authToken = getAuthToken();
+      
+      if (!authToken) {
+        showToast('Please log in to complete your purchase', 'error');
+        setTimeout(() => {
+          window.location.href = 'login.html';
+        }, 1500);
+        return;
+      }
+
+      // Show loading state
+      showToast('Creating order...');
+
+      const result = await createPaymentOrderAPI(authToken);
+      
+      if (!result.success || !result.data) {
+        showToast(result.error || 'Failed to create order', 'error');
+        return;
+      }
+
+      const orderData = result.data;
+      const { solana_pay_url, reference_key, total_sol, total_fiat, expires_at } = orderData;
+
+      // Create modal element
+      const modal = document.createElement('div');
+      modal.className = 'solana-pay-modal';
+      modal.innerHTML = `
+        <div class="solana-pay-content">
+          <div class="solana-pay-header">
+            <h3 class="solana-pay-title">
+              <i class="fas fa-coins" style="color: #9945FF;"></i>
+              Pay with Solana
+            </h3>
+            <button class="solana-pay-close">&times;</button>
+          </div>
+          
+          <div class="solana-pay-qr" id="solanaQrContainer"></div>
+          
+          <div class="solana-pay-amount">${total_sol.toFixed(6)} SOL</div>
+          <p class="solana-pay-note">
+            Scan the QR code with your Solana wallet app (Phantom, Solflare, etc.) to complete the payment.
+            <br><br>
+            <strong>Order Total:</strong> ₦${total_fiat.toLocaleString()}
+          </p>
+          
+          <div class="solana-pay-status" id="paymentStatus">
+            <div class="solana-pay-spinner"></div>
+            <span>Waiting for payment...</span>
+          </div>
+          
+          <button class="solana-pay-wallet-btn" id="openWalletBtn">
+            <i class="fas fa-wallet"></i>
+            Open in Wallet
+          </button>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+      
+      // Generate QR code
+      const qrContainer = document.getElementById('solanaQrContainer');
+      if (typeof QRCode !== 'undefined') {
+        QRCode.toCanvas(qrContainer, solana_pay_url, {
+          width: 250,
+          margin: 2,
+          color: {
+            dark: '#000000',
+            light: '#FFFFFF'
+          }
+        }, function(error) {
+          if (error) {
+            console.error('QR Code generation error:', error);
+            qrContainer.innerHTML = '<p style="color: red;">Error generating QR code</p>';
+          }
+        });
+      } else {
+        qrContainer.innerHTML = `
+          <p style="color: var(--text-muted); padding: 40px;">
+            <i class="fas fa-qrcode" style="font-size: 3rem; display: block; margin-bottom: 12px;"></i>
+            QR Code Loading...
+          </p>
+        `;
+      }
+      
+      // Handle close button
+      const closeBtn = modal.querySelector('.solana-pay-close');
+      closeBtn.addEventListener('click', () => {
+        stopPaymentPollingAPI();
+        modal.remove();
+      });
+      
+      // Handle click outside modal
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          stopPaymentPollingAPI();
+          modal.remove();
+        }
+      });
+      
+      // Handle "Open in Wallet" button
+      const openWalletBtn = document.getElementById('openWalletBtn');
+      openWalletBtn.addEventListener('click', () => {
+        window.open(solana_pay_url, '_blank');
+      });
+      
+      // Start polling for payment confirmation
+      startPaymentPollingAPI(reference_key, authToken, modal);
+    }
+
+    // Payment polling variables for API
+    let pollingIntervalAPI = null;
+    let pollingAttemptsAPI = 0;
+    const MAX_POLLING_ATTEMPTS_API = 100; // ~5 minutes at 3-second intervals
+    const POLLING_INTERVAL_MS_API = 3000; // 3 seconds
+
+    /**
+     * Start polling for payment confirmation via API
+     */
+    function startPaymentPollingAPI(referenceKey, authToken, modal) {
+      const statusElement = document.getElementById('paymentStatus');
+      pollingAttemptsAPI = 0;
+      
+      pollingIntervalAPI = setInterval(async () => {
+        pollingAttemptsAPI++;
+        
+        // Update status animation
+        if (statusElement) {
+          const dots = '.'.repeat((pollingAttemptsAPI % 3) + 1);
+          statusElement.innerHTML = `
+            <div class="solana-pay-spinner"></div>
+            <span>Checking payment status${dots}</span>
+          `;
+        }
+
+        const result = await verifyPaymentAPI(referenceKey, authToken);
+        
+        if (result.success && result.data) {
+          const status = result.data.status;
+          
+          if (status === 'confirmed') {
+            stopPaymentPollingAPI();
+            handlePaymentConfirmedAPI(modal, result.data);
+          } else if (status === 'failed') {
+            stopPaymentPollingAPI();
+            if (statusElement) {
+              statusElement.innerHTML = `
+                <i class="fas fa-times-circle" style="font-size: 1.5rem; color: #F44336;"></i>
+                <span>Payment failed</span>
+              `;
+              statusElement.style.background = 'rgba(244, 67, 54, 0.1)';
+              statusElement.style.color = '#F44336';
+            }
+          }
+          // If status is 'pending', continue polling
+        }
+        
+        // Stop polling after max attempts (timeout)
+        if (pollingAttemptsAPI >= MAX_POLLING_ATTEMPTS_API) {
+          stopPaymentPollingAPI();
+          if (statusElement) {
+            statusElement.innerHTML = `
+              <i class="fas fa-exclamation-triangle" style="color: #FF9800;"></i>
+              <span>Payment timeout. Please try again.</span>
+            `;
+            statusElement.style.background = 'rgba(255, 152, 0, 0.1)';
+            statusElement.style.color = '#FF9800';
+          }
+        }
+      }, POLLING_INTERVAL_MS_API);
+    }
+
+    /**
+     * Stop payment polling for API
+     */
+    function stopPaymentPollingAPI() {
+      if (pollingIntervalAPI) {
+        clearInterval(pollingIntervalAPI);
+        pollingIntervalAPI = null;
+      }
+      pollingAttemptsAPI = 0;
+    }
+
+    /**
+     * Handle confirmed payment via API
+     */
+    function handlePaymentConfirmedAPI(modal, paymentData) {
+      const statusElement = document.getElementById('paymentStatus');
+      if (statusElement) {
+        statusElement.innerHTML = `
+          <i class="fas fa-check-circle" style="font-size: 1.5rem;"></i>
+          <span>Payment confirmed!</span>
+        `;
+        statusElement.style.background = 'rgba(76, 175, 80, 0.1)';
+        statusElement.style.color = '#4CAF50';
+      }
+      
+      const walletBtn = document.getElementById('openWalletBtn');
+      if (walletBtn) {
+        walletBtn.style.display = 'none';
+      }
+      
+      setTimeout(() => {
+        const isBuyNow = checkoutSummary.isBuyNow;
+        if (isBuyNow) {
+          localStorage.removeItem('buyNowOrder');
+          localStorage.removeItem('pendingBuyNowOrder');
+        } else {
+          KickshausState.clearCart();
+        }
+        
+        localStorage.removeItem('checkoutSummary');
+        localStorage.removeItem('deliveryDetails');
+        localStorage.removeItem('validatedCart');
+        
+        modal.remove();
+        
+        showToast('✓ Payment successful! Thank you for your order.');
+        
+        setTimeout(() => {
+          window.location.href = 'index.html';
+        }, 2000);
+      }, 1500);
+    }
 
     /**
      * Creates and displays the Solana Pay QR code modal
@@ -911,8 +1244,13 @@
             return;
           }
           
-          // Show Solana Pay modal instead of default flow
-          showSolanaPayModal(totalAmount);
+          // Use backend API if available, otherwise use client-side implementation
+          if (USE_BACKEND_API) {
+            showSolanaPayModalWithAPI();
+          } else {
+            // Show Solana Pay modal with client-side implementation
+            showSolanaPayModal(totalAmount);
+          }
           return;
         }
 
@@ -945,7 +1283,5 @@
     });
   });
   </script>
-   <script src="global-state.js"></script>
-<script src="script.js"></script>
 </body>
 </html>

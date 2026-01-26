@@ -203,11 +203,14 @@
       const proceedBtn = document.getElementById('proceedBtn');
       
       // Check if this is a "Buy Now" order
+      // FIX: Prioritize buyNowOrder only if it exists AND has items (length > 0)
+      // This fixes the bug where an empty array [] is truthy in JavaScript
       const buyNowOrder = JSON.parse(localStorage.getItem('buyNowOrder') || 'null');
-      const cart = buyNowOrder || KickshausState.cart;
+      const cart = (buyNowOrder && buyNowOrder.length > 0) ? buyNowOrder : KickshausState.cart;
       
       let itemCount;
-      if (buyNowOrder) {
+      // FIX: Also check for non-empty buyNowOrder array here
+      if (buyNowOrder && buyNowOrder.length > 0) {
         itemCount = buyNowOrder.reduce((sum, item) => sum + item.quantity, 0);
       } else {
         itemCount = KickshausState.getCartItemCount();
@@ -226,7 +229,9 @@
       emptyState.style.display = 'none';
       proceedBtn.style.opacity = '1';
       proceedBtn.style.pointerEvents = 'auto';
-      itemCountText.textContent = `${itemCount} ${itemCount === 1 ? 'item' : 'items'} ${buyNowOrder ? 'to purchase' : 'in cart'}`;
+      // FIX: Also use the same check for isBuyNow text
+      const isBuyNow = buyNowOrder && buyNowOrder.length > 0;
+      itemCountText.textContent = `${itemCount} ${itemCount === 1 ? 'item' : 'items'} ${isBuyNow ? 'to purchase' : 'in cart'}`;
 
       container.innerHTML = cart.map(item => `
         <div class="flex items-center gap-4 border-b pb-4">
@@ -248,7 +253,7 @@
         </div>
       `).join('');
 
-      updateCheckoutSummary(cart, buyNowOrder);
+      updateCheckoutSummary(cart, isBuyNow);
     }
 
     // Update checkout summary
@@ -290,8 +295,10 @@
       const discountRow = document.getElementById('discountRow');
       
       // Get current subtotal
+      // FIX: Use the same check for isBuyNow
       const buyNowOrder = JSON.parse(localStorage.getItem('buyNowOrder') || 'null');
-      const currentSubtotal = buyNowOrder ? 
+      const isBuyNowForSubtotal = buyNowOrder && buyNowOrder.length > 0;
+      const currentSubtotal = isBuyNowForSubtotal ? 
         buyNowOrder.reduce((sum, item) => sum + (item.price * item.quantity), 0) : 
         KickshausState.getCartTotal();
 
@@ -312,11 +319,226 @@
         discountRow.classList.add('hidden');
       }
 
-      const cart = buyNowOrder || KickshausState.cart;
-      updateCheckoutSummary(cart, buyNowOrder);
+      // FIX: Reuse the isBuyNow variable for calling updateCheckoutSummary
+      const isBuyNow = isBuyNowForSubtotal;
+      const cart = isBuyNow ? buyNowOrder : KickshausState.cart;
+      updateCheckoutSummary(cart, isBuyNow);
+    }
+
+    // =====================================================
+    // API INTEGRATION - SOLANA PAY WORKFLOW
+    // =====================================================
+    
+    // API Base URL - configure based on environment
+    const API_BASE_URL = window.location.hostname === 'localhost' 
+      ? 'http://localhost:3000/api' 
+      : '/api';
+
+    /**
+     * Get cart items formatted for API
+     * Returns array of { product_id, quantity }
+     */
+    function getCartItemsForAPI() {
+      const buyNowOrder = JSON.parse(localStorage.getItem('buyNowOrder') || 'null');
+      const isBuyNow = buyNowOrder && buyNowOrder.length > 0;
+      const cart = isBuyNow ? buyNowOrder : KickshausState.cart;
+      
+      return cart.map(item => ({
+        product_id: item.id,
+        quantity: item.quantity
+      }));
+    }
+
+    /**
+     * Validate cart against backend
+     * Calls POST /api/cart/validate
+     * Returns validated total in NGN and item status
+     */
+    async function validateCartWithAPI() {
+      const items = getCartItemsForAPI();
+      
+      if (items.length === 0) {
+        return { success: false, error: 'Cart is empty' };
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/cart/validate`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ items }),
+        });
+
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to validate cart');
+        }
+
+        return data;
+      } catch (error) {
+        console.error('Cart validation error:', error);
+        return { 
+          success: false, 
+          error: error.message || 'Network error during cart validation'
+        };
+      }
+    }
+
+    /**
+     * Create order with Solana Pay
+     * Calls POST /api/payment/create-order
+     * Returns Solana Pay URL and reference key
+     */
+    async function createPaymentOrder(authToken) {
+      const items = getCartItemsForAPI();
+      
+      if (items.length === 0) {
+        return { success: false, error: 'Cart is empty' };
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/payment/create-order`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({ items }),
+        });
+
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to create payment order');
+        }
+
+        return data;
+      } catch (error) {
+        console.error('Create order error:', error);
+        return { 
+          success: false, 
+          error: error.message || 'Network error during order creation'
+        };
+      }
+    }
+
+    /**
+     * Verify payment status
+     * Calls GET /api/payment/verify?reference_key=xxx
+     * Returns payment status (pending, confirmed, failed)
+     */
+    async function verifyPayment(referenceKey, authToken) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/payment/verify?reference_key=${encodeURIComponent(referenceKey)}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          },
+        });
+
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to verify payment');
+        }
+
+        return data;
+      } catch (error) {
+        console.error('Verify payment error:', error);
+        return { 
+          success: false, 
+          error: error.message || 'Network error during payment verification'
+        };
+      }
+    }
+
+    /**
+     * Poll for payment confirmation
+     * Polls every 3 seconds until payment is confirmed or failed
+     */
+    function startPaymentPolling(referenceKey, authToken, onStatusChange) {
+      let pollCount = 0;
+      const maxPolls = 100; // ~5 minutes of polling at 3-second intervals
+      
+      const pollInterval = setInterval(async () => {
+        pollCount++;
+        
+        if (pollCount > maxPolls) {
+          clearInterval(pollInterval);
+          onStatusChange({ status: 'timeout', error: 'Payment verification timed out' });
+          return;
+        }
+
+        const result = await verifyPayment(referenceKey, authToken);
+        
+        if (result.success && result.data) {
+          const status = result.data.status;
+          
+          if (status === 'confirmed') {
+            clearInterval(pollInterval);
+            onStatusChange({ 
+              status: 'confirmed', 
+              transactionSignature: result.data.transaction_signature,
+              orderId: result.data.order_id
+            });
+          } else if (status === 'failed') {
+            clearInterval(pollInterval);
+            onStatusChange({ status: 'failed', error: 'Payment failed' });
+          }
+          // If status is 'pending', continue polling
+        } else if (!result.success) {
+          // Don't stop polling on temporary errors, but log them
+          console.warn('Poll error:', result.error);
+        }
+      }, 3000);
+
+      // Return function to stop polling
+      return () => clearInterval(pollInterval);
+    }
+
+    /**
+     * Handle proceed to delivery with cart validation
+     * This can be called before navigating to delivery page
+     */
+    async function handleProceedToDelivery(event) {
+      const proceedBtn = document.getElementById('proceedBtn');
+      
+      // Show loading state
+      proceedBtn.textContent = 'Validating...';
+      proceedBtn.style.pointerEvents = 'none';
+      
+      try {
+        const validationResult = await validateCartWithAPI();
+        
+        if (validationResult.success && validationResult.data && validationResult.data.success) {
+          // Store validation result for use in delivery/payment pages
+          localStorage.setItem('validatedCart', JSON.stringify(validationResult.data));
+          
+          // Allow navigation to continue
+          window.location.href = 'delivery.html';
+        } else {
+          // Show error
+          event.preventDefault();
+          const errorMsg = validationResult.error || 
+            (validationResult.data && !validationResult.data.success ? 'Some items are out of stock' : 'Validation failed');
+          showToast(errorMsg, 'error');
+          
+          // Reset button
+          proceedBtn.textContent = 'Proceed to Delivery';
+          proceedBtn.style.pointerEvents = 'auto';
+        }
+      } catch (error) {
+        event.preventDefault();
+        showToast('Error validating cart. Please try again.', 'error');
+        
+        // Reset button
+        proceedBtn.textContent = 'Proceed to Delivery';
+        proceedBtn.style.pointerEvents = 'auto';
+      }
     }
   </script>
-   <script src="global-state.js"></script>
   <script src="script.js"></script>
   
 </body>
