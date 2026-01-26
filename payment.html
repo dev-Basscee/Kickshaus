@@ -545,12 +545,19 @@
     const currentOrder = JSON.parse(localStorage.getItem('currentOrder') || '{}');
     const checkoutSummary = JSON.parse(localStorage.getItem('checkoutSummary') || '{}');
     
-    // Use current order if available, otherwise fall back to checkout summary
+    // Use current order if available (from API), otherwise fall back to checkout summary
+    // API returns: { order_id, reference_key, total_fiat, total_sol, solana_pay_url, ... }
+    // checkoutSummary has: { subtotal, tax, discount, total, itemCount, isBuyNow }
     const orderData = currentOrder.order || checkoutSummary;
-    document.getElementById('orderItemCount').textContent = orderData.itemCount || orderData.items?.length || 0;
-    document.getElementById('orderSubtotal').textContent = `₦${(orderData.subtotal || 0).toLocaleString()}`;
-    document.getElementById('orderTax').textContent = `₦${(orderData.tax || 0).toLocaleString()}`;
-    document.getElementById('orderTotal').textContent = `₦${(orderData.total || orderData.total_amount || 0).toLocaleString()}`;
+    const itemCount = orderData.itemCount || checkoutSummary.itemCount || 0;
+    const subtotal = orderData.subtotal || checkoutSummary.subtotal || 0;
+    const tax = orderData.tax || checkoutSummary.tax || 0;
+    const total = orderData.total || orderData.total_fiat || currentOrder.total_fiat || checkoutSummary.total || 0;
+    
+    document.getElementById('orderItemCount').textContent = itemCount;
+    document.getElementById('orderSubtotal').textContent = `₦${subtotal.toLocaleString()}`;
+    document.getElementById('orderTax').textContent = `₦${tax.toLocaleString()}`;
+    document.getElementById('orderTotal').textContent = `₦${total.toLocaleString()}`;
 
     // =====================================================
     // API CONFIGURATION
@@ -1259,8 +1266,8 @@
 
         // Handle Cryptocurrency (Solana Pay) differently
         if (method === 'crypto') {
-          // Get the total amount from checkoutSummary
-          const totalAmount = checkoutSummary.total || 0;
+          // Get the total amount from currentOrder (API) or checkoutSummary
+          const totalAmount = currentOrder.total_fiat || checkoutSummary.total || 0;
           
           if (totalAmount <= 0) {
             showToast('No items in your order. Please add items first.', 'error');
