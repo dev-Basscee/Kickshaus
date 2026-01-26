@@ -552,23 +552,23 @@
       ? 'http://localhost:3000/api' 
       : '/api';
     
-    // Flag to determine if backend API is available
-    // Set to true to use the production backend with real Solana Pay integration
+    // Production mode: Uses backend API for secure Solana Pay transactions
+    // The backend reads the PLATFORM_WALLET_ADDRESS from the .env file and
+    // fetches real-time SOL prices from CoinGecko for accurate currency conversion
     const USE_BACKEND_API = true;
 
     // =====================================================
-    // CLIENT-SIDE FALLBACK CONFIGURATION (only used when USE_BACKEND_API = false)
-    // When USE_BACKEND_API is true, the wallet address and exchange rates
-    // are fetched from the backend which reads from the .env file
+    // DEVELOPMENT FALLBACK CONFIGURATION
+    // ⚠️ SECURITY WARNING: These values are ONLY used when USE_BACKEND_API = false
+    // When USE_BACKEND_API = true (production), these are NEVER used - the backend
+    // provides the actual wallet address and exchange rates from secure server-side config
     // =====================================================
     
-    // Fallback wallet address (used only when backend is unavailable)
-    // This is overridden by PLATFORM_WALLET_ADDRESS in the backend .env file
-    const MERCHANT_WALLET = 'DfMxre4cKmvPfN6YXmY5u5P9vJdAaJzfQQnfrGNPNkVE';
+    // Development-only fallback wallet (not used in production)
+    const DEV_FALLBACK_WALLET = 'DfMxre4cKmvPfN6YXmY5u5P9vJdAaJzfQQnfrGNPNkVE';
     
-    // Fallback exchange rate (used only when backend is unavailable)
-    // The backend fetches real-time SOL prices from CoinGecko
-    const PLACEHOLDER_NGN_TO_SOL_RATE = 0.000001;
+    // Development-only fallback exchange rate (not used in production)
+    const DEV_FALLBACK_NGN_TO_SOL_RATE = 0.000001;
 
     // =====================================================
     // BACKEND API FUNCTIONS
@@ -894,19 +894,20 @@
 
     /**
      * Creates and displays the Solana Pay QR code modal
+     * ⚠️ DEVELOPMENT ONLY: This function is only used when USE_BACKEND_API = false
      * @param {number} amountInNGN - The total amount in Nigerian Naira
      */
     function showSolanaPayModal(amountInNGN) {
-      // Convert NGN to SOL (in production, use real-time exchange rate)
-      const amountInSOL = (amountInNGN * PLACEHOLDER_NGN_TO_SOL_RATE).toFixed(9);
+      // Convert NGN to SOL (development fallback rate - not for production use)
+      const amountInSOL = (amountInNGN * DEV_FALLBACK_NGN_TO_SOL_RATE).toFixed(9);
       
       // Generate a unique reference for this transaction
       const reference = new Uint8Array(32);
       crypto.getRandomValues(reference);
       const referenceBase58 = base58Encode(reference);
       
-      // Create the Solana Pay URL
-      const solanaPayUrl = createSolanaPayUrl(MERCHANT_WALLET, amountInSOL, referenceBase58);
+      // Create the Solana Pay URL (using development fallback wallet)
+      const solanaPayUrl = createSolanaPayUrl(DEV_FALLBACK_WALLET, amountInSOL, referenceBase58);
       
       // Create modal element
       const modal = document.createElement('div');
