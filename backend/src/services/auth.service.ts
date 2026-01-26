@@ -2,25 +2,15 @@ import { supabaseAdmin } from '../config/supabase';
 import { User, Merchant, UserRole, MerchantStatus } from '../types';
 import { hashPassword, verifyPassword } from '../utils/helpers';
 import { ConflictError, NotFoundError, UnauthorizedError, BadRequestError, AppError } from '../utils/errors';
-import { config } from '../config/env';
+import { isSupabaseConfigured } from '../config/env';
 
 export class AuthService {
-  /**
-   * Check if Supabase is properly configured
-   */
-  private isSupabaseConfigured(): boolean {
-    return (
-      config.supabase.url !== 'https://placeholder.supabase.co' &&
-      config.supabase.serviceRoleKey !== 'placeholder-service-key'
-    );
-  }
-
   /**
    * Register a new customer
    */
   async registerUser(email: string, password: string): Promise<Omit<User, 'password_hash'>> {
     // Check if Supabase is configured
-    if (!this.isSupabaseConfigured()) {
+    if (!isSupabaseConfigured()) {
       throw new AppError(
         'Registration is currently unavailable. Please contact support or try again later.',
         503,
@@ -91,7 +81,7 @@ export class AuthService {
    */
   async loginUser(email: string, password: string): Promise<{ user: Omit<User, 'password_hash'>; type: 'user' | 'admin' }> {
     // Check if Supabase is configured
-    if (!this.isSupabaseConfigured()) {
+    if (!isSupabaseConfigured()) {
       throw new AppError(
         'Login is currently unavailable. Please try again later.',
         503,
@@ -145,7 +135,7 @@ export class AuthService {
     wallet_address: string;
   }): Promise<Omit<Merchant, 'password_hash'>> {
     // Check if Supabase is configured
-    if (!this.isSupabaseConfigured()) {
+    if (!isSupabaseConfigured()) {
       throw new AppError(
         'Merchant registration is currently unavailable. Please try again later.',
         503,
@@ -219,7 +209,7 @@ export class AuthService {
    */
   async loginMerchant(email: string, password: string): Promise<Omit<Merchant, 'password_hash'>> {
     // Check if Supabase is configured
-    if (!this.isSupabaseConfigured()) {
+    if (!isSupabaseConfigured()) {
       throw new AppError(
         'Merchant login is currently unavailable. Please try again later.',
         503,
@@ -271,7 +261,7 @@ export class AuthService {
    * Get user by ID
    */
   async getUserById(userId: string): Promise<Omit<User, 'password_hash'> | null> {
-    if (!this.isSupabaseConfigured()) {
+    if (!isSupabaseConfigured()) {
       return null;
     }
 
@@ -292,7 +282,7 @@ export class AuthService {
    * Get merchant by ID
    */
   async getMerchantById(merchantId: string): Promise<Omit<Merchant, 'password_hash'> | null> {
-    if (!this.isSupabaseConfigured()) {
+    if (!isSupabaseConfigured()) {
       return null;
     }
 
@@ -313,7 +303,7 @@ export class AuthService {
    * List all merchants (admin only)
    */
   async listMerchants(status?: MerchantStatus): Promise<Omit<Merchant, 'password_hash'>[]> {
-    if (!this.isSupabaseConfigured()) {
+    if (!isSupabaseConfigured()) {
       return [];
     }
 
@@ -339,7 +329,7 @@ export class AuthService {
    * Update merchant status (admin only)
    */
   async updateMerchantStatus(merchantId: string, status: MerchantStatus): Promise<Omit<Merchant, 'password_hash'>> {
-    if (!this.isSupabaseConfigured()) {
+    if (!isSupabaseConfigured()) {
       throw new AppError(
         'Admin operations are currently unavailable. Please try again later.',
         503,

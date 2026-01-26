@@ -20,8 +20,8 @@ export const demoProducts: Product[] = [
       right: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500',
     },
     status: 'live',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+    created_at: '2025-01-01T00:00:00.000Z',
+    updated_at: '2025-01-01T00:00:00.000Z',
   },
   {
     id: 'demo-002',
@@ -38,8 +38,8 @@ export const demoProducts: Product[] = [
       right: 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=500',
     },
     status: 'live',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+    created_at: '2025-01-01T00:00:00.000Z',
+    updated_at: '2025-01-01T00:00:00.000Z',
   },
   {
     id: 'demo-003',
@@ -56,8 +56,8 @@ export const demoProducts: Product[] = [
       right: 'https://images.unsplash.com/photo-1600269452121-4f2416e55c28?w=500',
     },
     status: 'live',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+    created_at: '2025-01-01T00:00:00.000Z',
+    updated_at: '2025-01-01T00:00:00.000Z',
   },
   {
     id: 'demo-004',
@@ -74,8 +74,8 @@ export const demoProducts: Product[] = [
       right: 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=500',
     },
     status: 'live',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+    created_at: '2025-01-01T00:00:00.000Z',
+    updated_at: '2025-01-01T00:00:00.000Z',
   },
   {
     id: 'demo-005',
@@ -92,8 +92,8 @@ export const demoProducts: Product[] = [
       right: 'https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=500',
     },
     status: 'live',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+    created_at: '2025-01-01T00:00:00.000Z',
+    updated_at: '2025-01-01T00:00:00.000Z',
   },
   {
     id: 'demo-006',
@@ -110,8 +110,8 @@ export const demoProducts: Product[] = [
       right: 'https://images.unsplash.com/photo-1463100099107-aa0980c362e6?w=500',
     },
     status: 'live',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+    created_at: '2025-01-01T00:00:00.000Z',
+    updated_at: '2025-01-01T00:00:00.000Z',
   },
 ];
 

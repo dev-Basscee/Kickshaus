@@ -3,19 +3,9 @@ import { Product, ProductStatus, ProductImages } from '../types';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 import { PaginationInput } from '../utils/validators';
 import { demoProducts, getDemoProductById, isDemoProduct } from './demo-products';
-import { config } from '../config/env';
+import { isSupabaseConfigured } from '../config/env';
 
 export class ProductService {
-  /**
-   * Check if Supabase is properly configured
-   */
-  private isSupabaseConfigured(): boolean {
-    return (
-      config.supabase.url !== 'https://placeholder.supabase.co' &&
-      config.supabase.serviceRoleKey !== 'placeholder-service-key'
-    );
-  }
-
   /**
    * Get demo products with pagination and filtering
    */
@@ -83,7 +73,7 @@ export class ProductService {
     totalPages: number;
   }> {
     // If Supabase is not configured, return demo products
-    if (!this.isSupabaseConfigured()) {
+    if (!isSupabaseConfigured()) {
       console.log('📦 Supabase not configured, serving demo products');
       return this.getDemoProducts(pagination);
     }
@@ -189,7 +179,7 @@ export class ProductService {
     }
 
     // If Supabase is not configured, check demo products
-    if (!this.isSupabaseConfigured()) {
+    if (!isSupabaseConfigured()) {
       const demoProduct = getDemoProductById(productId);
       if (demoProduct) {
         return demoProduct;
@@ -223,7 +213,7 @@ export class ProductService {
    * Get products by merchant (merchant only)
    */
   async getMerchantProducts(merchantId: string, status?: ProductStatus): Promise<Product[]> {
-    if (!this.isSupabaseConfigured()) {
+    if (!isSupabaseConfigured()) {
       return []; // Cannot list merchant products without database
     }
 
