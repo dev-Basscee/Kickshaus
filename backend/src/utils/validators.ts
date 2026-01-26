@@ -1,0 +1,95 @@
+import { z } from 'zod';
+
+// Common validators
+const email = z.string().email('Invalid email format');
+const password = z.string().min(8, 'Password must be at least 8 characters');
+const uuid = z.string().uuid('Invalid ID format');
+const positiveNumber = z.number().positive('Must be a positive number');
+const nonNegativeInt = z.number().int().nonnegative('Must be a non-negative integer');
+
+// Auth schemas
+export const registerUserSchema = z.object({
+  email,
+  password,
+});
+
+export const loginSchema = z.object({
+  email,
+  password,
+});
+
+export const registerMerchantSchema = z.object({
+  business_name: z.string().min(2, 'Business name must be at least 2 characters').max(255),
+  email,
+  phone: z.string().min(10, 'Phone number must be at least 10 characters').max(50).optional(),
+  password,
+  wallet_address: z.string()
+    .min(32, 'Invalid Solana wallet address')
+    .max(44, 'Invalid Solana wallet address')
+    .regex(/^[1-9A-HJ-NP-Za-km-z]+$/, 'Invalid Solana wallet address format'),
+});
+
+// Product schemas
+export const productImagesSchema = z.object({
+  main: z.string().url('Main image must be a valid URL'),
+  top: z.string().url('Top image must be a valid URL'),
+  left: z.string().url('Left image must be a valid URL'),
+  right: z.string().url('Right image must be a valid URL'),
+});
+
+export const createProductSchema = z.object({
+  name: z.string().min(2, 'Product name must be at least 2 characters').max(255),
+  description: z.string().max(5000).optional(),
+  category: z.string().min(1, 'Category is required').max(100),
+  base_price: positiveNumber,
+  stock: nonNegativeInt,
+  images: productImagesSchema,
+});
+
+export const updateProductSchema = createProductSchema.partial();
+
+export const approveProductSchema = z.object({
+  action: z.enum(['approve', 'reject']),
+  reason: z.string().max(500).optional(),
+});
+
+// Cart schemas
+export const cartItemSchema = z.object({
+  product_id: uuid,
+  quantity: z.number().int().positive('Quantity must be at least 1'),
+});
+
+export const validateCartSchema = z.object({
+  items: z.array(cartItemSchema).min(1, 'Cart must have at least one item'),
+});
+
+// Order schemas
+export const createOrderSchema = z.object({
+  items: z.array(cartItemSchema).min(1, 'Order must have at least one item'),
+  shipping_address: z.string().max(500).optional(),
+});
+
+export const verifyPaymentSchema = z.object({
+  reference_key: z.string().min(1, 'Reference key is required'),
+});
+
+// Pagination schema
+export const paginationSchema = z.object({
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(20),
+  category: z.string().optional(),
+  search: z.string().optional(),
+  sort: z.enum(['price_asc', 'price_desc', 'name_asc', 'name_desc', 'newest']).optional(),
+});
+
+// Type exports
+export type RegisterUserInput = z.infer<typeof registerUserSchema>;
+export type LoginInput = z.infer<typeof loginSchema>;
+export type RegisterMerchantInput = z.infer<typeof registerMerchantSchema>;
+export type CreateProductInput = z.infer<typeof createProductSchema>;
+export type UpdateProductInput = z.infer<typeof updateProductSchema>;
+export type CartItem = z.infer<typeof cartItemSchema>;
+export type ValidateCartInput = z.infer<typeof validateCartSchema>;
+export type CreateOrderInput = z.infer<typeof createOrderSchema>;
+export type VerifyPaymentInput = z.infer<typeof verifyPaymentSchema>;
+export type PaginationInput = z.infer<typeof paginationSchema>;
