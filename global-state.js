@@ -67,7 +67,7 @@ const KickshausState = {
         id: product.id,
         name: product.name,
         price: product.price,
-        image: product.image,
+        image: product.image || (product.images && product.images[0]) || '',
         size: product.size || 'N/A',
         color: product.color || 'N/A',
         quantity: 1
