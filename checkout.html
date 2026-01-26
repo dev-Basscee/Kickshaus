@@ -237,7 +237,7 @@
         <div class="flex items-center gap-4 border-b pb-4">
           <div class="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden shrink-0">
             <img 
-              src="${item.image || item.images[0]}"
+              src="${item.image || (item.images && item.images[0]) || ''}"
               alt="${item.name}"
               class="w-full h-full object-contain"
             />
