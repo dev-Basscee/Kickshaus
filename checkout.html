@@ -199,27 +199,31 @@
 
     // Reset stale Buy Now state when cart checkout is used
     function clearStaleBuyNowOrder() {
-      const buyNowOrder = JSON.parse(localStorage.getItem('buyNowOrder') || 'null');
+      const buyNowOrder = parseStoredValue('buyNowOrder', null);
+      const checkoutSummary = parseStoredValue('checkoutSummary', {});
+      const cart = KickshausState.cart || [];
+      const isBuyNowCheckout = checkoutSummary && checkoutSummary.isBuyNow;
+
       if (!buyNowOrder) {
         return;
       }
 
-      if (!Array.isArray(buyNowOrder) || buyNowOrder.length === 0) {
+      const isValidBuyNow = Array.isArray(buyNowOrder) && buyNowOrder.length > 0;
+      const hasCartItems = cart.length > 0;
+
+      if (!isValidBuyNow || (hasCartItems && !isBuyNowCheckout)) {
         localStorage.removeItem('buyNowOrder');
-        return;
       }
+    }
 
-      const cart = KickshausState.cart || [];
-      if (cart.length === 0) {
-        return;
+    function parseStoredValue(key, fallback) {
+      try {
+        const stored = localStorage.getItem(key);
+        return stored ? JSON.parse(stored) : fallback;
+      } catch (error) {
+        localStorage.removeItem(key);
+        return fallback;
       }
-
-      const checkoutSummary = JSON.parse(localStorage.getItem('checkoutSummary') || '{}');
-      if (checkoutSummary.isBuyNow) {
-        return;
-      }
-
-      localStorage.removeItem('buyNowOrder');
     }
 
     // Render checkout items - handles both cart and "Buy Now" orders
