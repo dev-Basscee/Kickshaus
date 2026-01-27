@@ -11,9 +11,9 @@ export class PaymentController {
    */
   async createOrder(req: AuthenticatedRequest, res: Response): Promise<void> {
     const userId = req.user!.userId;
-    const { items } = req.body as CreateOrderInput;
+    const { items, ...delivery } = req.body as CreateOrderInput;
     
-    const order = await paymentService.createOrder(userId, items);
+    const order = await paymentService.createOrder(userId, items, delivery);
 
     sendSuccess(res, order, 201);
   }
@@ -53,6 +53,25 @@ export class PaymentController {
     const orders = await paymentService.getUserOrders(userId);
 
     sendSuccess(res, { orders });
+  }
+
+  /**
+   * Admin: Get all orders
+   * GET /api/admin/orders
+   */
+  async getAllOrdersAdmin(req: AuthenticatedRequest, res: Response): Promise<void> {
+    const orders = await paymentService.getAllOrders();
+    sendSuccess(res, { orders });
+  }
+
+  /**
+   * Admin: Get order by ID
+   * GET /api/admin/orders/:id
+   */
+  async getOrderAdmin(req: AuthenticatedRequest, res: Response): Promise<void> {
+    const { id } = req.params;
+    const order = await paymentService.getOrderAdmin(id);
+    sendSuccess(res, { order });
   }
 
   /**

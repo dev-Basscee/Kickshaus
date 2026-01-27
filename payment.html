@@ -9,10 +9,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   
-  <!-- Solana Pay Dependencies -->
-  <script src="https://unpkg.com/@solana/web3.js@1.87.6/lib/index.iife.min.js"></script>
-  <script src="https://unpkg.com/@solana/pay@0.2.5/dist/index.iife.js"></script>
-  <script src="https://unpkg.com/bignumber.js@9.1.2/bignumber.min.js"></script>
+  <!-- Frontend only renders QR from backend-provided URL -->
   <script src="https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js"></script>
 
   <style>
@@ -328,67 +325,22 @@
 </head>
 <body>
 
-  <!-- THEME TOGGLE -->
   <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">
     <i class="fas fa-moon"></i>
   </button>
 
-  <!-- HEADER -->
-  <!-- <header class="header">
-    <div class="container">
-      <nav class="nav">
-        <div class="nav-logo">
-          <a href="index.html">
-            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='%2300A8E8' d='M50 10 L80 30 L80 70 L50 90 L20 70 L20 30 Z'/%3E%3Cpath fill='white' d='M35 40 Q50 35 65 40 L65 60 Q50 65 35 60 Z'/%3E%3C/svg%3E" alt="Kickshaus Logo">
-          </a>
-        </div>
-
-        <ul class="nav-menu">
-          <li><a href="index.html" class="nav-link">Home</a></li>
-          <li><a href="index.html#products" class="nav-link">Products</a></li>
-          <li><a href="index.html#featured" class="nav-link">Featured</a></li>
-          <li><a href="collection.html" class="nav-link">Collections</a></li>
-        </ul>
-
-        <div class="nav-actions">
-          <button class="icon-btn" aria-label="Search">
-            <i class="fas fa-search"></i>
-          </button>
-          <a href="favourites.html" class="icon-btn heart-btn" aria-label="Favorites">
-            <i class="fas fa-heart"></i>
-            <span class="badge badge-favorites">0</span>
-          </a>
-          <a href="cart.html" class="icon-btn cart-btn" aria-label="Cart">
-            <i class="fas fa-shopping-cart"></i>
-            <span class="badge badge-cart">0</span>
-          </a>
-          <a href="login.html" class="icon-btn account-btn" aria-label="Account">
-            <i class="fas fa-user"></i>
-          </a>
-          <button class="mobile-menu-toggle" aria-label="Menu">
-            <i class="fas fa-bars"></i>
-          </button>
-        </div>
-      </nav>
-    </div>
-  </header> -->
-
-  <!-- MAIN CONTENT -->
   <main class="payment-page-container">
     <div class="container" style="max-width: 900px;">
       
-      <!-- Back Button -->
       <a href="javascript:history.back()" class="back-link" style="display: inline-flex; align-items: center; gap: 8px; margin-bottom: 32px; color: var(--text-secondary); text-decoration: none; font-weight: 500;">
         <i class="fas fa-arrow-left"></i> Back
       </a>
 
-      <!-- Page Header -->
       <div class="payment-header">
         <h1 class="payment-title">Payment Options</h1>
         <p class="payment-subtitle">Choose your preferred payment method</p>
       </div>
 
-      <!-- Order Summary -->
       <div class="order-summary-card">
         <h3>Order Summary</h3>
         <div class="order-detail">
@@ -409,7 +361,6 @@
         </div>
       </div>
 
-      <!-- Payment Methods -->
       <div class="payment-methods">
         <div class="payment-option" data-method="card">
           <div class="method-left">
@@ -452,7 +403,6 @@
         </div>
       </div>
 
-      <!-- Trust Badges -->
       <div class="trust-badges">
         <img src="https://upload.wikimedia.org/wikipedia/commons/4/41/Visa_Logo.png" alt="Visa" class="trust-badge">
         <img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/Mastercard-logo.png" alt="Mastercard" class="trust-badge">
@@ -466,71 +416,6 @@
     </div>
   </main>
 
-  <!-- FOOTER -->
-  <!-- <footer class="footer">
-    <div class="container">
-      <div class="footer-content">
-        <div class="footer-brand">
-          <div class="footer-logo">
-            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='%2300A8E8' d='M50 10 L80 30 L80 70 L50 90 L20 70 L20 30 Z'/%3E%3Cpath fill='white' d='M35 40 Q50 35 65 40 L65 60 Q50 65 35 60 Z'/%3E%3C/svg%3E" alt="Kickshaus Logo">
-          </div>
-          <p class="footer-tagline">Kickshaus<br>Premium Footwear For Your Best Luxury</p>
-          <p class="footer-address" style="color:var(--text-muted); font-size:0.9rem; margin-top:12px; line-height:1.6;">
-            2 Prof. Ikechi Mgbeoji Street,<br>
-            Okun, Ajah, Lagos State, Nigeria
-          </p>
-        </div>
-
-        <div class="footer-links">
-          <div class="footer-column">
-            <h4>Shop</h4>
-            <ul>
-              <li><a href="collection.html">New Arrivals</a></li>
-              <li><a href="collection.html">Men</a></li>
-              <li><a href="collection.html">Women</a></li>
-              <li><a href="collection.html">Sale</a></li>
-            </ul>
-          </div>
-
-          <div class="footer-column">
-            <h4>Support</h4>
-            <ul>
-              <li><a href="index.html#contact">Contact Us</a></li>
-              <li><a href="#">FAQs</a></li>
-              <li><a href="#">Shipping</a></li>
-              <li><a href="#">Returns</a></li>
-            </ul>
-          </div>
-
-          <div class="footer-column">
-            <h4>Company</h4>
-            <ul>
-              <li><a href="#">About Us</a></li>
-              <li><a href="#">Careers</a></li>
-              <li><a href="#">Privacy Policy</a></li>
-              <li><a href="#">Terms</a></li>
-            </ul>
-          </div>
-
-          <div class="footer-column">
-            <h4>Follow Us</h4>
-            <div class="social-links">
-              <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-              <a href="#" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
-              <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
-              <a href="#" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="footer-bottom">
-        <p>&copy; 2025 Kickshaus. All rights reserved.</p>
-      </div>
-    </div>
-  </footer> -->
-
-  <!-- BACK TO TOP -->
   <button id="backToTop" class="back-to-top" aria-label="Back to top">
     <i class="fas fa-arrow-up"></i>
   </button>
@@ -541,16 +426,21 @@
   <script src="script.js"></script>
   <script>
   document.addEventListener('DOMContentLoaded', () => {
-    // Load order summary from localStorage or currentOrder
+    // Load order summary from localStorage
     const currentOrder = JSON.parse(localStorage.getItem('currentOrder') || '{}');
     const checkoutSummary = JSON.parse(localStorage.getItem('checkoutSummary') || '{}');
     
-    // Use current order if available, otherwise fall back to checkout summary
+    // Extract order data, preferring currentOrder when available
     const orderData = currentOrder.order || checkoutSummary;
-    document.getElementById('orderItemCount').textContent = orderData.itemCount || orderData.items?.length || 0;
-    document.getElementById('orderSubtotal').textContent = `₦${(orderData.subtotal || 0).toLocaleString()}`;
-    document.getElementById('orderTax').textContent = `₦${(orderData.tax || 0).toLocaleString()}`;
-    document.getElementById('orderTotal').textContent = `₦${(orderData.total || orderData.total_amount || 0).toLocaleString()}`;
+    const itemCount = orderData.itemCount || checkoutSummary.itemCount || 0;
+    const subtotal = orderData.subtotal || checkoutSummary.subtotal || 0;
+    const tax = orderData.tax || checkoutSummary.tax || 0;
+    const total = orderData.total || orderData.total_fiat || currentOrder.total_fiat || checkoutSummary.total || 0;
+    
+    document.getElementById('orderItemCount').textContent = itemCount;
+    document.getElementById('orderSubtotal').textContent = `₦${subtotal.toLocaleString()}`;
+    document.getElementById('orderTax').textContent = `₦${tax.toLocaleString()}`;
+    document.getElementById('orderTotal').textContent = `₦${total.toLocaleString()}`;
 
     // =====================================================
     // API CONFIGURATION
@@ -559,24 +449,6 @@
       ? 'http://localhost:3000/api' 
       : '/api';
     
-    // Production mode: Uses backend API for secure Solana Pay transactions
-    // The backend reads the PLATFORM_WALLET_ADDRESS from the .env file and
-    // fetches real-time SOL prices from CoinGecko for accurate currency conversion
-    const USE_BACKEND_API = true;
-
-    // =====================================================
-    // DEVELOPMENT FALLBACK CONFIGURATION
-    // ⚠️ SECURITY WARNING: These values are ONLY used when USE_BACKEND_API = false
-    // When USE_BACKEND_API = true (production), these are NEVER used - the backend
-    // provides the actual wallet address and exchange rates from secure server-side config
-    // =====================================================
-    
-    // Development-only fallback wallet (not used in production)
-    const DEV_FALLBACK_WALLET = 'DfMxre4cKmvPfN6YXmY5u5P9vJdAaJzfQQnfrGNPNkVE';
-    
-    // Development-only fallback exchange rate (not used in production)
-    const DEV_FALLBACK_NGN_TO_SOL_RATE = 0.000001;
-
     // =====================================================
     // BACKEND API FUNCTIONS
     // =====================================================
@@ -598,13 +470,12 @@
 
     /**
      * Get auth token from localStorage
-     * Checks all possible token keys for compatibility
+     * Checks multiple possible storage keys for compatibility
      */
     function getAuthToken() {
-      return localStorage.getItem('kickshaus_auth_token') 
-        || localStorage.getItem('token') 
-        || localStorage.getItem('authToken') 
-        || null;
+      return localStorage.getItem('kickshaus_auth_token') || 
+             localStorage.getItem('token') || 
+             null;
     }
 
     /**
@@ -626,7 +497,21 @@
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${authToken}`,
           },
-          body: JSON.stringify({ items }),
+          body: JSON.stringify((() => {
+            const delivery = JSON.parse(localStorage.getItem('deliveryDetails') || '{}');
+            return {
+              items,
+              // Map localStorage delivery details to backend fields
+              contact_name: delivery.fullName || null,
+              contact_email: delivery.email || null,
+              sender_phone: delivery.phone || null,
+              receiver_phone: delivery.receiverPhone || delivery.phone || null,
+              shipping_address: delivery.address || null,
+              city: delivery.city || null,
+              state: delivery.state || null,
+              notes: delivery.notes || null,
+            };
+          })()),
         });
 
         const data = await response.json();
@@ -796,17 +681,6 @@
 
     /**
      * Start polling for payment confirmation via API
-     * 
-     * SECURITY: This function polls the BACKEND API for payment status.
-     * The frontend NEVER directly queries the Solana blockchain.
-     * 
-     * Why this matters:
-     * - Backend uses findReference() and validateTransfer() from @solana/pay
-     * - Backend cryptographically verifies recipient, amount, and reference
-     * - Client-side verification could be spoofed or manipulated
-     * - Backend has access to RPC endpoint and service role keys
-     * 
-     * Flow: Frontend asks "Did you get the money?" -> Backend checks blockchain -> Returns status
      */
     function startPaymentPollingAPI(referenceKey, authToken, modal) {
       const statusElement = document.getElementById('paymentStatus');
@@ -914,396 +788,6 @@
       }, 1500);
     }
 
-    /**
-     * Creates and displays the Solana Pay QR code modal
-     * ⚠️ DEVELOPMENT ONLY: This function is only used when USE_BACKEND_API = false
-     * @param {number} amountInNGN - The total amount in Nigerian Naira
-     */
-    function showSolanaPayModal(amountInNGN) {
-      // Runtime guard: Prevent execution in production mode
-      if (USE_BACKEND_API) {
-        console.warn('showSolanaPayModal should not be called when USE_BACKEND_API is true. Use showSolanaPayModalWithAPI instead.');
-        showSolanaPayModalWithAPI();
-        return;
-      }
-      
-      // Convert NGN to SOL (development fallback rate - not for production use)
-      const amountInSOL = (amountInNGN * DEV_FALLBACK_NGN_TO_SOL_RATE).toFixed(9);
-      
-      // Generate a unique reference keypair for this transaction
-      // Using solanaWeb3.Keypair ensures a valid PublicKey for on-chain reference tracking
-      const referenceKeypair = solanaWeb3.Keypair.generate();
-      const referenceBase58 = referenceKeypair.publicKey.toBase58();
-      
-      // Create the Solana Pay URL (using development fallback wallet)
-      const solanaPayUrl = createSolanaPayUrl(DEV_FALLBACK_WALLET, amountInSOL, referenceBase58);
-      
-      // Create modal element
-      const modal = document.createElement('div');
-      modal.className = 'solana-pay-modal';
-      modal.innerHTML = `
-        <div class="solana-pay-content">
-          <div class="solana-pay-header">
-            <h3 class="solana-pay-title">
-              <i class="fas fa-coins" style="color: #9945FF;"></i>
-              Pay with Solana
-            </h3>
-            <button class="solana-pay-close">&times;</button>
-          </div>
-          
-          <div class="solana-pay-qr" id="solanaQrContainer"></div>
-          
-          <div class="solana-pay-amount">${amountInSOL} SOL</div>
-          <p class="solana-pay-note">
-            Scan the QR code with your Solana wallet app (Phantom, Solflare, etc.) to complete the payment.
-            <br><br>
-            <strong>Order Total:</strong> ₦${amountInNGN.toLocaleString()}
-          </p>
-          
-          <div class="solana-pay-status" id="paymentStatus">
-            <div class="solana-pay-spinner"></div>
-            <span>Waiting for payment...</span>
-          </div>
-          
-          <button class="solana-pay-wallet-btn" id="openWalletBtn">
-            <i class="fas fa-wallet"></i>
-            Open in Wallet
-          </button>
-        </div>
-      `;
-      
-      document.body.appendChild(modal);
-      
-      // Generate QR code
-      const qrContainer = document.getElementById('solanaQrContainer');
-      if (typeof QRCode !== 'undefined') {
-        QRCode.toCanvas(qrContainer, solanaPayUrl, {
-          width: 250,
-          margin: 2,
-          color: {
-            dark: '#000000',
-            light: '#FFFFFF'
-          }
-        }, function(error) {
-          if (error) {
-            console.error('QR Code generation error:', error);
-            qrContainer.innerHTML = '<p style="color: red;">Error generating QR code</p>';
-          }
-        });
-      } else {
-        // Fallback if QRCode library not loaded
-        qrContainer.innerHTML = `
-          <p style="color: var(--text-muted); padding: 40px;">
-            <i class="fas fa-qrcode" style="font-size: 3rem; display: block; margin-bottom: 12px;"></i>
-            QR Code Loading...
-          </p>
-        `;
-      }
-      
-      // Handle close button
-      const closeBtn = modal.querySelector('.solana-pay-close');
-      closeBtn.addEventListener('click', () => {
-        stopPaymentPolling();
-        modal.remove();
-      });
-      
-      // Handle click outside modal
-      modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-          stopPaymentPolling();
-          modal.remove();
-        }
-      });
-      
-      // Handle "Open in Wallet" button
-      const openWalletBtn = document.getElementById('openWalletBtn');
-      openWalletBtn.addEventListener('click', () => {
-        window.open(solanaPayUrl, '_blank');
-      });
-      
-      // Start polling for payment confirmation
-      startPaymentPolling(referenceBase58, modal);
-    }
-    
-    /**
-<<<<<<< HEAD
-     * Creates a Solana Pay URL using the official @solana/pay SDK
-     * 
-     * SECURITY: Uses SolanaPay.encodeURL() for cryptographically correct URL generation.
-     * This ensures proper encoding of all parameters per the Solana Pay specification.
-     * 
-     * @param {string} recipient - The merchant's Solana wallet address (base58)
-     * @param {string} amount - The amount in SOL (string to preserve decimal precision)
-     * @param {string} reference - A unique reference public key for transaction tracking (base58)
-     * @returns {string} - The properly encoded Solana Pay URL
-     */
-    function createSolanaPayUrl(recipient, amount, reference) {
-      // Use the official Solana Pay SDK for secure URL generation
-      // SolanaPay global is provided by @solana/pay CDN script
-      // solanaWeb3 global is provided by @solana/web3.js CDN script
-      // BigNumber global is provided by bignumber.js CDN script
-      
-      try {
-        const url = SolanaPay.encodeURL({
-          recipient: new solanaWeb3.PublicKey(recipient),
-          amount: new BigNumber(amount),
-          reference: new solanaWeb3.PublicKey(reference),
-          label: 'Kickshaus',
-          message: 'Payment for your Kickshaus order',
-          memo: `Order-${Date.now()}`
-        });
-        
-        return url.toString();
-      } catch (error) {
-        console.error('Error encoding Solana Pay URL:', error);
-        // Fallback to manual construction only if SDK fails
-        // This maintains compatibility but logs the error for debugging
-        const baseUrl = `solana:${recipient}`;
-        const params = new URLSearchParams({
-          amount: amount,
-          reference: reference,
-          label: 'Kickshaus',
-          message: 'Payment for your Kickshaus order',
-          memo: `Order-${Date.now()}`
-        });
-        return `${baseUrl}?${params.toString()}`;
-      }
-=======
-     * Creates a Solana Pay URL with the specified parameters using the official library
-     * @param {string} recipient - The merchant's Solana wallet address
-     * @param {string} amount - The amount in SOL
-     * @param {string} reference - A unique reference for this transaction (base58 encoded)
-     * @returns {string} - The Solana Pay URL
-     */
-    function createSolanaPayUrl(recipient, amount, reference) {
-      // Use the official Solana Pay SDK encodeURL function for secure URL generation
-      // This ensures compliance with the Solana Pay specification
-      const url = SolanaPay.encodeURL({
-        recipient: new solanaWeb3.PublicKey(recipient),
-        amount: new BigNumber(amount),
-        reference: new solanaWeb3.PublicKey(reference),
-        label: 'Kickshaus',
-        message: 'Payment for your Kickshaus order',
-        memo: `Order-${Date.now()}`
-      });
-      
-      return url.toString();
->>>>>>> 348c9f1328e86cc4f160ceb8f36ba427c9d676d2
-    }
-    
-    /**
-     * Simple Base58 encoding for the reference
-     * @param {Uint8Array} bytes - The bytes to encode
-     * @returns {string} - Base58 encoded string
-     */
-    function base58Encode(bytes) {
-      const ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
-      const BASE = ALPHABET.length;
-      
-      if (bytes.length === 0) return '';
-      
-      // Convert bytes to a big integer
-      let num = BigInt(0);
-      for (let i = 0; i < bytes.length; i++) {
-        num = num * BigInt(256) + BigInt(bytes[i]);
-      }
-      
-      // Convert to base58
-      let encoded = '';
-      while (num > 0) {
-        const remainder = Number(num % BigInt(BASE));
-        num = num / BigInt(BASE);
-        encoded = ALPHABET[remainder] + encoded;
-      }
-      
-      // Add leading '1's for leading zero bytes
-      for (let i = 0; i < bytes.length && bytes[i] === 0; i++) {
-        encoded = '1' + encoded;
-      }
-      
-      return encoded;
-    }
-    
-    // Payment polling variables
-    let pollingInterval = null;
-    let pollingAttempts = 0;
-    const MAX_POLLING_ATTEMPTS = 120; // 10 minutes at 5-second intervals
-    const POLLING_INTERVAL_MS = 5000; // 5 seconds
-    
-    /**
-     * Starts polling for payment confirmation
-     * 
-     * VERIFICATION IMPLEMENTATION GUIDE:
-     * 
-     * In production, you would implement verification by:
-     * 
-     * 1. BACKEND APPROACH (Recommended):
-     *    - Send the transaction reference to your backend server
-     *    - Backend uses @solana/web3.js to connect to Solana RPC
-     *    - Query for transactions with the reference using:
-     *      const signatures = await connection.getSignaturesForAddress(referencePublicKey);
-     *    - Verify the transaction details (amount, recipient) match the expected values
-     *    - Return confirmation status to frontend
-     * 
-     * 2. FRONTEND APPROACH (For development/testing):
-     *    - Use @solana/web3.js Connection class
-     *    - Poll using: connection.getSignaturesForAddress(referencePublicKey)
-     *    - When signature found, get transaction details with:
-     *      connection.getParsedTransaction(signature)
-     *    - Verify transaction amount matches expected payment
-     * 
-     * @param {string} reference - The unique reference for this transaction
-     * @param {HTMLElement} modal - The modal element
-     */
-    function startPaymentPolling(reference, modal) {
-      // Runtime guard: This function should not be called in production mode
-      if (USE_BACKEND_API) {
-        console.warn('startPaymentPolling should not be called when USE_BACKEND_API is true. Use startPaymentPollingAPI instead.');
-        return;
-      }
-      
-      const statusElement = document.getElementById('paymentStatus');
-      pollingAttempts = 0;
-      
-      console.log('Starting payment polling for reference:', reference);
-      console.log('In production, connect to Solana RPC to verify payment.');
-      
-      pollingInterval = setInterval(() => {
-        pollingAttempts++;
-        
-        // Update status to show polling is active
-        if (statusElement) {
-          const dots = '.'.repeat((pollingAttempts % 3) + 1);
-          statusElement.innerHTML = `
-            <div class="solana-pay-spinner"></div>
-            <span>Checking payment status${dots}</span>
-          `;
-        }
-        
-        /**
-         * PRODUCTION IMPLEMENTATION:
-         * 
-         * Replace the simulated check below with actual Solana RPC calls:
-         * 
-         * async function checkPaymentStatus(reference) {
-         *   try {
-         *     // Connect to Solana cluster (mainnet-beta, devnet, or testnet)
-         *     const connection = new solanaWeb3.Connection(
-         *       'https://api.mainnet-beta.solana.com',
-         *       'confirmed'
-         *     );
-         *     
-         *     // Convert reference to PublicKey
-         *     const referencePublicKey = new solanaWeb3.PublicKey(reference);
-         *     
-         *     // Find transactions with this reference
-         *     const signatures = await connection.getSignaturesForAddress(
-         *       referencePublicKey,
-         *       { limit: 1 }
-         *     );
-         *     
-         *     if (signatures.length > 0) {
-         *       const signature = signatures[0].signature;
-         *       
-         *       // Get and verify transaction details
-         *       const transaction = await connection.getParsedTransaction(signature);
-         *       
-         *       // Verify amount and recipient match expected values
-         *       if (verifyTransactionDetails(transaction, expectedAmount, merchantWallet)) {
-         *         return { confirmed: true, signature };
-         *       }
-         *     }
-         *     
-         *     return { confirmed: false };
-         *   } catch (error) {
-         *     console.error('Error checking payment:', error);
-         *     return { confirmed: false, error };
-         *   }
-         * }
-         */
-        
-        /**
-         * PRODUCTION MODE:
-         * The client-side fallback implementation is for demonstration/testing only.
-         * Real payment verification should be done via the backend API.
-         * When USE_BACKEND_API is true, this polling function is not used.
-         */
-        
-        // Stop polling after max attempts (timeout)
-        if (pollingAttempts >= MAX_POLLING_ATTEMPTS) {
-          stopPaymentPolling();
-          if (statusElement) {
-            statusElement.innerHTML = `
-              <i class="fas fa-exclamation-triangle" style="color: #FF9800;"></i>
-              <span>Payment timeout. Please try again.</span>
-            `;
-            statusElement.style.background = 'rgba(255, 152, 0, 0.1)';
-            statusElement.style.color = '#FF9800';
-          }
-        }
-      }, POLLING_INTERVAL_MS);
-    }
-    
-    /**
-     * Stops the payment polling interval
-     */
-    function stopPaymentPolling() {
-      if (pollingInterval) {
-        clearInterval(pollingInterval);
-        pollingInterval = null;
-      }
-      pollingAttempts = 0;
-    }
-    
-    /**
-     * Handles successful payment confirmation
-     * @param {HTMLElement} modal - The modal element to close
-     */
-    function handlePaymentConfirmed(modal) {
-      stopPaymentPolling();
-      
-      const statusElement = document.getElementById('paymentStatus');
-      if (statusElement) {
-        statusElement.innerHTML = `
-          <i class="fas fa-check-circle" style="font-size: 1.5rem;"></i>
-          <span>Payment confirmed!</span>
-        `;
-        statusElement.style.background = 'rgba(76, 175, 80, 0.1)';
-        statusElement.style.color = '#4CAF50';
-      }
-      
-      // Hide the Open Wallet button
-      const walletBtn = document.getElementById('openWalletBtn');
-      if (walletBtn) {
-        walletBtn.style.display = 'none';
-      }
-      
-      // Clear cart and checkout data
-      setTimeout(() => {
-        const isBuyNow = checkoutSummary.isBuyNow;
-        if (isBuyNow) {
-          localStorage.removeItem('buyNowOrder');
-          localStorage.removeItem('pendingBuyNowOrder');
-        } else {
-          KickshausState.clearCart();
-        }
-        
-        localStorage.removeItem('checkoutSummary');
-        localStorage.removeItem('deliveryDetails');
-        
-        // Close modal
-        modal.remove();
-        
-        // Show success toast
-        showToast('✓ Payment successful! Thank you for your order.');
-        
-        // Redirect to home
-        setTimeout(() => {
-          window.location.href = 'index.html';
-        }, 2000);
-      }, 1500);
-    }
-
     // Payment selection with animation
     document.querySelectorAll('.payment-option').forEach(option => {
       option.addEventListener('click', function() {
@@ -1313,23 +797,17 @@
         this.style.transform = 'scale(0.97)';
         setTimeout(() => { this.style.transform = ''; }, 140);
 
-        // Handle Cryptocurrency (Solana Pay) differently
+        // Handle Cryptocurrency (Solana Pay)
         if (method === 'crypto') {
-          // Get the total amount from checkoutSummary
-          const totalAmount = checkoutSummary.total || 0;
+          const totalAmount = currentOrder.total_fiat || checkoutSummary.total || 0;
           
           if (totalAmount <= 0) {
             showToast('No items in your order. Please add items first.', 'error');
             return;
           }
           
-          // Use backend API if available, otherwise use client-side implementation
-          if (USE_BACKEND_API) {
-            showSolanaPayModalWithAPI();
-          } else {
-            // Show Solana Pay modal with client-side implementation
-            showSolanaPayModal(totalAmount);
-          }
+          // STRICT PRODUCTION: Always use API
+          showSolanaPayModalWithAPI();
           return;
         }
 
@@ -1337,23 +815,19 @@
         showToast('Processing payment...');
         
         setTimeout(() => {
-          // Clear Buy Now order if it exists
           const isBuyNow = checkoutSummary.isBuyNow;
           if (isBuyNow) {
             localStorage.removeItem('buyNowOrder');
             localStorage.removeItem('pendingBuyNowOrder');
           } else {
-            // Clear regular cart
             KickshausState.clearCart();
           }
           
-          // Clear checkout data
           localStorage.removeItem('checkoutSummary');
           localStorage.removeItem('deliveryDetails');
           
           showToast('✓ Payment successful! Thank you for your order.');
           
-          // Redirect to home
           setTimeout(() => {
             window.location.href = 'index.html';
           }, 2000);

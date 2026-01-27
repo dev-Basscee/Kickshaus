@@ -3,6 +3,7 @@ import { authController } from '../controllers/auth.controller';
 import { productController } from '../controllers/product.controller';
 import { authenticateUser, authorizeAdmin } from '../middleware/auth';
 import { asyncHandler } from '../middleware/error';
+import { paymentController } from '../controllers/payment.controller';
 
 const router = Router();
 
@@ -76,6 +77,28 @@ router.put(
 router.put(
   '/products/:id/reject',
   asyncHandler(productController.rejectProduct.bind(productController))
+);
+
+// =====================================================
+// ORDER MANAGEMENT
+// =====================================================
+
+/**
+ * GET /api/admin/orders
+ * List all orders (with delivery details)
+ */
+router.get(
+  '/orders',
+  asyncHandler(paymentController.getAllOrdersAdmin.bind(paymentController))
+);
+
+/**
+ * GET /api/admin/orders/:id
+ * Get order details (with items and delivery)
+ */
+router.get(
+  '/orders/:id',
+  asyncHandler(paymentController.getOrderAdmin.bind(paymentController))
 );
 
 export default router;

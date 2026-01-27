@@ -125,7 +125,17 @@ export class PaymentService {
    */
   async createOrder(
     userId: string,
-    items: CartItem[]
+    items: CartItem[],
+    delivery?: {
+      contact_name?: string;
+      contact_email?: string;
+      sender_phone?: string;
+      receiver_phone?: string;
+      shipping_address?: string;
+      city?: string;
+      state?: string;
+      notes?: string;
+    }
   ): Promise<CreateOrderResponse> {
     // Validate cart and get current prices from DB (zero-trust)
     const validation = await cartService.validateCart(items);
@@ -159,6 +169,15 @@ export class PaymentService {
         fulfillment_status: 'pending',
         reference_key: referenceKey,
         expires_at: expiresAt.toISOString(),
+        // Delivery details (optional)
+        contact_name: delivery?.contact_name ?? null,
+        contact_email: delivery?.contact_email ?? null,
+        sender_phone: delivery?.sender_phone ?? null,
+        receiver_phone: delivery?.receiver_phone ?? null,
+        shipping_address: delivery?.shipping_address ?? null,
+        city: delivery?.city ?? null,
+        state: delivery?.state ?? null,
+        notes: delivery?.notes ?? null,
       })
       .select('*')
       .single();
@@ -381,6 +400,45 @@ export class PaymentService {
     }
 
     return orders || [];
+  }
+
+  /**
+   * Admin: Get all orders
+   */
+  async getAllOrders(): Promise<Order[]> {
+    const { data: orders, error } = await supabaseAdmin
+      .from('orders')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw new Error(`Failed to fetch orders: ${error.message}`);
+    }
+
+    return orders || [];
+  }
+
+  /**
+   * Admin: Get order by ID (with items)
+   */
+  async getOrderAdmin(orderId: string): Promise<Order & { items: OrderItem[] }> {
+    const { data: order, error } = await supabaseAdmin
+      .from('orders')
+      .select(`
+        *,
+        order_items (*)
+      `)
+      .eq('id', orderId)
+      .single();
+
+    if (error || !order) {
+      throw new NotFoundError('Order not found');
+    }
+
+    return {
+      ...order,
+      items: order.order_items,
+    } as unknown as Order & { items: OrderItem[] };
   }
 }
 

@@ -3,7 +3,10 @@
 // Handles all communication with the backend API
 // ===============================================
 
-const API_BASE_URL = window.location.origin + '/api';
+// Determine base URL based on environment
+const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:3000/api'
+  : window.location.origin + '/api';
 
 const KickshausAPI = {
   // Auth token storage key
