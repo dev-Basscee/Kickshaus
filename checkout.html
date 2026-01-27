@@ -166,10 +166,9 @@
   <script src="api-client.js"></script>
   <script>
 
-    
-    let discountAmount = 0;
-
+    let checkoutDiscountAmount = 0;
     document.addEventListener('DOMContentLoaded', () => {
+      clearStaleBuyNowOrder();
       renderCheckoutItems();
     });
 
@@ -196,6 +195,35 @@
         localStorage.setItem('theme', 'light');
       }
     });
+
+    // Reset stale Buy Now state when cart checkout is used
+    function clearStaleBuyNowOrder() {
+      const buyNowOrder = parseStoredValue('buyNowOrder', null);
+      const checkoutSummary = parseStoredValue('checkoutSummary', {});
+      const cart = KickshausState.cart || [];
+      const isBuyNowCheckout = checkoutSummary && checkoutSummary.isBuyNow;
+
+      if (!buyNowOrder) {
+        return;
+      }
+
+      const isValidBuyNow = Array.isArray(buyNowOrder) && buyNowOrder.length > 0;
+      const hasCartItems = cart.length > 0;
+
+      if (!isValidBuyNow || (hasCartItems && !isBuyNowCheckout)) {
+        localStorage.removeItem('buyNowOrder');
+      }
+    }
+
+    function parseStoredValue(key, fallback) {
+      try {
+        const stored = localStorage.getItem(key);
+        return stored ? JSON.parse(stored) : fallback;
+      } catch (error) {
+        localStorage.removeItem(key);
+        return fallback;
+      }
+    }
 
     // Render checkout items - handles both cart and "Buy Now" orders
     function renderCheckoutItems() {
@@ -277,21 +305,21 @@
       }
       
       const tax = Math.round(subtotal * 0.075); // 7.5% tax
-      const total = subtotal + tax - discountAmount;
+      const total = subtotal + tax - checkoutDiscountAmount;
 
       document.getElementById('checkoutSubtotal').textContent = `₦${subtotal.toLocaleString()}`;
       document.getElementById('checkoutTax').textContent = `₦${tax.toLocaleString()}`;
       document.getElementById('checkoutTotal').textContent = `₦${total.toLocaleString()}`;
 
-      if (discountAmount > 0) {
-        document.getElementById('checkoutDiscount').textContent = `-₦${discountAmount.toLocaleString()}`;
+      if (checkoutDiscountAmount > 0) {
+        document.getElementById('checkoutDiscount').textContent = `-₦${checkoutDiscountAmount.toLocaleString()}`;
       }
 
       // Save to localStorage for next pages
       localStorage.setItem('checkoutSummary', JSON.stringify({
         subtotal,
         tax,
-        discount: discountAmount,
+        discount: checkoutDiscountAmount,
         total,
         itemCount: cart.reduce((sum, item) => sum + Number(item.quantity || 0), 0),
         isBuyNow: !!isBuyNow
@@ -313,19 +341,19 @@
         KickshausState.getCartTotal();
 
       if (coupon === 'SAVE500' || coupon === 'KICKSHAUS10') {
-        discountAmount = coupon === 'SAVE500' ? 500 : Math.round(currentSubtotal * 0.1);
+        checkoutDiscountAmount = coupon === 'SAVE500' ? 500 : Math.round(currentSubtotal * 0.1);
         discountRow.classList.remove('hidden');
         msg.textContent = '✓ Coupon applied successfully!';
         msg.className = 'text-sm mb-6 text-green-600 font-semibold';
       } else if (coupon === '') {
         msg.textContent = 'Please enter a coupon code';
         msg.className = 'text-sm mb-6 text-gray-500';
-        discountAmount = 0;
+        checkoutDiscountAmount = 0;
         discountRow.classList.add('hidden');
       } else {
         msg.textContent = '✗ Invalid coupon code';
         msg.className = 'text-sm mb-6 text-red-600 font-semibold';
-        discountAmount = 0;
+        checkoutDiscountAmount = 0;
         discountRow.classList.add('hidden');
       }
 
@@ -340,7 +368,7 @@
     // =====================================================
     
     // API Base URL - configure based on environment
-    const API_BASE_URL = window.location.hostname === 'localhost' 
+    const CHECKOUT_API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
       ? 'http://localhost:3000/api' 
       : '/api';
 
@@ -372,7 +400,7 @@
       }
 
       try {
-        const response = await fetch(`${API_BASE_URL}/cart/validate`, {
+        const response = await fetch(`${CHECKOUT_API_BASE_URL}/cart/validate`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -409,7 +437,7 @@
       }
 
       try {
-        const response = await fetch(`${API_BASE_URL}/payment/create-order`, {
+        const response = await fetch(`${CHECKOUT_API_BASE_URL}/payment/create-order`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -441,7 +469,7 @@
      */
     async function verifyPayment(referenceKey, authToken) {
       try {
-        const response = await fetch(`${API_BASE_URL}/payment/verify?reference_key=${encodeURIComponent(referenceKey)}`, {
+        const response = await fetch(`${CHECKOUT_API_BASE_URL}/payment/verify?reference_key=${encodeURIComponent(referenceKey)}`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${authToken}`,
