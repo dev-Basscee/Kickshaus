@@ -697,14 +697,18 @@
       }
 
       if (token) {
+        // Store token to all keys for compatibility
         localStorage.setItem('token', token);
+        localStorage.setItem('kickshaus_auth_token', token);
         try {
           const payload = JSON.parse(atob(token.split('.')[1]));
-          localStorage.setItem('user', JSON.stringify({
+          const userData = {
             id: payload.userId,
             email: payload.email,
             role: payload.role,
-          }));
+          };
+          localStorage.setItem('user', JSON.stringify(userData));
+          localStorage.setItem('kickshaus_user', JSON.stringify(userData));
           localStorage.setItem('userType', payload.type || 'user');
           
           showToast(`✓ Account created with ${provider || 'social account'}!`);
@@ -716,7 +720,9 @@
           console.error('Error parsing token:', e);
           // Clear potentially malformed token data
           localStorage.removeItem('token');
+          localStorage.removeItem('kickshaus_auth_token');
           localStorage.removeItem('user');
+          localStorage.removeItem('kickshaus_user');
           localStorage.removeItem('userType');
           showToast('✗ Authentication error. Please try again.', 'error');
         }
