@@ -41,6 +41,27 @@ async function fetchDashboardData() {
   }
 
   try {
+    // Fetch admin orders if available
+    try {
+      const ordersResponse = await apiClient.getAdminOrders?.();
+      if (ordersResponse && ordersResponse.success && ordersResponse.data) {
+        const orders = ordersResponse.data.orders || [];
+        DashboardData.orders = orders.map(o => ({
+          id: o.id,
+          customer: o.contact_name || '—',
+          email: o.contact_email || '—',
+          address: o.shipping_address || '—',
+          product: '—',
+          quantity: '—',
+          amount: Number(o.total_amount_fiat || 0),
+          status: mapOrderStatus(o.payment_status, o.fulfillment_status),
+          date: new Date(o.created_at).toLocaleString()
+        }));
+      }
+    } catch (e) {
+      console.warn('Admin orders not available or user not authorized.', e);
+    }
+
     // Fetch products for inventory
     const productsResponse = await apiClient.getProducts();
     if (productsResponse.success && productsResponse.data) {
@@ -166,25 +187,79 @@ function filterOrders(status) {
 }
 
 function viewOrderDetails(orderId) {
-  const order = DashboardData.orders.find(o => o.id === orderId);
-  if (!order) return;
-  showModal(`
-    <h2 style="margin-bottom: 20px; font-family: 'Playfair Display', serif;">Order Details - ${order.id}</h2>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-      <div><h4 style="margin-bottom: 8px; color: var(--text-muted);">Customer</h4><p><strong>Name:</strong> ${order.customer}</p><p><strong>Email:</strong> ${order.email}</p><p><strong>Address:</strong> ${order.address}</p></div>
-      <div><h4 style="margin-bottom: 8px; color: var(--text-muted);">Order Info</h4><p><strong>ID:</strong> ${order.id}</p><p><strong>Date:</strong> ${order.date}</p><p><strong>Status:</strong> <span class="status-badge ${order.status}">${order.status}</span></p></div>
-    </div>
-    <div style="background: var(--bg-primary); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
-      <h4 style="margin-bottom: 12px;">Product Details</h4>
-      <p><strong>Product:</strong> ${order.product}</p>
-      <p><strong>Quantity:</strong> ${order.quantity}</p>
-      <p><strong>Total:</strong> <span style="font-size: 1.3rem; color: var(--primary); font-weight: 700;">₦${order.amount.toLocaleString()}</span></p>
-    </div>
-    <div style="display: flex; gap: 12px; justify-content: flex-end;">
-      <button class="btn btn-secondary" onclick="closeModal()">Close</button>
-      <button class="btn btn-primary" onclick="showToast('Print feature coming soon!')"><i class="fas fa-print"></i> Print</button>
-    </div>
-  `);
+  const orderSummary = DashboardData.orders.find(o => o.id === orderId);
+  if (!orderSummary) return;
+
+  const apiClient = window.api || window.KickshausAPI;
+  const loadingContent = `
+    <h2 style="margin-bottom: 20px; font-family: 'Playfair Display', serif;">Order Details - ${orderSummary.id}</h2>
+    <p style="color: var(--text-muted);">Loading details...</p>
+  `;
+  showModal(loadingContent);
+
+  (async () => {
+    try {
+      const detailsResponse = await apiClient.getAdminOrder?.(orderId);
+      const orderData = (detailsResponse && detailsResponse.success && detailsResponse.data && detailsResponse.data.order) ? detailsResponse.data.order : null;
+
+      const itemsHtml = orderData && Array.isArray(orderData.items) && orderData.items.length > 0
+        ? orderData.items.map(it => `<li style="padding: 8px 0; border-bottom: 1px solid var(--border-color);">Product: <strong>${it.product_id}</strong> • Qty: <strong>${it.quantity}</strong> • Unit: ₦${Number(it.price_at_purchase).toLocaleString()}</li>`).join('')
+        : '<li>No items found</li>';
+
+      const content = `
+        <h2 style="margin-bottom: 20px; font-family: 'Playfair Display', serif;">Order Details - ${orderSummary.id}</h2>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+          <div>
+            <h4 style="margin-bottom: 8px; color: var(--text-muted);">Customer</h4>
+            <p><strong>Name:</strong> ${orderData?.contact_name || orderSummary.customer}</p>
+            <p><strong>Email:</strong> ${orderData?.contact_email || orderSummary.email}</p>
+            <p><strong>Sender Phone:</strong> ${orderData?.sender_phone || '—'}</p>
+            <p><strong>Receiver Phone:</strong> ${orderData?.receiver_phone || '—'}</p>
+          </div>
+          <div>
+            <h4 style="margin-bottom: 8px; color: var(--text-muted);">Delivery</h4>
+            <p><strong>Address:</strong> ${orderData?.shipping_address || orderSummary.address}</p>
+            <p><strong>City:</strong> ${orderData?.city || '—'}</p>
+            <p><strong>State:</strong> ${orderData?.state || '—'}</p>
+            <p><strong>Notes:</strong> ${orderData?.notes || '—'}</p>
+          </div>
+        </div>
+        <div style="background: var(--bg-primary); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+          <h4 style="margin-bottom: 12px;">Items</h4>
+          <ul style="list-style: none; padding: 0; margin: 0;">${itemsHtml}</ul>
+          <p style="margin-top: 12px;"><strong>Total:</strong> <span style="font-size: 1.2rem; color: var(--primary); font-weight: 700;">₦${orderSummary.amount.toLocaleString()}</span></p>
+        </div>
+        <div style="display: flex; gap: 12px; justify-content: flex-end;">
+          <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+          <button class="btn btn-primary" onclick="showToast('Print feature coming soon!')"><i class="fas fa-print"></i> Print</button>
+        </div>
+      `;
+      showModal(content);
+    } catch (err) {
+      console.error('Failed to load order details', err);
+      const content = `
+        <h2 style="margin-bottom: 20px; font-family: 'Playfair Display', serif;">Order Details - ${orderSummary.id}</h2>
+        <p style="color: var(--accent);">Failed to load detailed order info. Showing summary only.</p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+          <div><h4 style="margin-bottom: 8px; color: var(--text-muted);">Customer</h4><p><strong>Name:</strong> ${orderSummary.customer}</p><p><strong>Email:</strong> ${orderSummary.email}</p><p><strong>Address:</strong> ${orderSummary.address}</p></div>
+          <div><h4 style="margin-bottom: 8px; color: var(--text-muted);">Order Info</h4><p><strong>ID:</strong> ${orderSummary.id}</p><p><strong>Date:</strong> ${orderSummary.date}</p><p><strong>Status:</strong> <span class="status-badge ${orderSummary.status}">${orderSummary.status}</span></p></div>
+        </div>
+      `;
+      showModal(content);
+    }
+  })();
+}
+
+function mapOrderStatus(paymentStatus, fulfillmentStatus) {
+  // Normalize to dashboard statuses: pending | processing | completed | cancelled
+  if (String(fulfillmentStatus).toLowerCase() === 'cancelled') return 'cancelled';
+  if (String(fulfillmentStatus).toLowerCase() === 'delivered') return 'completed';
+  if (String(fulfillmentStatus).toLowerCase() === 'processing') return 'processing';
+  // Fallback: if payment confirmed and shipped, treat as processing/completed
+  if (String(paymentStatus).toLowerCase() === 'confirmed') {
+    return String(fulfillmentStatus).toLowerCase() === 'shipped' ? 'processing' : 'completed';
+  }
+  return 'pending';
 }
 
 function updateOrderStatus(orderId) {

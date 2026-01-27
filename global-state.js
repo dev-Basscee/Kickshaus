@@ -370,8 +370,8 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (user && (user.type === 'admin' || user.role === 'admin')) {
           window.location.href = 'dashboard.html';
         } else {
-          // Regular user - show profile or redirect to account page
-          window.location.href = 'index.html';
+          // Regular user - redirect to dashboard or account page
+          window.location.href = 'dashboard.html';
         }
       } else {
         window.location.href = 'login.html';

@@ -67,8 +67,6 @@ const PAYMENT_EXPIRY_MS = 15 * 60 * 1000;
 // Default NGN to USD exchange rate (configurable via environment)
 const DEFAULT_NGN_USD_RATE = 1600;
 
-// Fallback SOL price in USD (used when API is unreachable)
-const FALLBACK_SOL_PRICE_USD = 150.0;
 
 export class PaymentService {
   private connection: Connection;
@@ -89,16 +87,14 @@ export class PaymentService {
       );
       
       if (!response.ok) {
-        throw new Error('Failed to fetch SOL price');
+        throw new PaymentError('Failed to fetch SOL price');
       }
 
       const data = await response.json() as { solana: { usd: number } };
       return data.solana.usd;
     } catch (error) {
-      // Fallback price in case of API failure (should be replaced with a more robust solution)
-      console.error('Failed to fetch SOL price:', error);
-      console.warn(`Using fallback SOL price: $${FALLBACK_SOL_PRICE_USD}`);
-      return FALLBACK_SOL_PRICE_USD;
+      // In production, surface an explicit error (no dev fallbacks)
+      throw new PaymentError('Unable to retrieve SOL price. Please try again later.');
     }
   }
 

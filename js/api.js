@@ -293,6 +293,27 @@ const api = {
   },
 
   // =====================================================
+  // ADMIN ENDPOINTS
+  // =====================================================
+
+  /**
+   * Get all orders (admin)
+   * @returns {Promise<Object>}
+   */
+  async getAdminOrders() {
+    return await this.request('/admin/orders', 'GET');
+  },
+
+  /**
+   * Get order by ID with items (admin)
+   * @param {string} id - Order ID
+   * @returns {Promise<Object>}
+   */
+  async getAdminOrder(id) {
+    return await this.request(`/admin/orders/${id}`, 'GET');
+  },
+
+  // =====================================================
   // CART ENDPOINTS
   // =====================================================
 

@@ -164,7 +164,6 @@
   <script src="js/api.js"></script>
   <script src="global-state.js"></script>
   <script src="api-client.js"></script>
-  <script src="checkout.js"></script>
   <script>
 
     
@@ -214,7 +213,7 @@
       let itemCount;
       // FIX: Also check for non-empty buyNowOrder array here
       if (buyNowOrder && buyNowOrder.length > 0) {
-        itemCount = buyNowOrder.reduce((sum, item) => sum + item.quantity, 0);
+        itemCount = buyNowOrder.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
       } else {
         itemCount = KickshausState.getCartItemCount();
       }
@@ -260,7 +259,7 @@
             <p class="text-sm text-gray-600 mt-1">Qty: ${item.quantity}</p>
           </div>
 
-          <p class="font-bold">₦${((item.price || 0) * item.quantity).toLocaleString()}</p>
+          <p class="font-bold">₦${(Number(item.price || 0) * Number(item.quantity || 0)).toLocaleString()}</p>
         </div>
       `}).join('');
 
@@ -272,7 +271,7 @@
       let subtotal;
       
       if (isBuyNow) {
-        subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        subtotal = cart.reduce((sum, item) => sum + (Number(item.price || 0) * Number(item.quantity || 0)), 0);
       } else {
         subtotal = KickshausState.getCartTotal();
       }
@@ -294,7 +293,7 @@
         tax,
         discount: discountAmount,
         total,
-        itemCount: cart.reduce((sum, item) => sum + item.quantity, 0),
+        itemCount: cart.reduce((sum, item) => sum + Number(item.quantity || 0), 0),
         isBuyNow: !!isBuyNow
       }));
     }
@@ -310,7 +309,7 @@
       const buyNowOrder = JSON.parse(localStorage.getItem('buyNowOrder') || 'null');
       const isBuyNowForSubtotal = buyNowOrder && buyNowOrder.length > 0;
       const currentSubtotal = isBuyNowForSubtotal ? 
-        buyNowOrder.reduce((sum, item) => sum + (item.price * item.quantity), 0) : 
+        buyNowOrder.reduce((sum, item) => sum + (Number(item.price || 0) * Number(item.quantity || 0)), 0) : 
         KickshausState.getCartTotal();
 
       if (coupon === 'SAVE500' || coupon === 'KICKSHAUS10') {
@@ -515,6 +514,7 @@
      */
     async function handleProceedToDelivery(event) {
       const proceedBtn = document.getElementById('proceedBtn');
+      event.preventDefault();
       
       // Show loading state
       proceedBtn.textContent = 'Validating...';
@@ -527,7 +527,13 @@
           // Store validation result for use in delivery/payment pages
           localStorage.setItem('validatedCart', JSON.stringify(validationResult.data));
           
-          // Allow navigation to continue
+          // Ensure checkoutSummary is present (recompute for safety)
+          const buyNowOrder = JSON.parse(localStorage.getItem('buyNowOrder') || 'null');
+          const isBuyNow = buyNowOrder && buyNowOrder.length > 0;
+          const cart = isBuyNow ? buyNowOrder : KickshausState.cart;
+          updateCheckoutSummary(cart, isBuyNow);
+
+          // Navigate to delivery
           window.location.href = 'delivery.html';
         } else {
           // Show error
@@ -549,6 +555,8 @@
         proceedBtn.style.pointerEvents = 'auto';
       }
     }
+    // Bind proceed button to validated handoff
+    document.getElementById('proceedBtn').addEventListener('click', handleProceedToDelivery);
   </script>
   <script src="script.js"></script>
   

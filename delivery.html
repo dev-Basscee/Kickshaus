@@ -250,10 +250,28 @@ body.dark-theme .bg-white {
 
 
     document.addEventListener('DOMContentLoaded', () => {
-      // Load order summary (handles both cart and Buy Now)
-      const checkoutSummary = JSON.parse(localStorage.getItem('checkoutSummary') || '{}');
-      document.getElementById('orderTotal').textContent = `₦${(checkoutSummary.total || 0).toLocaleString()}`;
-      document.getElementById('orderItems').textContent = checkoutSummary.itemCount || 0;
+      // Load order summary (strict: must exist)
+      const summaryRaw = localStorage.getItem('checkoutSummary');
+      if (!summaryRaw) {
+        alert('Your checkout data is missing. Redirecting to cart.');
+        window.location.href = 'cart.html';
+        return;
+      }
+      let checkoutSummary;
+      try {
+        checkoutSummary = JSON.parse(summaryRaw);
+      } catch (e) {
+        alert('Corrupted checkout data. Redirecting to cart.');
+        window.location.href = 'cart.html';
+        return;
+      }
+      if (!checkoutSummary || typeof checkoutSummary.total === 'undefined' || typeof checkoutSummary.itemCount === 'undefined') {
+        alert('Incomplete checkout data. Redirecting to cart.');
+        window.location.href = 'cart.html';
+        return;
+      }
+      document.getElementById('orderTotal').textContent = `₦${Number(checkoutSummary.total || 0).toLocaleString()}`;
+      document.getElementById('orderItems').textContent = Number(checkoutSummary.itemCount || 0);
 
       // Handle form submission
       document.getElementById("deliveryForm").addEventListener("submit", function (e) {
@@ -294,7 +312,7 @@ body.dark-theme .bg-white {
         
         setTimeout(() => {
           window.location.href = "payment.html";
-        }, 1000);
+        }, 800);
       });
     });
   </script>
