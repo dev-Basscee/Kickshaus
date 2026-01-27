@@ -67,14 +67,14 @@ export const validateCartSchema = z.object({
 export const createOrderSchema = z.object({
   items: z.array(cartItemSchema).min(1, 'Order must have at least one item'),
   // Delivery details
-  contact_name: z.string().min(2, 'Contact name is required').max(255).optional(),
-  contact_email: z.string().email('Invalid email format').optional(),
-  sender_phone: z.string().min(7, 'Sender phone is required').max(50).optional(),
-  receiver_phone: z.string().min(7, 'Receiver phone is required').max(50).optional(),
-  shipping_address: z.string().min(4, 'Shipping address is required').max(500).optional(),
-  city: z.string().min(2, 'City is required').max(100).optional(),
-  state: z.string().min(2, 'State is required').max(100).optional(),
-  notes: z.string().max(2000).optional(),
+  contact_name: z.string().min(2, 'Contact name is required').max(255).optional().nullable(),
+  contact_email: z.string().email('Invalid email format').optional().nullable(),
+  sender_phone: z.string().min(7, 'Sender phone is required').max(50).optional().nullable(),
+  receiver_phone: z.string().min(7, 'Receiver phone is required').max(50).optional().nullable(),
+  shipping_address: z.string().min(4, 'Shipping address is required').max(500).optional().nullable(),
+  city: z.string().min(2, 'City is required').max(100).optional().nullable(),
+  state: z.string().min(2, 'State is required').max(100).optional().nullable(),
+  notes: z.string().max(2000).optional().nullable(),
 });
 
 export const verifyPaymentSchema = z.object({

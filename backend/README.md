@@ -36,9 +36,11 @@ Production-ready REST API for the Kickshaus e-commerce platform, built with Expr
    cd backend
    ```
 
-2. Install dependencies:
+2. Install dependencies (npm or pnpm):
    ```bash
    npm install
+   # or
+   pnpm install
    ```
 
 3. Copy the environment example file:
@@ -46,7 +48,7 @@ Production-ready REST API for the Kickshaus e-commerce platform, built with Expr
    cp .env.example .env
    ```
 
-4. Configure your environment variables in `.env`:
+4. Configure your environment variables in `.env` (full list):
    ```env
    # Server
    PORT=3000
@@ -65,20 +67,45 @@ Production-ready REST API for the Kickshaus e-commerce platform, built with Expr
    SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
    PLATFORM_WALLET_ADDRESS=your_platform_wallet_public_key
 
+    # CoinGecko
+    COINGECKO_API_URL=https://api.coingecko.com/api/v3
+
+    # Exchange Rate (1 USD = NGN_USD_RATE NGN)
+    NGN_USD_RATE=1600
+
    # Rate Limiting
    RATE_LIMIT_WINDOW_MS=900000
    RATE_LIMIT_MAX_REQUESTS=100
 
    # CORS
    CORS_ORIGIN=http://localhost:3001
+
+    # OAuth (optional)
+    GOOGLE_CLIENT_ID=
+    GOOGLE_CLIENT_SECRET=
+    FACEBOOK_APP_ID=
+    FACEBOOK_APP_SECRET=
+    SOCIAL_CALLBACK_URL=http://localhost:3000/api/auth
+    FRONTEND_URL=http://localhost:3000
    ```
 
-5. Run the database migrations in your Supabase SQL editor:
+5. Run the database migrations in your Supabase SQL editor (in order):
    - Execute `src/db/migrations/001_initial_schema.sql`
+   - Execute `src/db/migrations/002_add_social_auth.sql`
+   - Execute `src/db/migrations/003_add_delivery_details.sql`
+   
+   Notes:
+   - `confirm_order(p_order_id UUID, p_transaction_signature VARCHAR)` RPC is created by `001_initial_schema.sql`.
+   - Ensure Row Level Security policies are configured appropriately for your tables.
 
-6. Start the development server:
+6. Start the development server (use a free port if 3000 is busy):
    ```bash
+   # default
    npm run dev
+   # or
+   pnpm run dev
+   # alternative port
+   PORT=3001 npm run dev
    ```
 
 ## API Endpoints
@@ -233,10 +260,16 @@ npm test
 
 1. Use a reliable Solana RPC provider (Helius, QuickNode)
 2. Enable Row Level Security (RLS) in Supabase
-3. Use environment-specific configurations
-4. Set up proper logging and monitoring
-5. Configure SSL/TLS for all connections
-6. Use a reverse proxy (nginx) in front of Node.js
+3. Apply all migrations (001–003) in your production database
+4. Set `PLATFORM_WALLET_ADDRESS` to your receiving wallet and verify it
+5. Set `CORS_ORIGIN` to your deployed frontend domain
+6. Set up proper logging and monitoring
+7. Configure SSL/TLS for all connections
+8. Use a reverse proxy (nginx) in front of Node.js
+
+### Serving the Frontend
+- The backend serves static frontend files from the repository root; deploying the server will also serve `index.html` and related pages.
+- For separate hosting, point your static host to the repo root and configure `FRONTEND_URL` accordingly.
 
 ## License
 

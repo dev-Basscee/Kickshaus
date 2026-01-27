@@ -14,8 +14,14 @@ export function errorHandler(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _next: NextFunction
 ): void {
-  // Log error
-  Logger.error(err);
+  // Log error safely as string to avoid logger mutating error objects
+  try {
+    const logMsg = (err && (err.stack || err.message)) ? (err.stack || err.message) : String(err);
+    Logger.error(logMsg);
+  } catch (_) {
+    // Fallback logging
+    try { Logger.error('Unhandled error occurred in errorHandler'); } catch {}
+  }
 
   // Handle Zod validation errors
   if (err instanceof ZodError) {
