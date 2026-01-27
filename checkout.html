@@ -167,9 +167,7 @@
   <script src="checkout.js"></script>
   <script>
 
-    
-    discountAmount = 0;
-
+    let checkoutDiscountAmount = 0;
     document.addEventListener('DOMContentLoaded', () => {
       clearStaleBuyNowOrder();
       renderCheckoutItems();
@@ -221,9 +219,7 @@
         return;
       }
 
-      if (cart.length > 0) {
-        localStorage.removeItem('buyNowOrder');
-      }
+      localStorage.removeItem('buyNowOrder');
     }
 
     // Render checkout items - handles both cart and "Buy Now" orders
@@ -298,21 +294,21 @@
       }
       
       const tax = Math.round(subtotal * 0.075); // 7.5% tax
-      const total = subtotal + tax - discountAmount;
+      const total = subtotal + tax - checkoutDiscountAmount;
 
       document.getElementById('checkoutSubtotal').textContent = `₦${subtotal.toLocaleString()}`;
       document.getElementById('checkoutTax').textContent = `₦${tax.toLocaleString()}`;
       document.getElementById('checkoutTotal').textContent = `₦${total.toLocaleString()}`;
 
-      if (discountAmount > 0) {
-        document.getElementById('checkoutDiscount').textContent = `-₦${discountAmount.toLocaleString()}`;
+      if (checkoutDiscountAmount > 0) {
+        document.getElementById('checkoutDiscount').textContent = `-₦${checkoutDiscountAmount.toLocaleString()}`;
       }
 
       // Save to localStorage for next pages
       localStorage.setItem('checkoutSummary', JSON.stringify({
         subtotal,
         tax,
-        discount: discountAmount,
+        discount: checkoutDiscountAmount,
         total,
         itemCount: cart.reduce((sum, item) => sum + item.quantity, 0),
         isBuyNow: !!isBuyNow
@@ -334,19 +330,19 @@
         KickshausState.getCartTotal();
 
       if (coupon === 'SAVE500' || coupon === 'KICKSHAUS10') {
-        discountAmount = coupon === 'SAVE500' ? 500 : Math.round(currentSubtotal * 0.1);
+        checkoutDiscountAmount = coupon === 'SAVE500' ? 500 : Math.round(currentSubtotal * 0.1);
         discountRow.classList.remove('hidden');
         msg.textContent = '✓ Coupon applied successfully!';
         msg.className = 'text-sm mb-6 text-green-600 font-semibold';
       } else if (coupon === '') {
         msg.textContent = 'Please enter a coupon code';
         msg.className = 'text-sm mb-6 text-gray-500';
-        discountAmount = 0;
+        checkoutDiscountAmount = 0;
         discountRow.classList.add('hidden');
       } else {
         msg.textContent = '✗ Invalid coupon code';
         msg.className = 'text-sm mb-6 text-red-600 font-semibold';
-        discountAmount = 0;
+        checkoutDiscountAmount = 0;
         discountRow.classList.add('hidden');
       }
 
