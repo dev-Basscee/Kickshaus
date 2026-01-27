@@ -168,9 +168,10 @@
   <script>
 
     
-    let discountAmount = 0;
+    discountAmount = 0;
 
     document.addEventListener('DOMContentLoaded', () => {
+      clearStaleBuyNowOrder();
       renderCheckoutItems();
     });
 
@@ -197,6 +198,33 @@
         localStorage.setItem('theme', 'light');
       }
     });
+
+    // Reset stale Buy Now state when cart checkout is used
+    function clearStaleBuyNowOrder() {
+      const buyNowOrder = JSON.parse(localStorage.getItem('buyNowOrder') || 'null');
+      if (!buyNowOrder) {
+        return;
+      }
+
+      if (!Array.isArray(buyNowOrder) || buyNowOrder.length === 0) {
+        localStorage.removeItem('buyNowOrder');
+        return;
+      }
+
+      const cart = KickshausState.cart || [];
+      if (cart.length === 0) {
+        return;
+      }
+
+      const checkoutSummary = JSON.parse(localStorage.getItem('checkoutSummary') || '{}');
+      if (checkoutSummary.isBuyNow) {
+        return;
+      }
+
+      if (cart.length > 0) {
+        localStorage.removeItem('buyNowOrder');
+      }
+    }
 
     // Render checkout items - handles both cart and "Buy Now" orders
     function renderCheckoutItems() {
@@ -333,7 +361,7 @@
     // =====================================================
     
     // API Base URL - configure based on environment
-    const API_BASE_URL = window.location.hostname === 'localhost' 
+    const CHECKOUT_API_BASE_URL = window.location.hostname === 'localhost' 
       ? 'http://localhost:3000/api' 
       : '/api';
 
@@ -365,7 +393,7 @@
       }
 
       try {
-        const response = await fetch(`${API_BASE_URL}/cart/validate`, {
+        const response = await fetch(`${CHECKOUT_API_BASE_URL}/cart/validate`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -402,7 +430,7 @@
       }
 
       try {
-        const response = await fetch(`${API_BASE_URL}/payment/create-order`, {
+        const response = await fetch(`${CHECKOUT_API_BASE_URL}/payment/create-order`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -434,7 +462,7 @@
      */
     async function verifyPayment(referenceKey, authToken) {
       try {
-        const response = await fetch(`${API_BASE_URL}/payment/verify?reference_key=${encodeURIComponent(referenceKey)}`, {
+        const response = await fetch(`${CHECKOUT_API_BASE_URL}/payment/verify?reference_key=${encodeURIComponent(referenceKey)}`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${authToken}`,
