@@ -1,104 +1,30 @@
 import { Router } from 'express';
 import { authController } from '../controllers/auth.controller';
-import { productController } from '../controllers/product.controller';
-import { authenticateUser, authorizeAdmin } from '../middleware/auth';
+import { adminController } from '../controllers/admin.controller';
+import { authenticateUser, authorizeRole } from '../middleware/auth';
 import { asyncHandler } from '../middleware/error';
-import { paymentController } from '../controllers/payment.controller';
 
 const router = Router();
 
-// All admin routes require authentication and admin role
+// Protect all admin routes
 router.use(authenticateUser);
-router.use(authorizeAdmin);
+router.use(authorizeRole('admin'));
 
-// =====================================================
-// MERCHANT MANAGEMENT
-// =====================================================
+// Dashboard Stats
+router.get(
+  '/stats',
+  asyncHandler(adminController.getDashboardStats.bind(adminController))
+);
 
-/**
- * GET /api/admin/merchants
- * List all merchants (optionally filtered by status)
- */
+// Merchant Management
 router.get(
   '/merchants',
   asyncHandler(authController.listMerchants.bind(authController))
 );
 
-/**
- * PUT /api/admin/merchants/:id/approve
- * Approve a merchant
- */
 router.put(
-  '/merchants/:id/approve',
-  asyncHandler(async (req, res) => {
-    req.body = { status: 'approved' };
-    await authController.updateMerchantStatus(req, res);
-  })
-);
-
-/**
- * PUT /api/admin/merchants/:id/reject
- * Reject a merchant
- */
-router.put(
-  '/merchants/:id/reject',
-  asyncHandler(async (req, res) => {
-    req.body = { status: 'rejected' };
-    await authController.updateMerchantStatus(req, res);
-  })
-);
-
-// =====================================================
-// PRODUCT MANAGEMENT
-// =====================================================
-
-/**
- * GET /api/admin/products/pending
- * Get all products pending approval
- */
-router.get(
-  '/products/pending',
-  asyncHandler(productController.getPendingProducts.bind(productController))
-);
-
-/**
- * PUT /api/admin/products/:id/approve
- * Approve a product
- */
-router.put(
-  '/products/:id/approve',
-  asyncHandler(productController.approveProduct.bind(productController))
-);
-
-/**
- * PUT /api/admin/products/:id/reject
- * Reject a product
- */
-router.put(
-  '/products/:id/reject',
-  asyncHandler(productController.rejectProduct.bind(productController))
-);
-
-// =====================================================
-// ORDER MANAGEMENT
-// =====================================================
-
-/**
- * GET /api/admin/orders
- * List all orders (with delivery details)
- */
-router.get(
-  '/orders',
-  asyncHandler(paymentController.getAllOrdersAdmin.bind(paymentController))
-);
-
-/**
- * GET /api/admin/orders/:id
- * Get order details (with items and delivery)
- */
-router.get(
-  '/orders/:id',
-  asyncHandler(paymentController.getOrderAdmin.bind(paymentController))
+  '/merchants/:id/status',
+  asyncHandler(authController.updateMerchantStatus.bind(authController))
 );
 
 export default router;

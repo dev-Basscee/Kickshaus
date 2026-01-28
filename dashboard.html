@@ -159,7 +159,7 @@
               <div class="stat-icon blue"><i class="fas fa-dollar-sign"></i></div>
               <div class="stat-trend up"><i class="fas fa-arrow-up"></i>12.5%</div>
             </div>
-            <div class="stat-value">₦12.5M</div>
+            <div class="stat-value" id="totalRevenue">₦0</div>
             <div class="stat-label">Total Revenue</div>
           </div>
           <div class="stat-card">
@@ -167,7 +167,7 @@
               <div class="stat-icon green"><i class="fas fa-shopping-cart"></i></div>
               <div class="stat-trend up"><i class="fas fa-arrow-up"></i>8.3%</div>
             </div>
-            <div class="stat-value">1,284</div>
+            <div class="stat-value" id="totalOrders">0</div>
             <div class="stat-label">Total Orders</div>
           </div>
           <div class="stat-card">
@@ -175,16 +175,16 @@
               <div class="stat-icon orange"><i class="fas fa-users"></i></div>
               <div class="stat-trend up"><i class="fas fa-arrow-up"></i>15.2%</div>
             </div>
-            <div class="stat-value">8,429</div>
+            <div class="stat-value" id="totalCustomers">0</div>
             <div class="stat-label">Total Customers</div>
           </div>
           <div class="stat-card">
             <div class="stat-header">
-              <div class="stat-icon purple"><i class="fas fa-box"></i></div>
+              <div class="stat-icon purple"><i class="fas fa-store"></i></div>
               <div class="stat-trend down"><i class="fas fa-arrow-down"></i>3.1%</div>
             </div>
-            <div class="stat-value">234</div>
-            <div class="stat-label">Products</div>
+            <div class="stat-value" id="totalMerchants">0</div>
+            <div class="stat-label">Merchants</div>
           </div>
         </div>
 
@@ -195,11 +195,9 @@
           </div>
           <div class="table-container">
             <table>
-              <thead><tr><th>Order ID</th><th>Customer</th><th>Product</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
-              <tbody>
-                <tr><td><strong>#ORD-001</strong></td><td>John Doe</td><td>Premium Leather Loafer</td><td><strong>₦180,000</strong></td><td><span class="status-badge completed">Completed</span></td><td>Dec 30, 2025</td></tr>
-                <tr><td><strong>#ORD-002</strong></td><td>Jane Smith</td><td>Urban Street Sneaker</td><td><strong>₦145,000</strong></td><td><span class="status-badge processing">Processing</span></td><td>Dec 30, 2025</td></tr>
-                <tr><td><strong>#ORD-003</strong></td><td>Mike Johnson</td><td>Executive Oxford Shoe</td><td><strong>₦195,000</strong></td><td><span class="status-badge pending">Pending</span></td><td>Dec 29, 2025</td></tr>
+              <thead><tr><th>Order ID</th><th>Customer</th><th>Amount</th><th>Status</th></tr></thead>
+              <tbody id="recentOrdersTable">
+                <!-- Data will be populated by JS -->
               </tbody>
             </table>
           </div>
@@ -210,18 +208,50 @@
       <div class="dashboard-section" id="orders-section"></div>
       <div class="dashboard-section" id="products-section"></div>
       <div class="dashboard-section" id="customers-section"></div>
-      <div class="dashboard-section" id="analytics-section"></div>
+      <.dashboard-section" id="analytics-section"></div>
       <div class="dashboard-section" id="inventory-section"></div>
       <div class="dashboard-section" id="reviews-section"></div>
-      <div class="dashboard-section" id="merchants-section"></div>
+      <div class="dashboard-section" id="merchants-section">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">All Merchants</h2>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Business Name</th>
+                  <th>Email</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="merchantsTable">
+                <!-- Data will be populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
       <div class="dashboard-section" id="settings-section"></div>
     </main>
   </div>
 
-  <script src="js/api.js"></script>
-  <script src="global-state.js"></script>
-  <script src="api-client.js"></script>
-  <script src="universal-theme.js"></script>
-  <script src="dashboard-functions.js"></script>
+  <script>
+    // Add cache-busting query parameter to scripts
+    const scripts = [
+      'js/api.js',
+      'global-state.js',
+      'api-client.js',
+      'universal-theme.js',
+      'dashboard-functions.js'
+    ];
+    const version = new Date().getTime();
+    scripts.forEach(script => {
+      const scriptTag = document.createElement('script');
+      scriptTag.src = `${script}?v=${version}`;
+      document.body.appendChild(scriptTag);
+    });
+  </script>
 </body>
 </html>

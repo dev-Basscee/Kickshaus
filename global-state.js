@@ -367,11 +367,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const user = KickshausAPI.getUser();
         if (user && user.type === 'merchant') {
           window.location.href = 'merchant-dashboard.html';
-        } else if (user && (user.type === 'admin' || user.role === 'admin')) {
+        } else if (user && user.type === 'admin') {
           window.location.href = 'dashboard.html';
         } else {
-          // Regular user - redirect to dashboard or account page
-          window.location.href = 'dashboard.html';
+          // Regular user - redirect to home page
+          window.location.href = 'index.html';
         }
       } else {
         window.location.href = 'login.html';

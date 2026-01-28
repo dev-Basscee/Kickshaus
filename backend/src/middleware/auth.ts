@@ -37,6 +37,28 @@ export function authenticateUser(
 }
 
 /**
+ * Creates a middleware that authorizes users with a specific role.
+ * @param role The required role ('admin', 'merchant', 'customer')
+ */
+export function authorizeRole(role: 'admin' | 'merchant' | 'customer') {
+  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      return next(new UnauthorizedError('Authentication required'));
+    }
+
+    // Handle both 'role' and 'type' properties for flexibility
+    const userRole = req.user.role || req.user.type;
+
+    if (userRole !== role) {
+      return next(new ForbiddenError(`Forbidden: ${role} access required. Your role is ${userRole}.`));
+    }
+
+    next();
+  };
+}
+
+
+/**
  * Authorize admin users only
  */
 export function authorizeAdmin(
