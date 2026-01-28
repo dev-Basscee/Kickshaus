@@ -20,7 +20,9 @@ export function errorHandler(
     Logger.error(logMsg);
   } catch (_) {
     // Fallback logging
-    try { Logger.error('Unhandled error occurred in errorHandler'); } catch {}
+    try { Logger.error('Unhandled error occurred in errorHandler'); } catch {
+      // If the fallback logger fails, there is nothing else to do.
+    }
   }
 
   // Handle Zod validation errors

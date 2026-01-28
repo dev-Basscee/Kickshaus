@@ -1,8 +1,8 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { paymentService } from '../services/payment.service';
 import { AuthenticatedRequest } from '../types';
 import { sendSuccess } from '../utils/errors';
-import { CreateOrderInput, VerifyPaymentInput } from '../utils/validators';
+import { CreateOrderInput, VerifyPaymentInput, CreateTransactionInput } from '../utils/validators';
 
 export class PaymentController {
   /**
@@ -11,11 +11,44 @@ export class PaymentController {
    */
   async createOrder(req: AuthenticatedRequest, res: Response): Promise<void> {
     const userId = req.user!.userId;
-    const { items, ...delivery } = req.body as CreateOrderInput;
+    // Extract items and the raw delivery fields
+    const { items, ...rawDelivery } = req.body as CreateOrderInput;
+    
+    // FIX: Sanitize input. Convert 'null' to 'undefined' for TypeScript compatibility.
+    // The Service expects optional fields (undefined), not nullable ones.
+    const delivery = {
+      contact_name: rawDelivery.contact_name ?? undefined,
+      contact_email: rawDelivery.contact_email ?? undefined,
+      sender_phone: rawDelivery.sender_phone ?? undefined,
+      receiver_phone: rawDelivery.receiver_phone ?? undefined,
+      shipping_address: rawDelivery.shipping_address ?? undefined,
+      city: rawDelivery.city ?? undefined,
+      state: rawDelivery.state ?? undefined,
+      notes: rawDelivery.notes ?? undefined,
+    };
     
     const order = await paymentService.createOrder(userId, items, delivery);
 
     sendSuccess(res, order, 201);
+  }
+
+  /**
+   * Create a transaction for an order
+   * POST /api/payment/transaction
+   */
+  async createTransaction(req: AuthenticatedRequest, res: Response): Promise<void> {
+    const { orderId, account } = req.body as CreateTransactionInput;
+    const transaction = await paymentService.createTransaction(orderId, account);
+    sendSuccess(res, transaction);
+  }
+
+  /**
+   * GET /api/payment/chain-info
+   * Proxy to get latest blockhash from backend RPC
+   */
+  async getChainInfo(req: Request, res: Response): Promise<void> {
+    const info = await paymentService.getLatestBlockhash();
+    sendSuccess(res, info);
   }
 
   /**

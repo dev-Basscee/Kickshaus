@@ -10,6 +10,7 @@ export class AuthService {
    * Register a new customer
    */
   async registerUser(email: string, password: string): Promise<Omit<User, 'password_hash'>> {
+    email = email.toLowerCase().trim();
     // Check if Supabase is configured
     if (!isSupabaseConfigured()) {
       throw new AppError(
@@ -81,6 +82,7 @@ export class AuthService {
    * Login user (customer or admin)
    */
   async loginUser(email: string, password: string): Promise<{ user: Omit<User, 'password_hash'>; type: 'user' | 'admin' }> {
+    email = email.toLowerCase().trim();
     // Check if Supabase is configured
     if (!isSupabaseConfigured()) {
       throw new AppError(
@@ -359,6 +361,7 @@ export class AuthService {
    * - If user doesn't exist: create new user
    */
   async findOrCreateSocialUser(profile: SocialProfile): Promise<Omit<User, 'password_hash'>> {
+    profile.email = profile.email.toLowerCase().trim();
     if (!isSupabaseConfigured()) {
       throw new AppError(
         'Social login is currently unavailable. Please try again later.',

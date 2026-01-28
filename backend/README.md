@@ -66,12 +66,17 @@ Production-ready REST API for the Kickshaus e-commerce platform, built with Expr
    # Solana
    SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
    PLATFORM_WALLET_ADDRESS=your_platform_wallet_public_key
+   SOLANA_PAY_ICON_URL=https://yoursite.com/icon.png
 
     # CoinGecko
     COINGECKO_API_URL=https://api.coingecko.com/api/v3
 
     # Exchange Rate (1 USD = NGN_USD_RATE NGN)
     NGN_USD_RATE=1600
+
+    # Frontend Redirection URLs
+    FRONTEND_SUCCESS_URL=http://localhost:3001/payment-success
+    FRONTEND_CANCEL_URL=http://localhost:3001/payment-cancelled
 
    # Rate Limiting
    RATE_LIMIT_WINDOW_MS=900000

@@ -670,237 +670,76 @@
   <script src="api-client.js"></script>
   <script src="script.js"></script>
   <script>
-    // Social Auth URL (use existing API_BASE_URL from api-client.js or fallback)
-    const SOCIAL_AUTH_URL = window.location.origin;
-
-    // Social signup functions (same as login - OAuth handles both)
-    function signupWithGoogle() {
-      window.location.href = `${SOCIAL_AUTH_URL}/api/auth/google`;
-    }
-
-    function signupWithFacebook() {
-      window.location.href = `${SOCIAL_AUTH_URL}/api/auth/facebook`;
-    }
-
-    // Handle OAuth callback (in case user lands here after OAuth)
-    function handleOAuthCallback() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const token = urlParams.get('token');
-      const provider = urlParams.get('provider');
-      const error = urlParams.get('error');
-      const errorMessage = urlParams.get('message');
-
-      if (error) {
-        showToast('✗ ' + (errorMessage || 'Authentication failed. Please try again.'), 'error');
-        window.history.replaceState({}, document.title, window.location.pathname);
-        return;
-      }
-
-      if (token) {
-        // Store token to all keys for compatibility
-        localStorage.setItem('token', token);
-        localStorage.setItem('kickshaus_auth_token', token);
-        try {
-          const payload = JSON.parse(atob(token.split('.')[1]));
-          const userData = {
-            id: payload.userId,
-            email: payload.email,
-            role: payload.role,
-          };
-          localStorage.setItem('user', JSON.stringify(userData));
-          localStorage.setItem('kickshaus_user', JSON.stringify(userData));
-          localStorage.setItem('userType', payload.type || 'user');
-          
-          showToast(`✓ Account created with ${provider || 'social account'}!`);
-          
-          setTimeout(() => {
-            window.location.href = 'index.html';
-          }, 1000);
-        } catch (e) {
-          console.error('Error parsing token:', e);
-          // Clear potentially malformed token data
-          localStorage.removeItem('token');
-          localStorage.removeItem('kickshaus_auth_token');
-          localStorage.removeItem('user');
-          localStorage.removeItem('kickshaus_user');
-          localStorage.removeItem('userType');
-          showToast('✗ Authentication error. Please try again.', 'error');
-        }
-        window.history.replaceState({}, document.title, window.location.pathname);
-      }
-    }
-
-    handleOAuthCallback();
-
-    // Password strength checker
+  document.addEventListener('DOMContentLoaded', () => {
+    const signupForm = document.getElementById('signupForm');
+    const fullNameInput = document.getElementById('fullName');
+    const emailInput = document.getElementById('email');
     const passwordInput = document.getElementById('password');
-    const strengthIndicator = document.getElementById('passwordStrength');
-    const strengthFill = document.getElementById('strengthFill');
-    const strengthText = document.getElementById('strengthText');
 
-    passwordInput.addEventListener('input', function() {
-      const password = this.value;
-      
-      if (password.length === 0) {
-        strengthIndicator.classList.remove('show');
-        return;
-      }
-
-      strengthIndicator.classList.add('show');
-      
-      let strength = 0;
-      if (password.length >= 8) strength++;
-      if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
-      if (/\d/.test(password)) strength++;
-      if (/[^a-zA-Z\d]/.test(password)) strength++;
-
-      strengthFill.className = 'strength-fill';
-      if (strength <= 1) {
-        strengthFill.classList.add('weak');
-        strengthText.textContent = 'Weak password';
-        strengthText.style.color = '#ff4444';
-      } else if (strength <= 2) {
-        strengthFill.classList.add('medium');
-        strengthText.textContent = 'Medium password';
-        strengthText.style.color = '#ffaa00';
-      } else {
-        strengthFill.classList.add('strong');
-        strengthText.textContent = 'Strong password';
-        strengthText.style.color = '#00C851';
-      }
-    });
-
-    // Form validation
-    document.getElementById('signupForm').addEventListener('submit', async function(e) {
-      e.preventDefault();
-      
-      const fullName = document.getElementById('fullName');
-      const email = document.getElementById('email');
-      const password = document.getElementById('password');
-      const confirmPassword = document.getElementById('confirmPassword');
-      const terms = document.getElementById('terms');
-      
-      // Reset errors
-      document.querySelectorAll('.error-message').forEach(el => el.classList.remove('show'));
-      document.querySelectorAll('input').forEach(el => el.classList.remove('error'));
-      
-      let isValid = true;
-      
-      // Validate name
-      if (!fullName.value || fullName.value.trim().length < 3) {
-        fullName.classList.add('error');
-        document.getElementById('nameError').classList.add('show');
-        isValid = false;
-      }
-      
-      // Validate email
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!email.value || !emailRegex.test(email.value)) {
-        email.classList.add('error');
-        document.getElementById('emailError').classList.add('show');
-        isValid = false;
-      }
-      
-      // Validate password
-      if (!password.value || password.value.length < 8) {
-        password.classList.add('error');
-        document.getElementById('passwordError').classList.add('show');
-        isValid = false;
-      }
-      
-      // Validate confirm password
-      if (password.value !== confirmPassword.value) {
-        confirmPassword.classList.add('error');
-        document.getElementById('confirmError').classList.add('show');
-        isValid = false;
-      }
-      
-      // Validate terms
-      if (!terms.checked) {
-        document.getElementById('termsError').classList.add('show');
-        isValid = false;
-      }
-      
-      if (isValid) {
-        // Call backend API for registration
-        const btn = this.querySelector('.btn-auth');
-        const originalText = btn.textContent;
-        btn.disabled = true;
-        btn.textContent = 'Creating account...';
+    if (signupForm) {
+      signupForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
         
+        const submitBtn = signupForm.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+        submitBtn.textContent = 'Creating Account...';
+        submitBtn.disabled = true;
+
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
+        // Note: Your current backend doesn't store 'fullName' in the users table, 
+        // so we are only sending email/password for now.
+
         try {
-          console.log('Attempting registration for:', email.value);
-          
-          // Check if KickshausAPI is available
-          if (typeof KickshausAPI === 'undefined') {
-            throw new Error('API client not loaded. Please refresh the page.');
+          // 1. Send Data to API
+          const response = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.message || data.error || 'Registration failed');
           }
-          
-          const response = await KickshausAPI.register(email.value, password.value);
-          console.log('Registration response:', response);
-          
-          if (response.success) {
-            showToast('✓ Account created successfully! Welcome to Kickshaus.');
-            
-            // Check if there's a redirect URL
-            const redirectUrl = sessionStorage.getItem('redirectAfterLogin');
-            sessionStorage.removeItem('redirectAfterLogin');
-            
-            setTimeout(() => {
-              window.location.href = redirectUrl || 'index.html';
-            }, 1000);
+
+          // 2. Success Feedback
+          if (typeof showToast === 'function') {
+            showToast('Account created successfully! Redirecting...', 'success');
           } else {
-            throw new Error(response.error || 'Registration failed');
+            alert('Account created! Redirecting to login...');
           }
-        } catch (error) {
-          console.error('Registration error:', error);
-          
-          // Handle network errors specifically
-          let errorMessage = 'Registration failed. Please try again.';
-          if (error.message) {
-            if (error.message.includes('fetch') || error.message.includes('network') || error.message.includes('Failed to fetch')) {
-              errorMessage = 'Cannot connect to server. Please make sure the server is running.';
-            } else {
-              errorMessage = error.message;
-            }
+
+          // 3. REDIRECT to Login Page
+          setTimeout(() => {
+            window.location.href = 'login.html';
+          }, 1500);
+
+        } catch (err) {
+          console.error(err);
+          if (typeof showToast === 'function') {
+            showToast(err.message, 'error');
+          } else {
+            alert('Error: ' + err.message);
           }
-          
-          showToast('✗ ' + errorMessage, 'error');
-          btn.disabled = false;
-          btn.textContent = originalText;
-          
-          // Show specific error for email if user already exists
-          if (error.message && error.message.toLowerCase().includes('email')) {
-            email.classList.add('error');
-            document.getElementById('emailError').textContent = error.message;
-            document.getElementById('emailError').classList.add('show');
-          }
+          submitBtn.textContent = originalText;
+          submitBtn.disabled = false;
         }
-      }
-    });
-
-    // Real-time validation
-    document.getElementById('email').addEventListener('blur', function() {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (this.value && !emailRegex.test(this.value)) {
-        this.classList.add('error');
-        document.getElementById('emailError').classList.add('show');
-      } else {
-        this.classList.remove('error');
-        document.getElementById('emailError').classList.remove('show');
-      }
-    });
-
-    document.getElementById('confirmPassword').addEventListener('input', function() {
-      const password = document.getElementById('password').value;
-      if (this.value && this.value !== password) {
-        this.classList.add('error');
-        document.getElementById('confirmError').classList.add('show');
-      } else {
-        this.classList.remove('error');
-        document.getElementById('confirmError').classList.remove('show');
-      }
-    });
-  </script>
+      });
+    }
+    
+    // Toggle Password Visibility Logic
+    const togglePassword = document.querySelector('.password-toggle');
+    if (togglePassword && passwordInput) {
+      togglePassword.addEventListener('click', () => {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        togglePassword.classList.toggle('fa-eye');
+        togglePassword.classList.toggle('fa-eye-slash');
+      });
+    }
+  });
+</script>
 </body>
 </html>

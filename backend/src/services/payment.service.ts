@@ -1,5 +1,5 @@
-import { Connection, PublicKey, Keypair } from '@solana/web3.js';
-import { encodeURL, findReference, validateTransfer } from '@solana/pay';
+import { Connection, PublicKey, Keypair, Transaction, SystemProgram, TransactionInstruction, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { findReference, validateTransfer } from '@solana/pay';
 import BigNumber from 'bignumber.js';
 import { config } from '../config/env';
 import { supabaseAdmin } from '../config/supabase';
@@ -96,6 +96,11 @@ export class PaymentService {
       // In production, surface an explicit error (no dev fallbacks)
       throw new PaymentError('Unable to retrieve SOL price. Please try again later.');
     }
+  }
+
+  async getLatestBlockhash() {
+    const { blockhash, lastValidBlockHeight } = await this.connection.getLatestBlockhash();
+    return { blockhash, lastValidBlockHeight };
   }
 
   /**
@@ -200,14 +205,7 @@ export class PaymentService {
       throw new Error(`Failed to create order items: ${itemsError.message}`);
     }
 
-    // Construct Solana Pay URL
-    const solanaPayUrl = encodeURL({
-      recipient: this.platformWallet,
-      amount: new BigNumber(totalSol),
-      reference,
-      label: `Kickshaus Order #${order.id.slice(0, 8)}`,
-      message: 'Payment for shoes',
-    });
+    const solanaPayUrl = `solana:${this.platformWallet.toBase58()}?amount=${totalSol.toFixed(9)}&reference=${referenceKey}&label=Kickshaus&message=Order%20ID%3A%20${order.id}`;
 
     return {
       success: true,
@@ -215,9 +213,62 @@ export class PaymentService {
       reference_key: referenceKey,
       total_fiat: totalFiat,
       total_sol: totalSol,
-      solana_pay_url: solanaPayUrl.toString(),
-      qr_code_data: solanaPayUrl.toString(),
+      solana_pay_url: solanaPayUrl,
+      qr_code_data: solanaPayUrl,
       expires_at: expiresAt.toISOString(),
+    };
+  }
+
+  /**
+   * Create a new transaction for an order
+   */
+  async createTransaction(orderId: string, account: string) {
+    // Get order from database
+    const { data: order, error } = await supabaseAdmin
+      .from('orders')
+      .select('*')
+      .eq('id', orderId)
+      .single();
+
+    if (error || !order) {
+      throw new NotFoundError('Order not found');
+    }
+
+    // Get the latest blockhash
+    const { blockhash } = await this.connection.getLatestBlockhash();
+
+    // Create a new transaction
+    const transaction = new Transaction({
+      recentBlockhash: blockhash,
+      feePayer: new PublicKey(account),
+    });
+
+    // Add the transfer instruction
+    transaction.add(
+      SystemProgram.transfer({
+        fromPubkey: new PublicKey(account),
+        toPubkey: this.platformWallet,
+        lamports: new BigNumber(order.total_amount_sol).multipliedBy(LAMPORTS_PER_SOL).toNumber(),
+      })
+    );
+
+    // Add the memo instruction
+    transaction.add(
+      new TransactionInstruction({
+        keys: [],
+        programId: new PublicKey('MemoSq4gqABAXKb96qnH8TysNcVtrp5G_52'),
+        data: Buffer.from(`Kickshaus Order #${order.id.slice(0, 8)}`, 'utf-8'),
+      })
+    );
+
+    // Serialize the transaction (allow missing signatures for a partially-signed tx)
+    const serializedTransaction = transaction.serialize({
+      requireAllSignatures: false,
+    });
+
+    return {
+      transaction: serializedTransaction.toString('base64'),
+      message: 'Please approve the transaction to complete your purchase.',
     };
   }
 

@@ -21,6 +21,8 @@ router.get(
   asyncHandler(paymentController.getSolPrice.bind(paymentController))
 );
 
+router.get('/chain-info', authenticateUser, asyncHandler(paymentController.getChainInfo.bind(paymentController)));
+
 /**
  * POST /api/payment/create-order
  * Create a new order with Solana Pay

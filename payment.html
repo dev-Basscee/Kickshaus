@@ -9,8 +9,11 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   
+  <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.js"></script>
   <!-- Frontend only renders QR from backend-provided URL -->
   <script src="https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js"></script>
+
+  <script src="https://unpkg.com/@solana/spl-token@0.4.6/lib/index.iife.js"></script>
 
   <style>
     /* Payment page specific styles */
@@ -321,6 +324,17 @@
       transform: translateY(-2px);
       box-shadow: 0 8px 24px rgba(153, 69, 255, 0.4);
     }
+
+    .payment-error-banner {
+      display: none;
+      background: rgba(244, 67, 54, 0.1);
+      border: 1px solid #F44336;
+      color: #B71C1C;
+      padding: 12px 16px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
@@ -340,6 +354,8 @@
         <h1 class="payment-title">Payment Options</h1>
         <p class="payment-subtitle">Choose your preferred payment method</p>
       </div>
+
+      <div id="paymentErrorBanner" class="payment-error-banner"></div>
 
       <div class="order-summary-card">
         <h3>Order Summary</h3>
@@ -453,6 +469,34 @@
     // BACKEND API FUNCTIONS
     // =====================================================
 
+    // Dynamically load a script (fallback for QR library)
+    function loadScript(src) {
+      return new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = src;
+        s.async = true;
+        s.onload = () => resolve(true);
+        s.onerror = () => reject(new Error(`Failed to load script: ${src}`));
+        document.head.appendChild(s);
+      });
+    }
+
+    function showErrorBanner(message) {
+      const banner = document.getElementById('paymentErrorBanner');
+      if (banner) {
+        banner.textContent = String(message || 'An error occurred');
+        banner.style.display = 'block';
+      }
+    }
+
+    function clearErrorBanner() {
+      const banner = document.getElementById('paymentErrorBanner');
+      if (banner) {
+        banner.textContent = '';
+        banner.style.display = 'none';
+      }
+    }
+
     /**
      * Get cart items formatted for API
      * Returns array of { product_id, quantity }
@@ -498,7 +542,15 @@
             'Authorization': `Bearer ${authToken}`,
           },
           body: JSON.stringify((() => {
-            const delivery = JSON.parse(localStorage.getItem('deliveryDetails') || '{}');
+            // Safe parse of delivery details from localStorage
+            let delivery = {};
+            try {
+              const raw = localStorage.getItem('deliveryDetails');
+              delivery = raw ? JSON.parse(raw) : {};
+            } catch (_) {
+              delivery = {};
+            }
+
             return {
               items,
               // Map localStorage delivery details to backend fields
@@ -514,7 +566,15 @@
           })()),
         });
 
-        const data = await response.json();
+        // Robust response parsing: handle non-JSON responses gracefully
+        const contentType = response.headers.get('content-type') || '';
+        let data;
+        if (contentType.includes('application/json')) {
+          data = await response.json();
+        } else {
+          const text = await response.text();
+          throw new Error(`Unexpected response format: ${text.slice(0, 200)}`);
+        }
         
         if (!response.ok) {
           throw new Error(data.error || 'Failed to create payment order');
@@ -523,6 +583,20 @@
         return data;
       } catch (error) {
         console.error('Create order error:', error);
+
+        if (error.message.includes('Token has expired')) {
+          showToast('Your session has expired. Please log in again.', 'error');
+          // Clear invalid token
+          localStorage.removeItem('kickshaus_auth_token');
+          localStorage.removeItem('token');
+          // Redirect to login after a short delay
+          setTimeout(() => {
+            window.location.href = 'login.html';
+          }, 2000);
+        } else {
+          showErrorBanner(error.message || 'Network error during order creation');
+        }
+
         return { 
           success: false, 
           error: error.message || 'Network error during order creation'
@@ -565,18 +639,15 @@
      */
     async function showSolanaPayModalWithAPI() {
       const authToken = getAuthToken();
-      
       if (!authToken) {
         showToast('Please log in to complete your purchase', 'error');
-        setTimeout(() => {
-          window.location.href = 'login.html';
-        }, 1500);
+        setTimeout(() => window.location.href = 'login.html', 1500);
         return;
       }
 
-      // Show loading state
       showToast('Creating order...');
 
+      // 1. Get Payment Data from Backend
       const result = await createPaymentOrderAPI(authToken);
       
       if (!result.success || !result.data) {
@@ -584,92 +655,143 @@
         return;
       }
 
-      const orderData = result.data;
-      const { solana_pay_url, reference_key, total_sol, total_fiat, expires_at } = orderData;
+      const { solana_pay_url, reference_key, total_sol, total_fiat } = result.data;
 
-      // Create modal element
+      // 2. Create Modal UI
       const modal = document.createElement('div');
       modal.className = 'solana-pay-modal';
       modal.innerHTML = `
         <div class="solana-pay-content">
           <div class="solana-pay-header">
-            <h3 class="solana-pay-title">
-              <i class="fas fa-coins" style="color: #9945FF;"></i>
-              Pay with Solana
-            </h3>
+            <h3 class="solana-pay-title"><i class="fas fa-coins" style="color: #9945FF;"></i> Pay with Solana</h3>
             <button class="solana-pay-close">&times;</button>
           </div>
           
-          <div class="solana-pay-qr" id="solanaQrContainer"></div>
+          <div class="solana-pay-qr" id="solanaQrContainer" style="display: flex; justify-content: center; min-height: 256px;"></div>
           
           <div class="solana-pay-amount">${total_sol.toFixed(6)} SOL</div>
-          <p class="solana-pay-note">
-            Scan the QR code with your Solana wallet app (Phantom, Solflare, etc.) to complete the payment.
-            <br><br>
-            <strong>Order Total:</strong> ₦${total_fiat.toLocaleString()}
-          </p>
+          <p class="solana-pay-note">Total: ₦${total_fiat.toLocaleString()}</p>
           
           <div class="solana-pay-status" id="paymentStatus">
             <div class="solana-pay-spinner"></div>
             <span>Waiting for payment...</span>
           </div>
           
-          <button class="solana-pay-wallet-btn" id="openWalletBtn">
-            <i class="fas fa-wallet"></i>
-            Open in Wallet
+          <button id="browserWalletBtn" style="display: none; width: 100%; margin-top: 15px; padding: 12px; background: #512da8; color: white; border-radius: 12px; font-weight: bold; cursor: pointer;">
+            Pay with Browser Wallet
+          </button>
+
+          <button class="solana-pay-wallet-btn" id="openWalletBtn" style="width: 100%; margin-top: 10px;">
+            <i class="fas fa-wallet"></i> Open Mobile App
           </button>
         </div>
       `;
       
       document.body.appendChild(modal);
-      
-      // Generate QR code
+
+      // 3. Render QR Code (Standard)
       const qrContainer = document.getElementById('solanaQrContainer');
-      if (typeof QRCode !== 'undefined') {
-        QRCode.toCanvas(qrContainer, solana_pay_url, {
-          width: 250,
-          margin: 2,
-          color: {
-            dark: '#000000',
-            light: '#FFFFFF'
-          }
-        }, function(error) {
-          if (error) {
-            console.error('QR Code generation error:', error);
-            qrContainer.innerHTML = '<p style="color: red;">Error generating QR code</p>';
-          }
-        });
-      } else {
-        qrContainer.innerHTML = `
-          <p style="color: var(--text-muted); padding: 40px;">
-            <i class="fas fa-qrcode" style="font-size: 3rem; display: block; margin-bottom: 12px;"></i>
-            QR Code Loading...
-          </p>
-        `;
+      if (window.QRCode) {
+        try {
+          const canvas = document.createElement('canvas');
+          window.QRCode.toCanvas(canvas, solana_pay_url, { width: 256, margin: 2 }, (e) => { if (e) console.error(e); });
+          qrContainer.appendChild(canvas);
+        } catch(e) { qrContainer.innerHTML = '<p>Scan Unavailable</p>'; }
       }
+
+      // 4. BROWSER WALLET LOGIC (THE FIX)
+      const browserBtn = document.getElementById('browserWalletBtn');
+      const provider = window.solana || window.solflare;
+
+      if (provider) {
+        browserBtn.style.display = 'block';
+        
+        browserBtn.onclick = async () => {
+          const originalText = browserBtn.textContent;
+          browserBtn.textContent = "Connecting...";
+          browserBtn.disabled = true;
+
+          try {
+            // A. Connect Wallet
+            await provider.connect();
+            browserBtn.textContent = "Getting Chain Data...";
+
+            // B. Get Blockhash from Backend (Avoids 403 Forbidden)
+            const chainResp = await fetch(`${API_BASE_URL}/payment/chain-info`, {
+                headers: { 'Authorization': `Bearer ${authToken}` }
+            });
+            const chainData = await chainResp.json();
+            if (!chainData.success) throw new Error("Could not fetch chain data");
+            const { blockhash } = chainData.data;
+
+            // C. Parse URL (Standard Format)
+            // solana:ADDRESS?amount=X&reference=Y
+            const urlParts = solana_pay_url.split('?');
+            const recipientAddr = urlParts[0].replace('solana:', '');
+            const params = new URLSearchParams(urlParts[1]);
+            const amountVal = params.get('amount');
+
+            // D. Prepare Transaction
+            const recipient = new solanaWeb3.PublicKey(recipientAddr);
+            const amount = parseFloat(amountVal);
+            const lamports = Math.round(amount * solanaWeb3.LAMPORTS_PER_SOL);
+            const reference = new solanaWeb3.PublicKey(reference_key);
+            const fromPubkey = provider.publicKey;
+
+            const transaction = new solanaWeb3.Transaction();
+            transaction.recentBlockhash = blockhash;
+            transaction.feePayer = fromPubkey;
+
+            const instruction = solanaWeb3.SystemProgram.transfer({
+              fromPubkey: fromPubkey,
+              toPubkey: recipient,
+              lamports: lamports
+            });
+
+            // CRITICAL: Inject Reference Key
+            instruction.keys.push({ pubkey: reference, isSigner: false, isWritable: false });
+            transaction.add(instruction);
+
+            // E. Send (Wallet will handle insufficient funds check)
+            browserBtn.textContent = "Please Approve...";
+            
+            // NOTE: If you still get 'Simulation Failed', it confirms you need more SOL.
+            const { signature } = await provider.signAndSendTransaction(transaction);
+            
+            console.log("Sent:", signature);
+            browserBtn.textContent = "Verifying...";
+            
+            // Notify Backend
+            handlePaymentConfirmedAPI(modal, { signature });
+
+          } catch (err) {
+            console.error("Payment Error:", err);
+            
+            // Helpful Error Message for You
+            if (err.message && err.message.includes("Simulation failed")) {
+                alert("Transaction Failed: Insufficient SOL balance to pay for item + gas fees.");
+            } else if (err.logs) {
+                alert("Blockchain Error: " + err.logs.join('\n'));
+            } else {
+                alert("Payment Failed: " + (err.message || err));
+            }
+
+            browserBtn.textContent = originalText;
+            browserBtn.disabled = false;
+          }
+        };
+      }
+
+      // 5. Mobile Button Logic
+      document.getElementById('openWalletBtn').onclick = () => {
+        window.location.href = solana_pay_url;
+      };
+
+      // 6. Close Handler
+      const closeHandler = () => { stopPaymentPollingAPI(); modal.remove(); };
+      modal.querySelector('.solana-pay-close').onclick = closeHandler;
       
-      // Handle close button
-      const closeBtn = modal.querySelector('.solana-pay-close');
-      closeBtn.addEventListener('click', () => {
-        stopPaymentPollingAPI();
-        modal.remove();
-      });
-      
-      // Handle click outside modal
-      modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-          stopPaymentPollingAPI();
-          modal.remove();
-        }
-      });
-      
-      // Handle "Open in Wallet" button
-      const openWalletBtn = document.getElementById('openWalletBtn');
-      openWalletBtn.addEventListener('click', () => {
-        window.open(solana_pay_url, '_blank');
-      });
-      
-      // Start polling for payment confirmation
+      // 7. Start Polling
       startPaymentPollingAPI(reference_key, authToken, modal);
     }
 
