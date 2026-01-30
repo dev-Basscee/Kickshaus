@@ -20,8 +20,8 @@ export class ProductService {
     // Build query for count
     let countQuery = supabaseAdmin
       .from('products')
-      .select('id', { count: 'exact', head: true });
-      // .eq('status', 'live'); // Commented out to show all products for debugging
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'live');
 
     // Build query for data
     let dataQuery = supabaseAdmin

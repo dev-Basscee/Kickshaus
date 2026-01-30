@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Payment Options - Kickshaus</title>
 
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="public/css/style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   
@@ -436,10 +436,10 @@
     <i class="fas fa-arrow-up"></i>
   </button>
 
-  <script src="js/api.js"></script>
-  <script src="global-state.js"></script>
-  <script src="api-client.js"></script>
-  <script src="script.js"></script>
+  <script src="public/js/api.js"></script>
+  <script src="public/js/global-state.js"></script>
+  <script src="public/js/api-client.js"></script>
+  <script src="public/js/script.js"></script>
   <script>
   document.addEventListener('DOMContentLoaded', () => {
     // Load order summary from localStorage
@@ -459,14 +459,7 @@
     document.getElementById('orderTotal').textContent = `₦${total.toLocaleString()}`;
 
     // =====================================================
-    // API CONFIGURATION
-    // =====================================================
-    const API_BASE_URL = window.location.hostname === 'localhost' 
-      ? 'http://localhost:3000/api' 
-      : '/api';
-    
-    // =====================================================
-    // BACKEND API FUNCTIONS
+    // BACKEND API FUNCTIONS (Centralized)
     // =====================================================
 
     // Dynamically load a script (fallback for QR library)
@@ -517,6 +510,7 @@
      * Checks multiple possible storage keys for compatibility
      */
     function getAuthToken() {
+      // window.api handles token internally usually, but this helper is fine to keep
       return localStorage.getItem('kickshaus_auth_token') || 
              localStorage.getItem('token') || 
              null;
@@ -524,7 +518,7 @@
 
     /**
      * Create order with Solana Pay via backend API
-     * Calls POST /api/payment/create-order
+     * Calls POST /api/payment/create-order via window.api
      * Returns Solana Pay URL and reference key
      */
     async function createPaymentOrderAPI(authToken) {
@@ -535,61 +529,38 @@
       }
 
       try {
-        const response = await fetch(`${API_BASE_URL}/payment/create-order`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authToken}`,
-          },
-          body: JSON.stringify((() => {
-            // Safe parse of delivery details from localStorage
-            let delivery = {};
-            try {
-              const raw = localStorage.getItem('deliveryDetails');
-              delivery = raw ? JSON.parse(raw) : {};
-            } catch (_) {
-              delivery = {};
-            }
-
-            return {
-              items,
-              // Map localStorage delivery details to backend fields
-              contact_name: delivery.fullName || null,
-              contact_email: delivery.email || null,
-              sender_phone: delivery.phone || null,
-              receiver_phone: delivery.receiverPhone || delivery.phone || null,
-              shipping_address: delivery.address || null,
-              city: delivery.city || null,
-              state: delivery.state || null,
-              notes: delivery.notes || null,
-            };
-          })()),
-        });
-
-        // Robust response parsing: handle non-JSON responses gracefully
-        const contentType = response.headers.get('content-type') || '';
-        let data;
-        if (contentType.includes('application/json')) {
-          data = await response.json();
-        } else {
-          const text = await response.text();
-          throw new Error(`Unexpected response format: ${text.slice(0, 200)}`);
-        }
-        
-        if (!response.ok) {
-          throw new Error(data.error || 'Failed to create payment order');
+        // Construct order data
+        let delivery = {};
+        try {
+          const raw = localStorage.getItem('deliveryDetails');
+          delivery = raw ? JSON.parse(raw) : {};
+        } catch (_) {
+          delivery = {};
         }
 
+        const orderData = {
+          items,
+          // Map localStorage delivery details to backend fields
+          contact_name: delivery.fullName || null,
+          contact_email: delivery.email || null,
+          sender_phone: delivery.phone || null,
+          receiver_phone: delivery.receiverPhone || delivery.phone || null,
+          shipping_address: delivery.address || null,
+          city: delivery.city || null,
+          state: delivery.state || null,
+          notes: delivery.notes || null,
+        };
+
+        const data = await window.api.createOrder(orderData);
         return data;
+
       } catch (error) {
         console.error('Create order error:', error);
 
-        if (error.message.includes('Token has expired')) {
+        if (error.message && error.message.includes('Token has expired')) {
           showToast('Your session has expired. Please log in again.', 'error');
-          // Clear invalid token
           localStorage.removeItem('kickshaus_auth_token');
           localStorage.removeItem('token');
-          // Redirect to login after a short delay
           setTimeout(() => {
             window.location.href = 'login.html';
           }, 2000);
@@ -606,24 +577,12 @@
 
     /**
      * Verify payment status via backend API
-     * Calls GET /api/payment/verify?reference_key=xxx
+     * Calls GET /api/payment/verify via window.api
      * Returns payment status (pending, confirmed, failed)
      */
     async function verifyPaymentAPI(referenceKey, authToken) {
       try {
-        const response = await fetch(`${API_BASE_URL}/payment/verify?reference_key=${encodeURIComponent(referenceKey)}`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${authToken}`,
-          },
-        });
-
-        const data = await response.json();
-        
-        if (!response.ok) {
-          throw new Error(data.error || 'Failed to verify payment');
-        }
-
+        const data = await window.api.verifyPayment(referenceKey);
         return data;
       } catch (error) {
         console.error('Verify payment error:', error);
@@ -717,10 +676,7 @@
             browserBtn.textContent = "Getting Chain Data...";
 
             // B. Get Blockhash from Backend (Avoids 403 Forbidden)
-            const chainResp = await fetch(`${API_BASE_URL}/payment/chain-info`, {
-                headers: { 'Authorization': `Bearer ${authToken}` }
-            });
-            const chainData = await chainResp.json();
+            const chainData = await window.api.getChainInfo();
             if (!chainData.success) throw new Error("Could not fetch chain data");
             const { blockhash } = chainData.data;
 

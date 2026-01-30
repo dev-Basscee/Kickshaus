@@ -1,0 +1,392 @@
+/**
+ * ADMIN DASHBOARD FUNCTIONS
+ * Fetches real data and handles dashboard interactivity.
+ */
+
+const API_BASE = "/api";
+let isFetching = false;
+
+// --- INITIALIZATION ---
+function init() {
+  if (document.querySelector(".dashboard-container")) {
+    checkAdminAuth();
+    setupNavigation();
+    setupLogout();
+    setupNotifications();
+
+    fetchAllData();
+    setInterval(fetchAllData, 30000);
+
+    const refreshBtn = document.getElementById("refreshBtn");
+    if (refreshBtn) {
+      refreshBtn.addEventListener("click", fetchAllData);
+    }
+  }
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", init);
+} else {
+  init();
+}
+
+async function fetchAllData() {
+  if (isFetching) return;
+  isFetching = true;
+  const refreshBtn = document.getElementById("refreshBtn");
+  if (refreshBtn) {
+    refreshBtn.disabled = true;
+    const btnText = refreshBtn.querySelector("span");
+    if (btnText) btnText.textContent = "Refreshing...";
+  }
+
+  try {
+    await Promise.all([
+      loadDashboardStats(),
+      loadAllMerchants(),
+      loadAllOrders(),
+      loadAllCustomers(),
+      loadAllProducts(),
+    ]);
+  } catch (error) {
+    console.error("Dashboard data fetch failed:", error);
+  } finally {
+    isFetching = false;
+    if (refreshBtn) {
+      refreshBtn.disabled = false;
+      const btnText = refreshBtn.querySelector("span");
+      if (btnText) btnText.textContent = "Refresh";
+    }
+  }
+}
+
+function checkAdminAuth() {
+  const token = localStorage.getItem("token");
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  if (!token || (user.role !== "admin" && user.type !== "admin")) {
+    showToast("Unauthorized access. Redirecting to login.", "error");
+    setTimeout(() => { window.location.href = "login.html"; }, 1500);
+  }
+}
+
+window.showSection = (sectionName) => {
+  const navItems = document.querySelectorAll(".nav-item");
+  const sections = document.querySelectorAll(".dashboard-section");
+  const pageTitle = document.getElementById("pageTitle");
+
+  navItems.forEach(nav => {
+    if (nav.dataset.section === sectionName) {
+      nav.classList.add("active");
+      if (pageTitle) pageTitle.textContent = nav.querySelector("span").textContent;
+    } else {
+      nav.classList.remove("active");
+    }
+  });
+
+  sections.forEach(sec => {
+    if (sec.id === `${sectionName}-section`) {
+      sec.classList.add("active");
+    } else {
+      sec.classList.remove("active");
+    }
+  });
+  
+  const sidebar = document.getElementById("sidebar");
+  if (window.innerWidth <= 768 && sidebar) {
+    sidebar.classList.remove("active");
+  }
+};
+
+function setupNavigation() {
+  const navItems = document.querySelectorAll(".nav-item");
+  navItems.forEach(item => {
+    item.addEventListener("click", () => {
+      showSection(item.dataset.section);
+    });
+  });
+
+  const sidebarToggle = document.getElementById("sidebarToggle");
+  const sidebar = document.getElementById("sidebar");
+  if (sidebarToggle && sidebar) {
+    sidebarToggle.addEventListener("click", () => {
+      sidebar.classList.toggle("active");
+    });
+  }
+}
+
+function setupLogout() {
+  const logoutBtn = document.getElementById("logoutBtn");
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (typeof showConfirmationModal === "function") {
+        showConfirmationModal("Are you sure you want to logout?", () => { performLogout(); });
+      } else if (confirm("Are you sure you want to logout?")) {
+        performLogout();
+      }
+    });
+  }
+}
+
+function performLogout() {
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+  localStorage.removeItem("userType");
+  showToast("Logged out successfully.", "success");
+  setTimeout(() => { window.location.href = "login.html"; }, 1000);
+}
+
+function setupNotifications() {
+  const notificationBtn = document.getElementById("notificationBtn");
+  if (notificationBtn) {
+    notificationBtn.addEventListener("click", () => {
+      showToast("No new notifications at this time.", "info");
+      const badge = notificationBtn.querySelector(".notification-badge");
+      if (badge) badge.style.display = "none";
+    });
+  }
+}
+
+async function loadDashboardStats() {
+  try {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${API_BASE}/admin/stats`, {
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error("Failed to fetch stats");
+    const result = await response.json();
+    const data = result.data;
+    if (data) {
+      updateElement("totalRevenue", `₦${(data.total_revenue || 0).toLocaleString()}`);
+      updateElement("totalOrders", (data.recent_orders || []).length);
+      updateElement("totalCustomers", data.total_users || 0);
+      updateElement("totalMerchants", data.total_merchants || 0);
+      renderRecentOrders(data.recent_orders || []);
+    }
+  } catch (error) { console.error("Failed to load stats:", error); }
+}
+
+function renderAllMerchants(merchants) {
+  const pendingContainer = document.getElementById("pendingMerchantsTable");
+  const otherContainer = document.getElementById("merchantsTable");
+  if (!pendingContainer || !otherContainer) return;
+
+  const pendingMerchants = merchants.filter(m => m.status === "pending");
+  const otherMerchants = merchants.filter(m => m.status !== "pending");
+
+  if (pendingMerchants.length === 0) {
+    pendingContainer.innerHTML = "<tr><td colspan=\x224\x22 style=\x22text-align: center;\x22>No merchants awaiting approval.</td></tr>";
+  } else {
+    pendingContainer.innerHTML = pendingMerchants.map(merchant => `
+      <tr>
+        <td>${merchant.business_name || "N/A"}</td>
+        <td>${merchant.email}</td>
+        <td><span class="status-badge pending">Pending</span></td>
+        <td>
+          <button onclick="approveMerchant(\x27${merchant.id}\x27)" class="btn btn-secondary" style="font-size: 12px; padding: 6px 10px;">Approve</button>
+          <button onclick="rejectMerchant(\x27${merchant.id}\x27)" class="btn btn-secondary" style="font-size: 12px; padding: 6px 10px;">Reject</button>
+        </td>
+      </tr>
+    `).join("");
+  }
+
+  if (otherMerchants.length === 0) {
+    otherContainer.innerHTML = "<tr><td colspan=\x224\x22 style=\x22text-align: center;\x22>No other merchants found.</td></tr>";
+  } else {
+    otherContainer.innerHTML = otherMerchants.map(merchant => `
+      <tr>
+        <td>${merchant.business_name || "N/A"}</td>
+        <td>${merchant.email}</td>
+        <td><span class="status-badge ${merchant.status}">${merchant.status.charAt(0).toUpperCase() + merchant.status.slice(1)}</span></td>
+        <td><button class="btn btn-secondary" style="font-size: 12px; padding: 6px 10px;" disabled>Handled</button></td>
+      </tr>
+    `).join("");
+  }
+}
+
+async function loadAllOrders() {
+  try {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${API_BASE}/admin/orders`, {
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error("Failed to fetch orders");
+    const result = await response.json();
+    const orders = result.data.orders || [];
+    renderAllOrders(orders);
+    renderDeliveries(orders);
+  } catch (error) { console.error("Failed to load orders:", error); }
+}
+
+function renderRecentOrders(orders) {
+  const container = document.getElementById("recentOrdersTable");
+  if (!container) return;
+  if (orders.length === 0) {
+    container.innerHTML = "<tr><td colspan=\x224\x22 style=\x22text-align: center;\x22>No recent orders.</td></tr>";
+    return;
+  }
+  container.innerHTML = orders.slice(0, 5).map(order => `
+    <tr>
+      <td>#${order.id.slice(0, 8)}</td>
+      <td>${order.customer_name || "Guest User"}</td>
+      <td>₦${(Number(order.total_amount_fiat) || 0).toLocaleString()}</td>
+      <td><span class="status-badge ${order.payment_status}">${order.payment_status.charAt(0).toUpperCase() + order.payment_status.slice(1)}</span></td>
+    </tr>
+  `).join("");
+}
+
+function renderAllOrders(orders) {
+  const container = document.getElementById("allOrdersTable");
+  if (!container) return;
+  if (orders.length === 0) {
+    container.innerHTML = "<tr><td colspan=\x227\x22 style=\x22text-align: center;\x22>No orders found.</td></tr>";
+    return;
+  }
+  container.innerHTML = orders.map(order => `
+    <tr>
+      <td>#${order.id.slice(0, 8)}</td>
+      <td>${order.customer_name || "Guest User"}</td>
+      <td>₦${(Number(order.total_amount_fiat) || 0).toLocaleString()}</td>
+      <td><span class="status-badge ${order.payment_status}">${order.payment_status}</span></td>
+      <td>
+        <select onchange="updateOrderStatus(\x27${order.id}\x27, this.value)" class="status-select">
+          <option value="pending" ${order.order_status === "pending" ? "selected" : ""}>Pending</option>
+          <option value="processing" ${order.order_status === "processing" ? "selected" : ""}>Processing</option>
+          <option value="shipped" ${order.order_status === "shipped" ? "selected" : ""}>Shipped</option>
+          <option value="delivered" ${order.order_status === "delivered" ? "selected" : ""}>Delivered</option>
+          <option value="cancelled" ${order.order_status === "cancelled" ? "selected" : ""}>Cancelled</option>
+        </select>
+      </td>
+      <td>${new Date(order.created_at).toLocaleDateString()}</td>
+      <td><button onclick="viewOrderDetails(\x27${order.id}\x27)" class="btn btn-secondary" style="font-size: 11px; padding: 4px 8px;">View</button></td>
+    </tr>
+  `).join("");
+}
+
+function renderDeliveries(orders) {
+  const container = document.getElementById("deliveryOrdersTable");
+  if (!container) return;
+  const deliveryOrders = orders.filter(o => o.order_status === "shipped" || o.order_status === "delivered");
+  if (deliveryOrders.length === 0) {
+    container.innerHTML = "<tr><td colspan=\x225\x22 style=\x22text-align: center;\x22>No active deliveries.</td></tr>";
+    return;
+  }
+  container.innerHTML = deliveryOrders.map(order => `
+    <tr>
+      <td>#${order.id.slice(0, 8)}</td>
+      <td>${order.customer_name || "N/A"}</td>
+      <td><span class="status-badge ${order.order_status}">${order.order_status}</span></td>
+      <td>${new Date(order.updated_at).toLocaleString()}</td>
+      <td><button onclick="viewOrderDetails(\x27${order.id}\x27)" class="btn btn-secondary" style="font-size: 11px; padding: 4px 8px;">Track</button></td>
+    </tr>
+  `).join("");
+}
+
+async function loadAllCustomers() {
+  const container = document.getElementById("customersTable");
+  if (!container) return;
+  try {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${API_BASE}/admin/customers`, {
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error("Failed to fetch customers");
+    const result = await response.json();
+    const customers = result.data.customers || [];
+    if (customers.length === 0) {
+      container.innerHTML = "<tr><td colspan=\x223\x22 style=\x22text-align: center;\x22>No customers found.</td></tr>";
+      return;
+    }
+    container.innerHTML = customers.map(customer => `
+      <tr>
+        <td>${customer.full_name || "N/A"}</td>
+        <td>${customer.email}</td>
+        <td>${new Date(customer.created_at).toLocaleDateString()}</td>
+      </tr>
+    `).join("");
+  } catch (error) { console.error("Failed to load customers:", error); }
+}
+
+async function loadAllProducts() {
+  const container = document.getElementById("productsTable");
+  if (!container) return;
+  try {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${API_BASE}/admin/products`, {
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error("Failed to fetch products");
+    const result = await response.json();
+    const products = result.data.products || [];
+    if (products.length === 0) {
+      container.innerHTML = "<tr><td colspan=\x224\x22 style=\x22text-align: center;\x22>No products found.</td></tr>";
+      return;
+    }
+    container.innerHTML = products.map(product => `
+      <tr>
+        <td>${product.name || "N/A"}</td>
+        <td>${product.category}</td>
+        <td>₦${(Number(product.base_price) || 0).toLocaleString()}</td>
+        <td>${product.stock}</td>
+      </tr>
+    `).join("");
+  } catch (error) { console.error("Failed to load products:", error); }
+}
+
+function updateElement(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value;
+}
+
+window.openOrderTab = (evt, tabName) => {
+  const tabcontent = document.getElementsByClassName("tab-content");
+  for (let i = 0; i < tabcontent.length; i++) { tabcontent[i].style.display = "none"; }
+  const tablinks = document.getElementsByClassName("tab-link");
+  for (let i = 0; i < tablinks.length; i++) { tablinks[i].className = tablinks[i].className.replace(" active", ""); }
+  document.getElementById(tabName).style.display = "block";
+  evt.currentTarget.className += " active";
+};
+
+window.approveMerchant = async (id) => {
+  if (confirm("Are you sure you want to approve this merchant?")) {
+    await updateMerchantStatus(id, "approved");
+  }
+};
+
+window.rejectMerchant = async (id) => {
+  if (confirm("Are you sure you want to reject this merchant?")) {
+    await updateMerchantStatus(id, "rejected");
+  }
+};
+
+async function updateMerchantStatus(id, status) {
+  try {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${API_BASE}/admin/merchants/${id}/status`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+      body: JSON.stringify({ status })
+    });
+    if (!response.ok) throw new Error("Failed to update merchant status");
+    showToast(`Merchant ${status} successfully!`, "success");
+    loadAllMerchants();
+  } catch (error) { showToast(error.message, "error"); }
+}
+
+window.updateOrderStatus = async (orderId, status) => {
+  try {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${API_BASE}/admin/orders/${orderId}/status`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+      body: JSON.stringify({ status })
+    });
+    if (!response.ok) throw new Error("Failed to update order status");
+    showToast("Order status updated successfully!", "success");
+    loadAllOrders();
+  } catch (error) { showToast(error.message, "error"); }
+};
+
+window.viewOrderDetails = (id) => {
+  showToast("Order detail view coming soon!", "info");
+};

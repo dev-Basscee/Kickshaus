@@ -32,7 +32,7 @@ const envSchema = z.object({
 
   // Rate Limiting
   RATE_LIMIT_WINDOW_MS: z.string().default('900000'),
-  RATE_LIMIT_MAX_REQUESTS: z.string().default('100'),
+  RATE_LIMIT_MAX_REQUESTS: z.string().default('1000'),
 
   // CORS
   CORS_ORIGIN: z.string().default('*'),
@@ -73,7 +73,7 @@ function validateEnv() {
           COINGECKO_API_URL: process.env.COINGECKO_API_URL || 'https://api.coingecko.com/api/v3',
           NGN_USD_RATE: process.env.NGN_USD_RATE || '1600',
           RATE_LIMIT_WINDOW_MS: process.env.RATE_LIMIT_WINDOW_MS || '900000',
-          RATE_LIMIT_MAX_REQUESTS: process.env.RATE_LIMIT_MAX_REQUESTS || '100',
+          RATE_LIMIT_MAX_REQUESTS: process.env.RATE_LIMIT_MAX_REQUESTS || '1000',
           CORS_ORIGIN: process.env.CORS_ORIGIN || '*',
           GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
           GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,

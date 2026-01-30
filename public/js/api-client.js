@@ -267,11 +267,11 @@ const KickshausAPI = {
   
   /**
    * Verify payment
-   * @param {string} transactionId - Transaction ID
+   * @param {string} referenceKey - Reference Key (Solana Public Key)
    * @returns {Promise<Object>} Payment status
    */
-  async verifyPayment(transactionId) {
-    return await this.request(`/payment/verify/${transactionId}`, {
+  async verifyPayment(referenceKey) {
+    return await this.request(`/payment/verify?reference_key=${referenceKey}`, {
       method: 'GET',
     });
   },

@@ -260,11 +260,11 @@ const api = {
 
   /**
    * Verify payment status
-   * @param {string} reference - Payment reference
+   * @param {string} reference - Payment reference key
    * @returns {Promise<Object>}
    */
   async verifyPayment(reference) {
-    return await this.request(`/payment/verify?reference=${reference}`, 'GET');
+    return await this.request(`/payment/verify?reference_key=${reference}`, 'GET');
   },
 
   /**
@@ -273,6 +273,14 @@ const api = {
    */
   async getSolPrice() {
     return await this.request('/payment/sol-price', 'GET');
+  },
+
+  /**
+   * Get Solana chain info (blockhash)
+   * @returns {Promise<Object>}
+   */
+  async getChainInfo() {
+    return await this.request('/payment/chain-info', 'GET');
   },
 
   /**

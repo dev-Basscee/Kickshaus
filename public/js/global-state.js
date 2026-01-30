@@ -368,10 +368,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (user && user.type === 'merchant') {
           window.location.href = 'merchant-dashboard.html';
         } else if (user && user.type === 'admin') {
-          window.location.href = 'dashboard.html';
+          window.location.href = 'admin-dashboard.html';
         } else {
-          // Regular user - redirect to home page
-          window.location.href = 'index.html';
+          // Regular user - redirect to customer dashboard
+          window.location.href = 'dashboard.html';
         }
       } else {
         window.location.href = 'login.html';

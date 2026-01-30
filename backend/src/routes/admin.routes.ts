@@ -27,4 +27,27 @@ router.put(
   asyncHandler(authController.updateMerchantStatus.bind(authController))
 );
 
+// Order Management
+router.get(
+    '/orders',
+    asyncHandler(adminController.getAllOrders.bind(adminController))
+);
+
+router.put(
+    '/orders/:orderId/status',
+    asyncHandler(adminController.updateOrderStatus.bind(adminController))
+);
+
+// Customer Management
+router.get(
+    '/customers',
+    asyncHandler(adminController.getAllCustomers.bind(adminController))
+);
+
+// Product Management
+router.get(
+    '/products',
+    asyncHandler(adminController.getAllProducts.bind(adminController))
+);
+
 export default router;

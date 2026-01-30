@@ -50,8 +50,6 @@ const limiter = rateLimit({
   legacyHeaders: false,
 });
 
-app.use(limiter);
-
 // =====================================================
 // BODY PARSING
 // =====================================================
@@ -84,7 +82,7 @@ app.use('/images', express.static(path.join(FRONTEND_DIR, 'images')));
 // =====================================================
 
 // Mount API routes
-app.use('/api', routes);
+app.use('/api', limiter, routes);
 
 // =====================================================
 // FRONTEND HTML PAGES
@@ -95,7 +93,7 @@ const htmlPages = [
   'index', 'login', 'signup', 'cart', 'checkout', 'payment',
   'product-detail', 'collection', 'favourites', 'delivery',
   'dashboard', 'merchant-dashboard', 'merchant-login',
-  'become-merchant'
+  'become-merchant', 'admin-dashboard'
 ];
 
 htmlPages.forEach(page => {

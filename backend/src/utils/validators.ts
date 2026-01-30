@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 // Common validators
 const email = z.string().email('Invalid email format');
-const password = z.string().min(8, 'Password must be at least 8 characters');
+const password = z.string().min(6, 'Password must be at least 6 characters');
 const uuid = z.string().uuid('Invalid ID format');
 const positiveNumber = z.number().positive('Must be a positive number');
 const nonNegativeInt = z.number().int().nonnegative('Must be a non-negative integer');
@@ -81,6 +81,11 @@ export const verifyPaymentSchema = z.object({
   reference_key: z.string().min(1, 'Reference key is required'),
 });
 
+export const createTransactionSchema = z.object({
+  orderId: uuid,
+  account: z.string().min(1, 'Account public key is required'),
+});
+
 // Pagination schema
 export const paginationSchema = z.object({
   page: z.coerce.number().int().positive().default(1),
@@ -100,4 +105,5 @@ export type CartItem = z.infer<typeof cartItemSchema>;
 export type ValidateCartInput = z.infer<typeof validateCartSchema>;
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;
 export type VerifyPaymentInput = z.infer<typeof verifyPaymentSchema>;
+export type CreateTransactionInput = z.infer<typeof createTransactionSchema>;
 export type PaginationInput = z.infer<typeof paginationSchema>;

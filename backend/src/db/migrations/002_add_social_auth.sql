@@ -16,6 +16,7 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id VARCHAR(255) UNIQUE;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS facebook_id VARCHAR(255) UNIQUE;
 
 -- Add constraint to ensure provider is valid
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_provider_check;
 ALTER TABLE users ADD CONSTRAINT users_provider_check CHECK (provider IN ('email', 'google', 'facebook'));
 
 -- Create indexes for faster lookups on social IDs
