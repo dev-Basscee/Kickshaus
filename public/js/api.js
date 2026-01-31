@@ -40,6 +40,14 @@ const api = {
       const data = await response.json();
       
       if (!response.ok) {
+        // Handle unauthorized access (expired/invalid token)
+        if (response.status === 401 || response.status === 403) {
+          this.logout();
+          if (!window.location.pathname.includes('login.html') && 
+              !window.location.pathname.includes('merchant-login.html')) {
+            window.location.href = 'login.html?error=session_expired';
+          }
+        }
         throw new Error(data.error || data.message || 'API Request Failed');
       }
       

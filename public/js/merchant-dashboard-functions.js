@@ -4,6 +4,34 @@
  */
 const API_BASE = '/api';
 
+// Helper for authenticated requests with auto-logout on 401
+async function fetchAuth(endpoint, options = {}) {
+  const token = localStorage.getItem('token') || localStorage.getItem('kickshaus_auth_token');
+  
+  const defaultHeaders = {
+    "Authorization": `Bearer ${token}`
+  };
+
+  const headers = { ...defaultHeaders, ...(options.headers || {}) };
+  
+  const response = await fetch(`${API_BASE}${endpoint}`, {
+    ...options,
+    headers
+  });
+
+  if (response.status === 401 || response.status === 403) {
+    localStorage.removeItem("token");
+    localStorage.removeItem("kickshaus_auth_token");
+    localStorage.removeItem("user");
+    localStorage.removeItem("kickshaus_user");
+    localStorage.removeItem("userType");
+    window.location.href = "merchant-login.html?error=session_expired";
+    throw new Error("Session expired");
+  }
+
+  return response;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   checkMerchantAuth();
   setupNavigation();
@@ -117,16 +145,8 @@ async function loadDashboardData() {
 
 async function loadMyProducts() {
   try {
-    const token = localStorage.getItem('token') || localStorage.getItem('kickshaus_auth_token');
-    const response = await fetch(`${API_BASE}/merchant/products`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+    const response = await fetchAuth('/merchant/products');
     
-    if (response.status === 401 || response.status === 403) {
-       window.location.href = 'merchant-login.html';
-       return;
-    }
-
     const result = await response.json();
     const products = result.data.products || result.data || [];
 
@@ -167,10 +187,7 @@ async function loadMyProducts() {
 
 async function loadMerchantOrders() {
   try {
-    const token = localStorage.getItem('token') || localStorage.getItem('kickshaus_auth_token');
-    const response = await fetch(`${API_BASE}/merchant/orders`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+    const response = await fetchAuth('/merchant/orders');
     
     if (!response.ok) throw new Error('Failed to fetch orders');
     
@@ -239,11 +256,10 @@ if (addProductForm) {
     };
 
     try {
-      const res = await fetch(`${API_BASE}/merchant/products`, {
+      const res = await fetchAuth('/merchant/products', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(formData)
       });
@@ -272,12 +288,10 @@ if (addProductForm) {
 
 window.deleteProduct = async (id) => {
   if(!confirm('Are you sure you want to delete this product?')) return;
-  const token = localStorage.getItem('token') || localStorage.getItem('kickshaus_auth_token');
   
   try {
-    const res = await fetch(`${API_BASE}/merchant/products/${id}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': `Bearer ${token}` }
+    const res = await fetchAuth(`/merchant/products/${id}`, {
+      method: 'DELETE'
     });
     
     if (res.ok) {

@@ -6,6 +6,33 @@
 const API_BASE = "/api";
 let isFetching = false;
 
+// Helper for authenticated requests with auto-logout on 401
+async function fetchAuth(endpoint, options = {}) {
+  const token = localStorage.getItem("token");
+  
+  const defaultHeaders = {
+    "Authorization": `Bearer ${token}`
+  };
+
+  // Merge headers
+  const headers = { ...defaultHeaders, ...(options.headers || {}) };
+  
+  const response = await fetch(`${API_BASE}${endpoint}`, {
+    ...options,
+    headers
+  });
+
+  if (response.status === 401 || response.status === 403) {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    localStorage.removeItem("userType");
+    window.location.href = "login.html?error=session_expired";
+    throw new Error("Session expired");
+  }
+
+  return response;
+}
+
 // --- INITIALIZATION ---
 function init() {
   if (document.querySelector(".dashboard-container")) {
@@ -149,10 +176,7 @@ function setupNotifications() {
 
 async function loadDashboardStats() {
   try {
-    const token = localStorage.getItem("token");
-    const response = await fetch(`${API_BASE}/admin/stats`, {
-      headers: { "Authorization": `Bearer ${token}` }
-    });
+    const response = await fetchAuth('/admin/stats');
     if (!response.ok) throw new Error("Failed to fetch stats");
     const result = await response.json();
     const data = result.data;
@@ -168,10 +192,7 @@ async function loadDashboardStats() {
 
 async function loadAllMerchants() {
   try {
-    const token = localStorage.getItem("token");
-    const response = await fetch(`${API_BASE}/admin/merchants`, {
-      headers: { "Authorization": `Bearer ${token}` }
-    });
+    const response = await fetchAuth('/admin/merchants');
     if (!response.ok) throw new Error("Failed to fetch merchants");
     const result = await response.json();
     const merchants = result.data.merchants || [];
@@ -219,10 +240,7 @@ function renderAllMerchants(merchants) {
 
 async function loadAllOrders() {
   try {
-    const token = localStorage.getItem("token");
-    const response = await fetch(`${API_BASE}/admin/orders`, {
-      headers: { "Authorization": `Bearer ${token}` }
-    });
+    const response = await fetchAuth('/admin/orders');
     if (!response.ok) throw new Error("Failed to fetch orders");
     const result = await response.json();
     const orders = result.data.orders || [];
@@ -300,10 +318,7 @@ async function loadAllCustomers() {
   const container = document.getElementById("customersTable");
   if (!container) return;
   try {
-    const token = localStorage.getItem("token");
-    const response = await fetch(`${API_BASE}/admin/customers`, {
-      headers: { "Authorization": `Bearer ${token}` }
-    });
+    const response = await fetchAuth('/admin/customers');
     if (!response.ok) throw new Error("Failed to fetch customers");
     const result = await response.json();
     const customers = result.data.customers || [];
@@ -325,10 +340,7 @@ async function loadAllProducts() {
   const container = document.getElementById("productsTable");
   if (!container) return;
   try {
-    const token = localStorage.getItem("token");
-    const response = await fetch(`${API_BASE}/admin/products`, {
-      headers: { "Authorization": `Bearer ${token}` }
-    });
+    const response = await fetchAuth('/admin/products');
     if (!response.ok) throw new Error("Failed to fetch products");
     const result = await response.json();
     const products = result.data.products || [];
@@ -377,10 +389,9 @@ window.rejectMerchant = async (id) => {
 
 async function updateMerchantStatus(id, status) {
   try {
-    const token = localStorage.getItem("token");
-    const response = await fetch(`${API_BASE}/admin/merchants/${id}/status`, {
+    const response = await fetchAuth(`/admin/merchants/${id}/status`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status })
     });
     if (!response.ok) throw new Error("Failed to update merchant status");
@@ -391,10 +402,9 @@ async function updateMerchantStatus(id, status) {
 
 window.updateOrderStatus = async (orderId, status) => {
   try {
-    const token = localStorage.getItem("token");
-    const response = await fetch(`${API_BASE}/admin/orders/${orderId}/status`, {
+    const response = await fetchAuth(`/admin/orders/${orderId}/status`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status })
     });
     if (!response.ok) throw new Error("Failed to update order status");
@@ -405,10 +415,7 @@ window.updateOrderStatus = async (orderId, status) => {
 
 window.viewOrderDetails = async (id) => {
   try {
-    const token = localStorage.getItem("token");
-    const response = await fetch(`${API_BASE}/admin/orders/${id}`, {
-      headers: { "Authorization": `Bearer ${token}` }
-    });
+    const response = await fetchAuth(`/admin/orders/${id}`);
     if (!response.ok) throw new Error("Failed to fetch order details");
     const result = await response.json();
     const order = result.data.order;
