@@ -8,6 +8,7 @@
     "start": "node dist/index.js",
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "seed": "ts-node src/db/seed.ts",
+    "cleanup": "ts-node src/db/cleanup.ts",
     "lint": "eslint src/**/*.ts",
     "test": "jest",
     "test:watch": "jest --watch",
