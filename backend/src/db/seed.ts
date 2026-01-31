@@ -73,91 +73,137 @@ export async function seedDatabase() {
   }
 
   // 3. Create Products
-  console.log('Checking for products...');
-  const { count } = await supabaseAdmin
-    .from('products')
-    .select('id', { count: 'exact', head: true });
-
-  if (count === 0) {
-    console.log('Creating sample products...');
-    
-    const products = [
-      {
-        merchant_id: merchantId,
-        name: 'Nike React Infinity Run',
-        description: 'The Nike React Infinity Run Flyknit is designed to help reduce injury and keep you on the run. More foam and improved upper details provide a secure and cushioned feel.',
-        category: 'Running',
-        base_price: 185000,
-        stock: 50,
-        status: 'live',
-        images: {
-          primary: '/images/hero-shoe-1.png',
-          gallery: []
-        }
-      },
-      {
-        merchant_id: merchantId,
-        name: 'Classic Oxford Brogue',
-        description: 'Timeless elegance meets modern comfort. These hand-crafted Oxfords feature genuine leather soles and premium calfskin upper.',
-        category: 'Formal',
-        base_price: 250000,
-        stock: 20,
-        status: 'live',
-        images: {
-          primary: '/images/hero-shoe-2.png',
-          gallery: []
-        }
-      },
-      {
-        merchant_id: merchantId,
-        name: 'Urban Street Sneaker',
-        description: 'Designed for the city streets. Breathable mesh, durable rubber sole, and a style that stands out.',
-        category: 'Casual',
-        base_price: 95000,
-        stock: 100,
-        status: 'live',
-        images: {
-          primary: '/images/hero-shoe-3.png',
-          gallery: []
-        }
-      },
-       {
-        merchant_id: merchantId,
-        name: 'Air Max Pulse',
-        description: 'Bringing a new sensation to Air Max. The Pulse features a point-loaded Air unit (meaning it distributes weight to targeted points on the Air unit) for extra bounce.',
-        category: 'Lifestyle',
-        base_price: 120000,
-        stock: 35,
-        status: 'live',
-        images: {
-          primary: '/images/promo-banner.png',
-          gallery: []
-        }
+  console.log('Syncing products...');
+  
+  const products = [
+    {
+      merchant_id: merchantId,
+      name: 'Nike React Infinity Run',
+      description: 'The Nike React Infinity Run Flyknit is designed to help reduce injury and keep you on the run. More foam and improved upper details provide a secure and cushioned feel.',
+      category: 'Running',
+      base_price: 185000,
+      stock: 50,
+      status: 'live',
+      images: {
+        main: '/images/hero-shoe-1.png',
+        gallery: []
       }
-    ];
+    },
+    {
+      merchant_id: merchantId,
+      name: 'Classic Oxford Brogue',
+      description: 'Timeless elegance meets modern comfort. These hand-crafted Oxfords feature genuine leather soles and premium calfskin upper.',
+      category: 'Formal',
+      base_price: 250000,
+      stock: 20,
+      status: 'live',
+      images: {
+        main: '/images/hero-shoe-2.png',
+        gallery: []
+      }
+    },
+    {
+      merchant_id: merchantId,
+      name: 'Urban Street Sneaker',
+      description: 'Designed for the city streets. Breathable mesh, durable rubber sole, and a style that stands out.',
+      category: 'Casual',
+      base_price: 95000,
+      stock: 100,
+      status: 'live',
+      images: {
+        main: '/images/hero-shoe-3.png',
+        gallery: []
+      }
+    },
+     {
+      merchant_id: merchantId,
+      name: 'Air Max Pulse',
+      description: 'Bringing a new sensation to Air Max. The Pulse features a point-loaded Air unit (meaning it distributes weight to targeted points on the Air unit) for extra bounce.',
+      category: 'Lifestyle',
+      base_price: 120000,
+      stock: 35,
+      status: 'live',
+      images: {
+        main: '/images/promo-banner.png',
+        gallery: []
+      }
+    },
+    {
+      merchant_id: merchantId,
+      name: 'Jordan Retro High',
+      description: 'The iconic Jordan look with premium leather and classic cushioning. A must-have for any sneaker enthusiast.',
+      category: 'Casual',
+      base_price: 195000,
+      stock: 15,
+      status: 'live',
+      images: {
+        main: '/images/hero-shoe-1.png',
+        gallery: []
+      }
+    },
+    {
+      merchant_id: merchantId,
+      name: 'Leather Chelsea Boot',
+      description: 'Elegant and versatile, these Chelsea boots are crafted from premium Italian leather with a durable sole.',
+      category: 'Formal',
+      base_price: 165000,
+      stock: 25,
+      status: 'live',
+      images: {
+        main: '/images/hero-shoe-2.png',
+        gallery: []
+      }
+    },
+    {
+      merchant_id: merchantId,
+      name: 'Performance Trainer',
+      description: 'Engineered for peak performance. Lightweight, breathable, and designed for maximum stability during intense workouts.',
+      category: 'Running',
+      base_price: 85000,
+      stock: 60,
+      status: 'live',
+      images: {
+        main: '/images/hero-shoe-3.png',
+        gallery: []
+      }
+    },
+    {
+      merchant_id: merchantId,
+      name: 'Summer Canvas Loafer',
+      description: 'Lightweight canvas loafers perfect for the summer season. Comfortable, breathable, and stylish.',
+      category: 'Casual',
+      base_price: 55000,
+      stock: 40,
+      status: 'live',
+      images: {
+        main: '/images/promo-banner.png',
+        gallery: []
+      }
+    }
+  ];
 
-    const { error } = await supabaseAdmin.from('products').insert(products);
-
-    if (error) console.error('Error creating products:', error.message);
-    else console.log('✅ Sample products created.');
-  } else {
-    console.log('ℹ️ Products already exist. Randomizing prices for existing products...');
+  for (const productData of products) {
+    const randomPrice = Math.floor(Math.random() * (200000 - 50000 + 1)) + 50000;
     
-    const { data: existingProducts } = await supabaseAdmin
+    // Check if product exists by name
+    const { data: existing } = await supabaseAdmin
       .from('products')
-      .select('id');
+      .select('id')
+      .eq('name', productData.name)
+      .single();
 
-    if (existingProducts) {
-      for (const product of existingProducts) {
-        const randomPrice = Math.floor(Math.random() * (200000 - 50000 + 1)) + 50000;
-        await supabaseAdmin
-          .from('products')
-          .update({ base_price: randomPrice })
-          .eq('id', product.id);
-      }
-      console.log(`✅ Randomized prices for ${existingProducts.length} products.`);
+    if (!existing) {
+      await supabaseAdmin.from('products').insert({
+        ...productData,
+        base_price: randomPrice
+      });
+    } else {
+      await supabaseAdmin.from('products').update({
+        base_price: randomPrice
+      }).eq('id', existing.id);
     }
   }
+  console.log(`✅ Synced and randomized prices for ${products.length} products.`);
 }
 
 // Allow running directly via ts-node

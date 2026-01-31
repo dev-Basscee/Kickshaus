@@ -62,9 +62,9 @@ const KickshausState = {
     if (Array.isArray(product.images) && product.images.length > 0) {
       return product.images[0];
     }
-    // Images as object with main property
-    if (product.images && typeof product.images === 'object' && product.images.main) {
-      return product.images.main;
+    // Images as object
+    if (product.images && typeof product.images === 'object') {
+      return product.images.main || product.images.primary || '';
     }
     return '';
   },
@@ -179,7 +179,7 @@ async function loadProductsFromAPI() {
           category: p.category,
           price: p.final_price || p.base_price || p.price,
           description: p.description,
-          images: p.images ? (Array.isArray(p.images) ? p.images : [p.images.main, p.images.top, p.images.left, p.images.right].filter(Boolean)) : [],
+          images: p.images ? (Array.isArray(p.images) ? p.images : [p.images.main, p.images.primary, p.images.top, p.images.left, p.images.right].filter(Boolean)) : [],
           badge: p.badge || null,
           stock: p.stock || 0,
           rating: p.rating || 4.5,
@@ -228,7 +228,7 @@ async function getProductByIdAsync(id) {
         category: p.category,
         price: p.final_price || p.base_price || p.price,
         description: p.description,
-        images: p.images ? (Array.isArray(p.images) ? p.images : [p.images.main, p.images.top, p.images.left, p.images.right].filter(Boolean)) : [],
+        images: p.images ? (Array.isArray(p.images) ? p.images : [p.images.main, p.images.primary, p.images.top, p.images.left, p.images.right].filter(Boolean)) : [],
         badge: p.badge || null,
         stock: p.stock || 0,
         rating: p.rating || 4.5,
