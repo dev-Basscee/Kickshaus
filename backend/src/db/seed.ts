@@ -85,7 +85,7 @@ export async function seedDatabase() {
       stock: 50,
       status: 'live',
       images: {
-        main: '/images/hero-shoe-1.png',
+        main: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=600',
         gallery: []
       }
     },
@@ -98,7 +98,7 @@ export async function seedDatabase() {
       stock: 20,
       status: 'live',
       images: {
-        main: '/images/hero-shoe-2.png',
+        main: 'https://images.unsplash.com/photo-1533867617858-e7b97e060509?auto=format&fit=crop&q=80&w=600',
         gallery: []
       }
     },
@@ -111,7 +111,7 @@ export async function seedDatabase() {
       stock: 100,
       status: 'live',
       images: {
-        main: '/images/hero-shoe-3.png',
+        main: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&q=80&w=600',
         gallery: []
       }
     },
@@ -124,7 +124,7 @@ export async function seedDatabase() {
       stock: 35,
       status: 'live',
       images: {
-        main: '/images/promo-banner.png',
+        main: 'https://images.unsplash.com/photo-1514989940723-e8e51635b782?auto=format&fit=crop&q=80&w=600',
         gallery: []
       }
     },
@@ -137,7 +137,7 @@ export async function seedDatabase() {
       stock: 15,
       status: 'live',
       images: {
-        main: '/images/hero-shoe-1.png',
+        main: 'https://images.unsplash.com/photo-1552346154-21d32810aba3?auto=format&fit=crop&q=80&w=600',
         gallery: []
       }
     },
@@ -150,7 +150,7 @@ export async function seedDatabase() {
       stock: 25,
       status: 'live',
       images: {
-        main: '/images/hero-shoe-2.png',
+        main: 'https://images.unsplash.com/photo-1638247025967-b4e38f787b76?auto=format&fit=crop&q=80&w=600',
         gallery: []
       }
     },
@@ -163,7 +163,7 @@ export async function seedDatabase() {
       stock: 60,
       status: 'live',
       images: {
-        main: '/images/hero-shoe-3.png',
+        main: 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?auto=format&fit=crop&q=80&w=600',
         gallery: []
       }
     },
@@ -176,7 +176,7 @@ export async function seedDatabase() {
       stock: 40,
       status: 'live',
       images: {
-        main: '/images/promo-banner.png',
+        main: 'https://images.unsplash.com/photo-1560769629-975ec94e6a86?auto=format&fit=crop&q=80&w=600',
         gallery: []
       }
     }
