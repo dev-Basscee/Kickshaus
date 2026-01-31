@@ -33,6 +33,11 @@ export class AdminController {
 
     const totalRevenue = orders?.reduce((sum, order) => sum + Number(order.total_amount_fiat), 0) || 0;
 
+    // 4.5. Count Total Orders
+    const { count: orderCount } = await supabaseAdmin
+      .from('orders')
+      .select('*', { count: 'exact', head: true });
+
     // 5. Recent Activity (Last 5 Orders)
     const { data: recentOrders } = await supabaseAdmin
       .from('orders')
@@ -45,6 +50,7 @@ export class AdminController {
       total_merchants: merchantCount || 0,
       total_products: productCount || 0,
       total_revenue: totalRevenue,
+      total_orders: orderCount || 0,
       recent_orders: recentOrders || []
     });
   }
@@ -63,7 +69,12 @@ export class AdminController {
         payment_status,
         order_status,
         created_at,
-        users (full_name)
+        users (full_name),
+        order_items (
+          quantity,
+          price_at_purchase,
+          products (name)
+        )
       `)
       .order('created_at', { ascending: false });
 
@@ -71,13 +82,52 @@ export class AdminController {
       return sendError(res, error.message, 500);
     }
 
-    // Manually map the user's full_name to a top-level customer_name property
+    // Map the nested data to a flatter structure for the frontend
     const orders = data.map((order: any) => ({
       ...order,
-      customer_name: order.users ? order.users.full_name : 'Guest User'
+      customer_name: order.users ? order.users.full_name : 'Guest User',
+      items_summary: order.order_items.map((item: any) => `${item.products.name} (x${item.quantity})`).join(', ')
     }));
 
     sendSuccess(res, { orders });
+  }
+
+  /**
+   * GET /api/admin/orders/:orderId
+   * Retrieves full details for a specific order.
+   */
+  async getOrderById(req: AuthenticatedRequest, res: Response): Promise<void> {
+    const { orderId } = req.params;
+
+    const { data: order, error } = await supabaseAdmin
+      .from('orders')
+      .select(`
+        *,
+        users (full_name, email),
+        order_items (
+          id,
+          quantity,
+          price_at_purchase,
+          products (
+            id,
+            name,
+            category,
+            images
+          )
+        )
+      `)
+      .eq('id', orderId)
+      .single();
+
+    if (error) {
+      return sendError(res, error.message, 500);
+    }
+
+    if (!order) {
+      return sendError(res, 'Order not found.', 404);
+    }
+
+    sendSuccess(res, { order });
   }
 
   /**

@@ -205,7 +205,7 @@
             <table>
               <thead><tr><th>Order ID</th><th>Customer</th><th>Amount</th><th>Status</th></tr></thead>
               <tbody id="recentOrdersTable">
-                <!-- Data will be populated by JS -->
+                <!-- Data will be populated by API -->
               </tbody>
             </table>
           </div>
@@ -230,6 +230,7 @@
                   <tr>
                     <th>Order ID</th>
                     <th>Customer</th>
+                    <th>Items</th>
                     <th>Total Amount</th>
                     <th>Payment Status</th>
                     <th>Order Status</th>
@@ -238,7 +239,7 @@
                   </tr>
                 </thead>
                 <tbody id="allOrdersTable">
-                  <!-- Data will be populated by JS -->
+                  <!-- Data will be populated by API -->
                 </tbody>
               </table>
             </div>
@@ -257,13 +258,66 @@
                   </tr>
                 </thead>
                 <tbody id="deliveryOrdersTable">
-                  <!-- Data will be populated by JS -->
+                  <!-- Data will be populated by API -->
                 </tbody>
               </table>
             </div>
           </div>
         </div>
       </div>
+
+      <!-- Order Details Modal -->
+      <div id="orderModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10002; align-items: center; justify-content: center;">
+        <div style="background: var(--bg-card); padding: 32px; border-radius: 20px; max-width: 800px; width: 95%; max-height: 90vh; overflow-y: auto; position: relative;">
+          <button onclick="closeOrderModal()" style="position: absolute; top: 20px; right: 20px; font-size: 2rem; border: none; background: none; cursor: pointer; color: var(--text-muted);">&times;</button>
+          
+          <h2 id="modalOrderId" style="margin-bottom: 24px; font-family: 'Playfair Display', serif; font-size: 1.8rem;">Order #</h2>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-bottom: 32px;">
+            <div>
+              <h3 style="font-size: 1.1rem; margin-bottom: 12px; color: var(--primary);">Customer Details</h3>
+              <p><strong>Name:</strong> <span id="modalCustomerName"></span></p>
+              <p><strong>Email:</strong> <span id="modalCustomerEmail"></span></p>
+              <p><strong>Phone:</strong> <span id="modalCustomerPhone"></span></p>
+            </div>
+            <div>
+              <h3 style="font-size: 1.1rem; margin-bottom: 12px; color: var(--primary);">Shipping Address</h3>
+              <p id="modalShippingAddress"></p>
+              <p><span id="modalCity"></span>, <span id="modalState"></span></p>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 32px;">
+            <h3 style="font-size: 1.1rem; margin-bottom: 12px; color: var(--primary);">Payment Info</h3>
+            <p><strong>Payment Status:</strong> <span id="modalPaymentStatus" class="status-badge"></span></p>
+            <p><strong>Solana Reference:</strong> <span id="modalReference" style="font-family: monospace; font-size: 0.8rem; word-break: break-all;"></span></p>
+            <p><strong>Transaction Hash:</strong> <span id="modalSignature" style="font-family: monospace; font-size: 0.8rem; word-break: break-all;">N/A</span></p>
+          </div>
+
+          <h3 style="font-size: 1.1rem; margin-bottom: 12px; color: var(--primary);">Order Items</h3>
+          <div class="table-container">
+            <table style="width: 100%;">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Quantity</th>
+                  <th>Price</th>
+                  <th>Subtotal</th>
+                </tr>
+              </thead>
+              <tbody id="modalItemsTable">
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="3" style="text-align: right; font-weight: bold; padding: 12px;">Total:</td>
+                  <td id="modalOrderTotal" style="font-weight: bold; padding: 12px;">₦0</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+
       <div class="dashboard-section" id="products-section">
         <div class="card">
           <div class="card-header">
@@ -280,7 +334,7 @@
                 </tr>
               </thead>
               <tbody id="productsTable">
-                <!-- Data will be populated by JS -->
+                <!-- Data will be populated by API -->
               </tbody>
             </table>
           </div>
@@ -301,7 +355,7 @@
                 </tr>
               </thead>
               <tbody id="customersTable">
-                <!-- Data will be populated by JS -->
+                <!-- Data will be populated by API -->
               </tbody>
             </table>
           </div>
@@ -326,7 +380,7 @@
                 </tr>
               </thead>
               <tbody id="pendingMerchantsTable">
-                <!-- Data will be populated by JS -->
+                <!-- Data will be populated by API -->
               </tbody>
             </table>
           </div>
@@ -347,7 +401,7 @@
                 </tr>
               </thead>
               <tbody id="merchantsTable">
-                <!-- Data will be populated by JS -->
+                <!-- Data will be populated by API -->
               </tbody>
             </table>
           </div>

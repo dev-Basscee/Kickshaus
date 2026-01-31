@@ -15,7 +15,7 @@ function init() {
     setupNotifications();
 
     fetchAllData();
-    setInterval(fetchAllData, 30000);
+    setInterval(fetchAllData, 10000); // Refresh every 10 seconds
 
     const refreshBtn = document.getElementById("refreshBtn");
     if (refreshBtn) {
@@ -158,12 +158,25 @@ async function loadDashboardStats() {
     const data = result.data;
     if (data) {
       updateElement("totalRevenue", `₦${(data.total_revenue || 0).toLocaleString()}`);
-      updateElement("totalOrders", (data.recent_orders || []).length);
+      updateElement("totalOrders", data.total_orders || (data.recent_orders || []).length);
       updateElement("totalCustomers", data.total_users || 0);
       updateElement("totalMerchants", data.total_merchants || 0);
       renderRecentOrders(data.recent_orders || []);
     }
   } catch (error) { console.error("Failed to load stats:", error); }
+}
+
+async function loadAllMerchants() {
+  try {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${API_BASE}/admin/merchants`, {
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error("Failed to fetch merchants");
+    const result = await response.json();
+    const merchants = result.data.merchants || [];
+    renderAllMerchants(merchants);
+  } catch (error) { console.error("Failed to load merchants:", error); }
 }
 
 function renderAllMerchants(merchants) {
@@ -239,13 +252,14 @@ function renderAllOrders(orders) {
   const container = document.getElementById("allOrdersTable");
   if (!container) return;
   if (orders.length === 0) {
-    container.innerHTML = "<tr><td colspan=\x227\x22 style=\x22text-align: center;\x22>No orders found.</td></tr>";
+    container.innerHTML = "<tr><td colspan=\x228\x22 style=\x22text-align: center;\x22>No orders found.</td></tr>";
     return;
   }
   container.innerHTML = orders.map(order => `
     <tr>
       <td>#${order.id.slice(0, 8)}</td>
       <td>${order.customer_name || "Guest User"}</td>
+      <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${order.items_summary || ''}">${order.items_summary || 'N/A'}</td>
       <td>₦${(Number(order.total_amount_fiat) || 0).toLocaleString()}</td>
       <td><span class="status-badge ${order.payment_status}">${order.payment_status}</span></td>
       <td>
@@ -387,6 +401,54 @@ window.updateOrderStatus = async (orderId, status) => {
   } catch (error) { showToast(error.message, "error"); }
 };
 
-window.viewOrderDetails = (id) => {
-  showToast("Order detail view coming soon!", "info");
+window.viewOrderDetails = async (id) => {
+  try {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${API_BASE}/admin/orders/${id}`, {
+      headers: { "Authorization": `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error("Failed to fetch order details");
+    const result = await response.json();
+    const order = result.data.order;
+    
+    // Fill Modal
+    document.getElementById("modalOrderId").textContent = `Order #${order.id.slice(0, 8)}`;
+    document.getElementById("modalCustomerName").textContent = order.users?.full_name || order.contact_name || "N/A";
+    document.getElementById("modalCustomerEmail").textContent = order.users?.email || order.contact_email || "N/A";
+    document.getElementById("modalCustomerPhone").textContent = order.receiver_phone || order.sender_phone || "N/A";
+    
+    document.getElementById("modalShippingAddress").textContent = order.shipping_address || "N/A";
+    document.getElementById("modalCity").textContent = order.city || "";
+    document.getElementById("modalState").textContent = order.state || "";
+    
+    const payStatus = document.getElementById("modalPaymentStatus");
+    payStatus.textContent = order.payment_status;
+    payStatus.className = `status-badge ${order.payment_status}`;
+    
+    document.getElementById("modalReference").textContent = order.reference_key || "N/A";
+    document.getElementById("modalSignature").textContent = order.transaction_signature || "N/A";
+    
+    document.getElementById("modalOrderTotal").textContent = `₦${(Number(order.total_amount_fiat) || 0).toLocaleString()}`;
+    
+    // Fill Items Table
+    const itemsTable = document.getElementById("modalItemsTable");
+    itemsTable.innerHTML = order.order_items.map(item => `
+      <tr>
+        <td>${item.products.name}</td>
+        <td>${item.quantity}</td>
+        <td>₦${(Number(item.price_at_purchase) || 0).toLocaleString()}</td>
+        <td>₦${(Number(item.price_at_purchase) * item.quantity).toLocaleString()}</td>
+      </tr>
+    `).join("");
+    
+    // Show Modal
+    document.getElementById("orderModal").style.display = "flex";
+  } catch (error) {
+    console.error("Failed to load order details:", error);
+    showToast("Failed to load order details.", "error");
+  }
+};
+
+window.closeOrderModal = () => {
+  document.getElementById("orderModal").style.display = "none";
 };

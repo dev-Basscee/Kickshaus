@@ -91,7 +91,7 @@ export async function seedDatabase() {
         stock: 50,
         status: 'live',
         images: {
-          primary: '/images/ChatGPT Image Dec 2, 2025, 10_51_42 PM.png',
+          primary: '/images/hero-shoe-1.png',
           gallery: []
         }
       },
@@ -104,7 +104,7 @@ export async function seedDatabase() {
         stock: 20,
         status: 'live',
         images: {
-          primary: '/images/pair-brown-shoes-with-black-leather-sole-word-bottom__1_-removebg-preview.png',
+          primary: '/images/hero-shoe-2.png',
           gallery: []
         }
       },
@@ -117,7 +117,7 @@ export async function seedDatabase() {
         stock: 100,
         status: 'live',
         images: {
-          primary: '/images/ryan-waring-164_6wVEHfI-unsplash-removebg-preview.png',
+          primary: '/images/hero-shoe-3.png',
           gallery: []
         }
       },
@@ -130,7 +130,7 @@ export async function seedDatabase() {
         stock: 35,
         status: 'live',
         images: {
-          primary: '/images/326297053_11365005-removebg-preview.png',
+          primary: '/images/promo-banner.png',
           gallery: []
         }
       }

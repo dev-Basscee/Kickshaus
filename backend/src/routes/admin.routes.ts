@@ -33,6 +33,11 @@ router.get(
     asyncHandler(adminController.getAllOrders.bind(adminController))
 );
 
+router.get(
+    '/orders/:orderId',
+    asyncHandler(adminController.getOrderById.bind(adminController))
+);
+
 router.put(
     '/orders/:orderId/status',
     asyncHandler(adminController.updateOrderStatus.bind(adminController))

@@ -392,17 +392,17 @@ function handleQuickAddToCart(product) {
 const heroSlides = [
   {
     id: 1,
-    image: "images/ChatGPT Image Dec 2, 2025, 10_51_42 PM.png",
+    image: "images/hero-shoe-1.png",
     alt: "Nike React Infinity Run"
   },
   {
     id: 2,
-    image: "images/pair-brown-shoes-with-black-leather-sole-word-bottom__1_-removebg-preview.png",
+    image: "images/hero-shoe-2.png",
     alt: "Red Sports Sneaker"
   },
   {
     id: 3,
-    image: "images/ryan-waring-164_6wVEHfI-unsplash-removebg-preview.png",
+    image: "images/hero-shoe-3.png",
     alt: "Premium Sneaker Collection"
   }
 ];

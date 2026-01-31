@@ -721,17 +721,42 @@
             handlePaymentConfirmedAPI(modal, { signature });
 
           } catch (err) {
-            console.error("Payment Error:", err);
+            console.error("Detailed Payment Error:", err);
             
-            // Helpful Error Message for You
-            if (err.message && err.message.includes("Simulation failed")) {
-                alert("Transaction Failed: Insufficient SOL balance to pay for item + gas fees.");
-            } else if (err.logs) {
-                alert("Blockchain Error: " + err.logs.join('\n'));
-            } else {
-                alert("Payment Failed: " + (err.message || err));
+            let errorMessage = "Payment Failed";
+            
+            // 1. Check for insufficient funds in simulation or preflight
+            const errorString = JSON.stringify(err).toLowerCase();
+            const isInsufficientFunds = 
+              errorString.includes("insufficient") || 
+              errorString.includes("0x1") || // SystemProgram insufficient funds error code
+              (err.message && err.message.toLowerCase().includes("insufficient"));
+
+            if (isInsufficientFunds) {
+              errorMessage = "Insufficient SOL: Your wallet doesn't have enough SOL to cover the item price and network fees.";
+            } 
+            // 2. Handle simulation failure with logs
+            else if (err.message && err.message.includes("Simulation failed")) {
+              errorMessage = "Transaction Simulation Failed. This usually happens due to insufficient balance or network congestion.";
+              
+              // Try to extract logs if available
+              if (err.logs && Array.isArray(err.logs)) {
+                console.log("Transaction Logs:", err.logs);
+                if (err.logs.some(log => log.includes("insufficient funds"))) {
+                   errorMessage = "Insufficient SOL: Your wallet doesn't have enough SOL for this transaction.";
+                }
+              }
+            }
+            // 3. User rejected
+            else if (errorString.includes("user rejected") || errorString.includes("declined")) {
+              errorMessage = "Transaction cancelled by user.";
+            }
+            // 4. Default fallback
+            else {
+              errorMessage = "Payment Error: " + (err.message || "An unexpected error occurred during payment.");
             }
 
+            alert(errorMessage);
             browserBtn.textContent = originalText;
             browserBtn.disabled = false;
           }
