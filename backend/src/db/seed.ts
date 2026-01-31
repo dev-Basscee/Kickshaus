@@ -199,11 +199,12 @@ export async function seedDatabase() {
       });
     } else {
       await supabaseAdmin.from('products').update({
-        base_price: randomPrice
+        base_price: randomPrice,
+        images: productData.images
       }).eq('id', existing.id);
     }
   }
-  console.log(`✅ Synced and randomized prices for ${products.length} products.`);
+  console.log(`✅ Synced, updated images, and randomized prices for ${products.length} products.`);
 }
 
 // Allow running directly via ts-node
