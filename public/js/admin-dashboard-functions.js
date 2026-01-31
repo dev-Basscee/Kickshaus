@@ -339,9 +339,11 @@ async function loadAllProducts() {
     container.innerHTML = products.map(product => `
       <tr>
         <td>${product.name || "N/A"}</td>
+        <td>${product.merchant_name || "N/A"}</td>
         <td>${product.category}</td>
         <td>₦${(Number(product.base_price) || 0).toLocaleString()}</td>
         <td>${product.stock}</td>
+        <td><span class="status-badge ${product.status}">${product.status || 'N/A'}</span></td>
       </tr>
     `).join("");
   } catch (error) { console.error("Failed to load products:", error); }

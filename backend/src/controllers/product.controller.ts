@@ -136,6 +136,16 @@ export class ProductController {
       product,
     });
   }
+
+  /**
+   * Get orders for the logged-in merchant
+   * GET /api/merchant/orders
+   */
+  async getMerchantOrders(req: AuthenticatedRequest, res: Response): Promise<void> {
+    const merchantId = req.user!.merchantId!;
+    const orders = await paymentService.getMerchantOrders(merchantId);
+    sendSuccess(res, { orders });
+  }
 }
 
 export const productController = new ProductController();

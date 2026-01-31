@@ -189,14 +189,27 @@ export class AdminController {
   async getAllProducts(req: AuthenticatedRequest, res: Response): Promise<void> {
     const { data, error } = await supabaseAdmin
       .from('products')
-      .select('id, name, category, base_price, stock')
+      .select(`
+        id, 
+        name, 
+        category, 
+        base_price, 
+        stock,
+        status,
+        merchants (business_name)
+      `)
       .order('created_at', { ascending: false });
 
     if (error) {
       return sendError(res, error.message, 500);
     }
 
-    sendSuccess(res, { products: data });
+    const products = data.map((p: any) => ({
+      ...p,
+      merchant_name: p.merchants?.business_name || 'N/A'
+    }));
+
+    sendSuccess(res, { products });
   }
 
 }

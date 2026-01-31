@@ -144,7 +144,7 @@ export class ProductService {
         base_price: productData.base_price,
         stock: productData.stock,
         images: productData.images,
-        status: 'pending_approval' as ProductStatus,
+        status: 'live' as ProductStatus,
       })
       .select('*')
       .single();

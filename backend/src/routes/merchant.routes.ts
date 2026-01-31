@@ -87,4 +87,15 @@ router.delete(
   asyncHandler(productController.deleteProduct.bind(productController))
 );
 
+/**
+ * GET /api/merchant/orders
+ * Get orders containing products from this merchant
+ */
+router.get(
+  '/orders',
+  authenticateUser,
+  authorizeMerchant,
+  asyncHandler(productController.getMerchantOrders.bind(productController))
+);
+
 export default router;

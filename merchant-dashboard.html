@@ -111,6 +111,7 @@
         <a class="nav-item active" data-section="overview"><i class="fas fa-chart-line"></i><span>Overview</span></a>
         <a class="nav-item" data-section="add-product"><i class="fas fa-plus-circle"></i><span>Add Product</span></a>
         <a class="nav-item" data-section="my-products"><i class="fas fa-box"></i><span>My Products</span></a>
+        <a class="nav-item" data-section="orders"><i class="fas fa-shopping-bag"></i><span>Orders</span></a>
       </nav>
       <div class="sidebar-footer">
         <button class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i><span>Logout</span></button>
@@ -203,6 +204,32 @@
                 </tr>
               </thead>
               <tbody id="productsTable">
+                <!-- Loaded by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ORDERS SECTION -->
+      <div class="dashboard-section" id="orders-section">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Orders for My Products</h2>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Customer</th>
+                  <th>Items Bought</th>
+                  <th>Total Amount</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody id="merchantOrdersTable">
                 <!-- Loaded by JS -->
               </tbody>
             </table>

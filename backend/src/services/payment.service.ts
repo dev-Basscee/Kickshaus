@@ -487,6 +487,79 @@ export class PaymentService {
       items: order.order_items,
     } as unknown as Order & { items: OrderItem[] };
   }
+
+  /**
+   * Get orders for a specific merchant
+   * Returns orders that contain at least one product from this merchant
+   */
+  async getMerchantOrders(merchantId: string): Promise<any[]> {
+    // 1. Get all product IDs for this merchant
+    const { data: merchantProducts } = await supabaseAdmin
+      .from('products')
+      .select('id')
+      .eq('merchant_id', merchantId);
+
+    if (!merchantProducts || merchantProducts.length === 0) {
+      return [];
+    }
+
+    const productIds = merchantProducts.map(p => p.id);
+
+    // 2. Get order items for these products, joining with orders and users
+    const { data: orderItems, error } = await supabaseAdmin
+      .from('order_items')
+      .select(`
+        quantity,
+        price_at_purchase,
+        products (id, name, category, images),
+        orders (
+          id,
+          total_amount_fiat,
+          payment_status,
+          fulfillment_status,
+          created_at,
+          updated_at,
+          shipping_address,
+          city,
+          state,
+          contact_name,
+          contact_email,
+          users (full_name, email)
+        )
+      `)
+      .in('product_id', productIds)
+      .order('created_at', { foreignTable: 'orders', ascending: false });
+
+    if (error) {
+      throw new Error(`Failed to fetch merchant orders: ${error.message}`);
+    }
+
+    // 3. Group by order to return a list of orders with merchant-specific items
+    const ordersMap = new Map();
+
+    orderItems?.forEach((item: any) => {
+      const order = item.orders;
+      if (!order) return;
+
+      if (!ordersMap.has(order.id)) {
+        ordersMap.set(order.id, {
+          ...order,
+          customer_name: order.users?.full_name || order.contact_name || 'Guest',
+          customer_email: order.users?.email || order.contact_email || 'N/A',
+          merchant_items: []
+        });
+      }
+
+      ordersMap.get(order.id).merchant_items.push({
+        product_id: item.products.id,
+        name: item.products.name,
+        quantity: item.quantity,
+        price: item.price_at_purchase
+      });
+    });
+
+    return Array.from(ordersMap.values());
+  }
 }
 
 export const paymentService = new PaymentService();
