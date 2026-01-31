@@ -74,8 +74,10 @@ app.use(express.static(FRONTEND_DIR, {
   extensions: ['html', 'htm'],
 }));
 
-// Serve images folder
-app.use('/images', express.static(path.join(FRONTEND_DIR, 'images')));
+// Serve images folder with caching (1 day)
+app.use('/images', express.static(path.join(FRONTEND_DIR, 'images'), {
+  maxAge: '1d'
+}));
 
 // =====================================================
 // ROUTES
