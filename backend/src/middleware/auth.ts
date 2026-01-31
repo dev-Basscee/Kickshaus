@@ -26,6 +26,10 @@ export function authenticateUser(
     
     next();
   } catch (error) {
+    if (error instanceof Error) {
+      console.error(`Auth Error: ${error.name} - ${error.message}`);
+    }
+    
     if (error instanceof jwt.TokenExpiredError) {
       next(new UnauthorizedError('Token has expired'));
     } else if (error instanceof jwt.JsonWebTokenError) {

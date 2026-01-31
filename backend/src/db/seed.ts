@@ -28,14 +28,17 @@ export async function seedDatabase() {
     if (error) console.error('Error creating admin:', error.message);
     else console.log('✅ Default Admin created: admin@kickshaus.com / admin123');
   } else {
-    console.log('ℹ️ Admin account already exists. Updating password to default...');
+    console.log('ℹ️ Admin account already exists. Updating password and ensuring role is admin...');
     const { error } = await supabaseAdmin
       .from('users')
-      .update({ password_hash: hashPassword(adminPassword) })
+      .update({ 
+        password_hash: hashPassword(adminPassword),
+        role: 'admin'
+      })
       .eq('email', adminEmail);
     
-    if (error) console.error('Error updating admin password:', error.message);
-    else console.log('✅ Default Admin password updated: admin@kickshaus.com / admin123');
+    if (error) console.error('Error updating admin:', error.message);
+    else console.log('✅ Default Admin updated: admin@kickshaus.com / admin123');
   }
 
   // 2. Create Merchant

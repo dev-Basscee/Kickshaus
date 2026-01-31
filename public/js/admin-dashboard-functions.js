@@ -10,6 +10,11 @@ let isFetching = false;
 async function fetchAuth(endpoint, options = {}) {
   const token = localStorage.getItem("token");
   
+  if (!token) {
+    window.location.href = "login.html?error=auth_required";
+    throw new Error("No authentication token found");
+  }
+
   const defaultHeaders = {
     "Authorization": `Bearer ${token}`
   };
