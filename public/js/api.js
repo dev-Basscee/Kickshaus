@@ -69,13 +69,14 @@ const api = {
         localStorage.setItem('token', response.data.token);
       }
       if (response.data.user) {
+        const type = response.data.type || 'user';
         const userData = { 
           ...response.data.user, 
-          type: response.data.type || 'user' 
+          type: type
         };
         localStorage.setItem(USER_DATA_KEY, JSON.stringify(userData));
         localStorage.setItem('user', JSON.stringify(userData));
-        localStorage.setItem('userType', response.data.type || 'user');
+        localStorage.setItem('userType', type);
       }
     }
     

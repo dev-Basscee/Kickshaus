@@ -100,6 +100,17 @@
   <script src="public/js/api-client.js"></script>
   <script src="public/js/universal-theme.js"></script>
   <script>
+    // Check for errors in URL
+    document.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const error = urlParams.get('error');
+      const message = urlParams.get('message');
+      
+      if (error && message) {
+        showToast(decodeURIComponent(message), 'error');
+      }
+    });
+
     function togglePassword() {
       const input = document.getElementById('password');
       const icon = document.querySelector('.toggle-password i');

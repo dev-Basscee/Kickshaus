@@ -9,11 +9,27 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function checkMerchantAuth() {
-  const token = localStorage.getItem('token');
-  const userType = localStorage.getItem('userType'); // 'merchant'
+  const token = localStorage.getItem('token') || localStorage.getItem('kickshaus_auth_token');
+  const userType = localStorage.getItem('userType');
+  const user = JSON.parse(localStorage.getItem('user') || localStorage.getItem('kickshaus_user') || '{}');
   
-  if (!token || userType !== 'merchant') {
-    window.location.href = 'merchant-login.html';
+  const isMerchant = userType === 'merchant' || user.type === 'merchant';
+  
+  if (!token || !isMerchant) {
+    console.warn('Authentication failed: No valid merchant session found');
+    // Clear potentially corrupted session data
+    localStorage.removeItem('token');
+    localStorage.removeItem('userType');
+    window.location.href = 'merchant-login.html?error=unauthorized&message=Please%20login%20as%20a%20merchant';
+  } else {
+    // Populate header info if elements exist
+    const nameEl = document.getElementById('merchantName');
+    const emailEl = document.getElementById('merchantEmail');
+    const avatarEl = document.getElementById('merchantAvatar');
+    
+    if (nameEl) nameEl.textContent = user.business_name || user.email || 'Merchant';
+    if (emailEl) emailEl.textContent = user.email || '';
+    if (avatarEl) avatarEl.textContent = (user.business_name || user.email || 'M').charAt(0).toUpperCase();
   }
 }
 
