@@ -141,7 +141,22 @@ export async function seedDatabase() {
     if (error) console.error('Error creating products:', error.message);
     else console.log('✅ Sample products created.');
   } else {
-    console.log('ℹ️ Products already exist.');
+    console.log('ℹ️ Products already exist. Randomizing prices for existing products...');
+    
+    const { data: existingProducts } = await supabaseAdmin
+      .from('products')
+      .select('id');
+
+    if (existingProducts) {
+      for (const product of existingProducts) {
+        const randomPrice = Math.floor(Math.random() * (200000 - 50000 + 1)) + 50000;
+        await supabaseAdmin
+          .from('products')
+          .update({ base_price: randomPrice })
+          .eq('id', product.id);
+      }
+      console.log(`✅ Randomized prices for ${existingProducts.length} products.`);
+    }
   }
 }
 
