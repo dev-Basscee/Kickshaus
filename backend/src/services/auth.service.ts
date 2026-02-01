@@ -9,7 +9,7 @@ export class AuthService {
   /**
    * Register a new customer
    */
-  async registerUser(email: string, password: string): Promise<Omit<User, 'password_hash'>> {
+  async registerUser(email: string, password: string, fullName: string): Promise<Omit<User, 'password_hash'>> {
     email = email.toLowerCase().trim();
     // Check if Supabase is configured
     if (!isSupabaseConfigured()) {
@@ -49,9 +49,10 @@ export class AuthService {
         .insert({
           email,
           password_hash: passwordHash,
+          full_name: fullName,
           role: 'customer' as UserRole,
         })
-        .select('id, email, role, provider, google_id, facebook_id, created_at, updated_at')
+        .select('id, email, full_name, role, provider, google_id, facebook_id, created_at, updated_at')
         .single();
 
       if (error) {
@@ -270,7 +271,7 @@ export class AuthService {
 
     const { data, error } = await supabaseAdmin
       .from('users')
-      .select('id, email, role, provider, google_id, facebook_id, created_at, updated_at')
+      .select('id, email, full_name, role, provider, google_id, facebook_id, created_at, updated_at')
       .eq('id', userId)
       .single();
 
@@ -376,7 +377,7 @@ export class AuthService {
       // First, try to find user by provider ID
       const { data: existingByProvider, error: providerError } = await supabaseAdmin
         .from('users')
-        .select('id, email, role, provider, google_id, facebook_id, created_at, updated_at')
+        .select('id, email, full_name, role, provider, google_id, facebook_id, created_at, updated_at')
         .eq(providerIdField, profile.providerId)
         .single();
 
@@ -388,21 +389,26 @@ export class AuthService {
       // Check if user exists with the same email
       const { data: existingByEmail, error: emailError } = await supabaseAdmin
         .from('users')
-        .select('id, email, role, provider, google_id, facebook_id, created_at, updated_at')
+        .select('id, email, full_name, role, provider, google_id, facebook_id, created_at, updated_at')
         .eq('email', profile.email)
         .single();
 
       if (!emailError && existingByEmail) {
         // User exists with email, link the social account
-        const updateData: Record<string, string> = {
+        const updateData: Record<string, string | null> = {
           [providerIdField]: profile.providerId,
         };
+        
+        // If existing user has no name but social profile does, update it
+        if (!existingByEmail.full_name && profile.fullName) {
+          updateData.full_name = profile.fullName;
+        }
 
         const { data: updatedUser, error: updateError } = await supabaseAdmin
           .from('users')
           .update(updateData)
           .eq('id', existingByEmail.id)
-          .select('id, email, role, provider, google_id, facebook_id, created_at, updated_at')
+          .select('id, email, full_name, role, provider, google_id, facebook_id, created_at, updated_at')
           .single();
 
         if (updateError) {
@@ -425,9 +431,10 @@ export class AuthService {
           password_hash: null, // Social users don't have passwords
           role: 'customer' as UserRole,
           provider: profile.provider as AuthProvider,
+          full_name: profile.fullName || null,
           [providerIdField]: profile.providerId,
         })
-        .select('id, email, role, provider, google_id, facebook_id, created_at, updated_at')
+        .select('id, email, full_name, role, provider, google_id, facebook_id, created_at, updated_at')
         .single();
 
       if (createError) {

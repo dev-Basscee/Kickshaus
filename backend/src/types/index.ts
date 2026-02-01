@@ -13,6 +13,7 @@ export interface User {
   id: string;
   email: string;
   password_hash: string | null;
+  full_name: string | null;
   role: UserRole;
   provider: AuthProvider;
   google_id: string | null;

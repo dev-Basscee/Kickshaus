@@ -19,9 +19,29 @@ const app = express();
 // Trust the first proxy (Required for rate-limiting behind load balancers/proxies)
 app.set('trust proxy', 1);
 
-// =====================================================
+// ===============================================
 // SECURITY MIDDLEWARE
-// =====================================================
+// ===============================================
+
+// Block access to sensitive files/directories
+app.use((req, res, next) => {
+  const sensitivePaths = [
+    '/backend',
+    '/.git',
+    '/.env',
+    '/.idx',
+    '/node_modules',
+    '/package.json',
+    '/package-lock.json',
+    '/README.md'
+  ];
+  
+  const normalizedUrl = req.url.toLowerCase();
+  if (sensitivePaths.some(p => normalizedUrl.startsWith(p.toLowerCase()))) {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+  next();
+});
 
 // Helmet for security headers - modified for serving static content
 app.use(helmet({

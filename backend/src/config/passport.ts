@@ -12,6 +12,7 @@ export interface SocialProfile {
   providerId: string;
   email: string;
   emailVerified: boolean;
+  fullName?: string;
 }
 
 /**
@@ -55,6 +56,7 @@ export function initializePassport(): void {
               providerId: profile.id,
               email,
               emailVerified,
+              fullName: profile.displayName,
             };
 
             // Find or create user
@@ -80,7 +82,7 @@ export function initializePassport(): void {
           clientID: config.social.facebook.appId!,
           clientSecret: config.social.facebook.appSecret!,
           callbackURL: `${config.social.callbackUrl}/facebook/callback`,
-          profileFields: ['id', 'emails', 'name'],
+          profileFields: ['id', 'emails', 'name', 'displayName'],
         },
         async (
           _accessToken: string,
@@ -102,6 +104,7 @@ export function initializePassport(): void {
               providerId: profile.id,
               email,
               emailVerified: true,
+              fullName: profile.displayName,
             };
 
             // Find or create user

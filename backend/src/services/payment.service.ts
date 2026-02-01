@@ -234,6 +234,15 @@ export class PaymentService {
       throw new NotFoundError('Order not found');
     }
 
+    // Check wallet balance
+    const walletPublicKey = new PublicKey(account);
+    const balance = await this.connection.getBalance(walletPublicKey);
+    const requiredAmount = new BigNumber(order.total_amount_sol).multipliedBy(LAMPORTS_PER_SOL).toNumber();
+
+    if (balance < requiredAmount) {
+      throw new PaymentError('Insufficient SOL balance to complete this transaction');
+    }
+
     // Get the latest blockhash
     const { blockhash } = await this.connection.getLatestBlockhash();
 

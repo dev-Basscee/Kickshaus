@@ -19,9 +19,9 @@ export class AuthController {
    * POST /api/auth/register
    */
   async register(req: AuthenticatedRequest, res: Response): Promise<void> {
-    const { email, password } = req.body as RegisterUserInput;
+    const { full_name, email, password } = req.body as RegisterUserInput;
     
-    const user = await authService.registerUser(email, password);
+    const user = await authService.registerUser(email, password, full_name);
     
     const token = generateToken({
       userId: user.id,
