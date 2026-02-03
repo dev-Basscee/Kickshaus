@@ -6,6 +6,70 @@ import { CreateOrderInput, VerifyPaymentInput, CreateTransactionInput } from '..
 
 export class PaymentController {
   /**
+   * Initialize Paystack payment
+   * POST /api/payment/paystack/initialize
+   */
+  async initializePaystack(req: AuthenticatedRequest, res: Response): Promise<void> {
+    const userId = req.user!.userId;
+    // We expect the body to contain items and optional delivery info
+    // casting to partial CreateOrderInput for better type checking
+    const body = req.body as CreateOrderInput & { 
+      callback_url?: string;
+      // These fields might come from body if not in standard structure
+      email?: string;
+    };
+    
+    const items = body.items;
+    
+    // Prioritize contact_email, fall back to explicit 'email' field, or fail
+    const email = body.contact_email || body.email;
+    const callbackUrl = body.callback_url || req.headers.referer || 'http://localhost:3000/payment.html';
+
+    if (!email) {
+       res.status(400).json({ success: false, error: 'Email is required for Paystack payment' });
+       return;
+    }
+
+    // Clean delivery object
+    const delivery = {
+      contact_name: body.contact_name ?? undefined,
+      contact_email: email,
+      sender_phone: body.sender_phone ?? undefined,
+      receiver_phone: body.receiver_phone ?? undefined,
+      shipping_address: body.shipping_address ?? undefined,
+      city: body.city ?? undefined,
+      state: body.state ?? undefined,
+      notes: body.notes ?? undefined,
+    };
+
+    const result = await paymentService.initializePaystackTransaction(
+      userId,
+      email,
+      items,
+      callbackUrl,
+      delivery
+    );
+
+    sendSuccess(res, result);
+  }
+
+  /**
+   * Verify Paystack payment
+   * GET /api/payment/paystack/verify?reference=xxx
+   */
+  async verifyPaystack(req: AuthenticatedRequest, res: Response): Promise<void> {
+    const { reference } = req.query as { reference: string };
+    
+    if (!reference) {
+      res.status(400).json({ success: false, error: 'Reference is required' });
+      return;
+    }
+
+    const result = await paymentService.verifyPaystackTransaction(reference);
+    sendSuccess(res, result);
+  }
+
+  /**
    * Create a new order with Solana Pay
    * POST /api/payment/create-order
    */

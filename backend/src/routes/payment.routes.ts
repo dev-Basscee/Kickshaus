@@ -3,13 +3,35 @@ import { paymentController } from '../controllers/payment.controller';
 import { authenticateUser } from '../middleware/auth';
 import { validateBody, validateQuery } from '../middleware/validate';
 import { asyncHandler } from '../middleware/error';
-import { createOrderSchema, verifyPaymentSchema } from '../utils/validators';
+import { createOrderSchema, verifyPaymentSchema, createTransactionSchema } from '../utils/validators';
 
 const router = Router();
 
 // =====================================================
 // PAYMENT ROUTES
 // =====================================================
+
+/**
+ * POST /api/payment/paystack/initialize
+ * Initialize Paystack payment
+ */
+router.post(
+  '/paystack/initialize',
+  authenticateUser,
+  // Reuse createOrderSchema for body validation, but we handle extra fields in controller
+  validateBody(createOrderSchema),
+  asyncHandler(paymentController.initializePaystack.bind(paymentController))
+);
+
+/**
+ * GET /api/payment/paystack/verify
+ * Verify Paystack payment
+ */
+router.get(
+  '/paystack/verify',
+  authenticateUser,
+  asyncHandler(paymentController.verifyPaystack.bind(paymentController))
+);
 
 /**
  * GET /api/payment/sol-price
@@ -33,6 +55,18 @@ router.post(
   authenticateUser,
   validateBody(createOrderSchema),
   asyncHandler(paymentController.createOrder.bind(paymentController))
+);
+
+/**
+ * POST /api/payment/transaction
+ * Create a transaction for an order
+ * (Requires authentication)
+ */
+router.post(
+  '/transaction',
+  authenticateUser,
+  validateBody(createTransactionSchema),
+  asyncHandler(paymentController.createTransaction.bind(paymentController))
 );
 
 /**
