@@ -398,12 +398,12 @@
           <i class="fas fa-chevron-right arrow"></i>
         </div>
 
-        <div class="payment-option" data-method="paypal">
+        <div class="payment-option" data-method="paystack">
           <div class="method-left">
             <div class="icon-box">
-              <i class="fab fa-paypal"></i>
+              <i class="fas fa-money-bill-wave"></i>
             </div>
-            <span class="method-name">PayPal</span>
+            <span class="method-name">Paystack</span>
           </div>
           <i class="fas fa-chevron-right arrow"></i>
         </div>
@@ -422,7 +422,7 @@
       <div class="trust-badges">
         <img src="https://upload.wikimedia.org/wikipedia/commons/4/41/Visa_Logo.png" alt="Visa" class="trust-badge">
         <img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/Mastercard-logo.png" alt="Mastercard" class="trust-badge">
-        <img src="https://www.paypalobjects.com/webstatic/en_US/i/buttons/paypal-logo-large.png" alt="PayPal" class="trust-badge">
+        <img src="https://website-v3-assets.s3.amazonaws.com/assets/img/hero/Paystack-mark-white-twitter.png" style="background: #000; padding: 4px; border-radius: 4px;" alt="Paystack" class="trust-badge">
         <div style="display: flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: 0.9rem;">
           <i class="fas fa-lock"></i>
           <span>Secure Payment</span>
@@ -673,42 +673,26 @@
           try {
             // A. Connect Wallet
             await provider.connect();
-            browserBtn.textContent = "Getting Chain Data...";
+            browserBtn.textContent = "Creating Transaction...";
 
-            // B. Get Blockhash from Backend (Avoids 403 Forbidden)
-            const chainData = await window.api.getChainInfo();
-            if (!chainData.success) throw new Error("Could not fetch chain data");
-            const { blockhash } = chainData.data;
+            // B. Create Transaction via Backend (Secure & Consistent)
+            const txResponse = await window.api.createTransaction(
+              result.data.order_id, 
+              provider.publicKey.toString()
+            );
 
-            // C. Parse URL (Standard Format)
-            // solana:ADDRESS?amount=X&reference=Y
-            const urlParts = solana_pay_url.split('?');
-            const recipientAddr = urlParts[0].replace('solana:', '');
-            const params = new URLSearchParams(urlParts[1]);
-            const amountVal = params.get('amount');
+            if (!txResponse.success || !txResponse.data) {
+              throw new Error(txResponse.message || "Failed to create transaction");
+            }
 
-            // D. Prepare Transaction
-            const recipient = new solanaWeb3.PublicKey(recipientAddr);
-            const amount = parseFloat(amountVal);
-            const lamports = Math.round(amount * solanaWeb3.LAMPORTS_PER_SOL);
-            const reference = new solanaWeb3.PublicKey(reference_key);
-            const fromPubkey = provider.publicKey;
+            const base64Tx = txResponse.data.transaction;
 
-            const transaction = new solanaWeb3.Transaction();
-            transaction.recentBlockhash = blockhash;
-            transaction.feePayer = fromPubkey;
+            // C. Deserialize Transaction
+            // Convert base64 string to Uint8Array for Solana Web3.js
+            const txBuffer = Uint8Array.from(atob(base64Tx), c => c.charCodeAt(0));
+            const transaction = solanaWeb3.Transaction.from(txBuffer);
 
-            const instruction = solanaWeb3.SystemProgram.transfer({
-              fromPubkey: fromPubkey,
-              toPubkey: recipient,
-              lamports: lamports
-            });
-
-            // CRITICAL: Inject Reference Key
-            instruction.keys.push({ pubkey: reference, isSigner: false, isWritable: false });
-            transaction.add(instruction);
-
-            // E. Send (Wallet will handle insufficient funds check)
+            // D. Send (Wallet will handle signing)
             browserBtn.textContent = "Please Approve...";
             
             // NOTE: If you still get 'Simulation Failed', it confirms you need more SOL.
@@ -721,42 +705,44 @@
             handlePaymentConfirmedAPI(modal, { signature });
 
           } catch (err) {
-            console.error("Detailed Payment Error:", err);
+            console.log("Detailed Payment Error:", err);
             
             let errorMessage = "Payment Failed";
             
-            // 1. Check for insufficient funds in simulation or preflight
-            const errorString = JSON.stringify(err).toLowerCase();
-            const isInsufficientFunds = 
-              errorString.includes("insufficient") || 
-              errorString.includes("0x1") || // SystemProgram insufficient funds error code
-              (err.message && err.message.toLowerCase().includes("insufficient"));
+            // 1. Check if it's a backend API error (which we threw as an Error object)
+            // If the message contains "Insufficient SOL balance", it came from our service
+            if (err.message && err.message.includes("Insufficient SOL balance")) {
+              errorMessage = "Insufficient Balance: Your wallet doesn't have enough SOL to cover this order.";
+            }
+            else if (err.message && err.message.includes("Order has expired")) {
+              errorMessage = "Order Expired: This order is no longer valid. Please start checkout again.";
+            }
+            // 2. Check for Solana-specific errors in simulation or preflight
+            else {
+              const errorString = JSON.stringify(err).toLowerCase();
+              const isInsufficientFunds = 
+                errorString.includes("insufficient") || 
+                errorString.includes("0x1") || // SystemProgram error code for insufficient funds
+                (err.message && err.message.toLowerCase().includes("insufficient"));
 
-            if (isInsufficientFunds) {
-              errorMessage = "Insufficient SOL: Your wallet doesn't have enough SOL to cover the item price and network fees.";
-            } 
-            // 2. Handle simulation failure with logs
-            else if (err.message && err.message.includes("Simulation failed")) {
-              errorMessage = "Transaction Simulation Failed. This usually happens due to insufficient balance or network congestion.";
-              
-              // Try to extract logs if available
-              if (err.logs && Array.isArray(err.logs)) {
-                console.log("Transaction Logs:", err.logs);
-                if (err.logs.some(log => log.includes("insufficient funds"))) {
-                   errorMessage = "Insufficient SOL: Your wallet doesn't have enough SOL for this transaction.";
-                }
+              if (isInsufficientFunds) {
+                errorMessage = "Insufficient SOL: You need more SOL in your wallet to cover the price and network fees.";
+              } 
+              else if (err.message && err.message.includes("Simulation failed")) {
+                errorMessage = "Transaction Simulation Failed. This usually happens due to insufficient balance or network congestion.";
+              }
+              else if (errorString.includes("user rejected") || errorString.includes("declined")) {
+                errorMessage = "Transaction cancelled by user.";
+              }
+              else {
+                errorMessage = err.message || "An unexpected error occurred during payment.";
               }
             }
-            // 3. User rejected
-            else if (errorString.includes("user rejected") || errorString.includes("declined")) {
-              errorMessage = "Transaction cancelled by user.";
-            }
-            // 4. Default fallback
-            else {
-              errorMessage = "Payment Error: " + (err.message || "An unexpected error occurred during payment.");
-            }
 
-            alert(errorMessage);
+            // Professional feedback via toast instead of alert
+            showToast(errorMessage, 'error');
+            
+            // Reset button state
             browserBtn.textContent = originalText;
             browserBtn.disabled = false;
           }
@@ -891,6 +877,162 @@
       }, 1500);
     }
 
+    // =====================================================
+    // PAYSTACK LOGIC
+    // =====================================================
+
+    /**
+     * Initialize Paystack payment
+     */
+    async function initializePaystackPayment() {
+      const authToken = getAuthToken();
+      if (!authToken) {
+        showToast('Please log in to complete your purchase', 'error');
+        setTimeout(() => window.location.href = 'login.html', 1500);
+        return;
+      }
+
+      const items = getCartItemsForAPI();
+      if (items.length === 0) {
+        showToast('Cart is empty', 'error');
+        return;
+      }
+
+      showToast('Initializing Paystack...');
+
+      try {
+        let delivery = {};
+        try {
+          const raw = localStorage.getItem('deliveryDetails');
+          delivery = raw ? JSON.parse(raw) : {};
+        } catch (_) {
+          delivery = {};
+        }
+
+        // Determine callback URL (current page)
+        const callbackUrl = window.location.href.split('?')[0];
+
+        const payload = {
+          items,
+          contact_email: delivery.email || null,
+          contact_name: delivery.fullName || null,
+          sender_phone: delivery.phone || null,
+          receiver_phone: delivery.receiverPhone || delivery.phone || null,
+          shipping_address: delivery.address || null,
+          city: delivery.city || null,
+          state: delivery.state || null,
+          notes: delivery.notes || null,
+          callback_url: callbackUrl
+        };
+        
+        // If user is logged in but no email in delivery, the backend will use user's email if possible.
+        // But better to fail fast if we can't find email.
+        // The controller checks for email.
+
+        const response = await window.api.initializePaystack(payload);
+
+        if (response.success && response.data) {
+          // Redirect to Paystack
+          window.location.href = response.data.authorization_url;
+        } else {
+          showErrorBanner(response.error || 'Failed to initialize payment');
+        }
+      } catch (error) {
+        console.error('Paystack error:', error);
+        showErrorBanner(error.message || 'Payment initialization failed');
+      }
+    }
+
+    /**
+     * Verify Paystack payment on return
+     */
+    async function verifyPaystackOnReturn() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const reference = urlParams.get('reference') || urlParams.get('trxref'); // Paystack sends trxref usually, or reference
+
+      if (reference) {
+        // Clear query params to avoid re-verification on refresh
+        window.history.replaceState({}, document.title, window.location.pathname);
+
+        // Show a modal or loading state
+        const modal = document.createElement('div');
+        modal.className = 'solana-pay-modal'; // Reuse styles
+        modal.innerHTML = `
+          <div class="solana-pay-content">
+            <h3 class="solana-pay-title">Verifying Payment</h3>
+            <div class="solana-pay-status" style="margin-top: 20px;">
+              <div class="solana-pay-spinner"></div>
+              <span>Confirming with Paystack...</span>
+            </div>
+            <p style="margin-top: 10px; color: #666; font-size: 0.9rem;">Please do not close this window.</p>
+          </div>
+        `;
+        document.body.appendChild(modal);
+
+        try {
+          const response = await window.api.verifyPaystack(reference);
+
+          if (response.success && response.data && response.data.status === 'confirmed') {
+             modal.innerHTML = `
+               <div class="solana-pay-content">
+                 <div style="text-align: center; color: #4CAF50;">
+                   <i class="fas fa-check-circle" style="font-size: 3rem; margin-bottom: 16px;"></i>
+                   <h3 class="solana-pay-title">Payment Successful!</h3>
+                   <p>Your order has been confirmed.</p>
+                   <p style="font-size: 0.9rem; color: #666; margin-top: 8px;">Order Ref: ${reference}</p>
+                 </div>
+               </div>
+             `;
+             
+             // Clear cart and storage
+             const isBuyNow = checkoutSummary.isBuyNow;
+             if (isBuyNow) {
+                localStorage.removeItem('buyNowOrder');
+                localStorage.removeItem('pendingBuyNowOrder');
+             } else {
+                KickshausState.clearCart();
+             }
+             localStorage.removeItem('checkoutSummary');
+             localStorage.removeItem('deliveryDetails');
+             localStorage.removeItem('validatedCart');
+
+             setTimeout(() => {
+               window.location.href = 'index.html';
+             }, 3000);
+          } else {
+             modal.innerHTML = `
+               <div class="solana-pay-content">
+                 <div style="text-align: center; color: #F44336;">
+                   <i class="fas fa-times-circle" style="font-size: 3rem; margin-bottom: 16px;"></i>
+                   <h3 class="solana-pay-title">Payment Not Confirmed</h3>
+                   <p>${response.error || 'The payment could not be verified at this time.'}</p>
+                   <p style="font-size: 0.85rem; color: #999; margin-top: 8px;">Ref: ${reference}</p>
+                   <button class="solana-pay-close" style="margin-top: 20px; font-size: 1rem; border: 1px solid #ccc; padding: 8px 16px; border-radius: 8px; cursor: pointer;">Close & Try Again</button>
+                 </div>
+               </div>
+             `;
+             modal.querySelector('.solana-pay-close').onclick = () => modal.remove();
+          }
+        } catch (error) {
+           modal.innerHTML = `
+             <div class="solana-pay-content">
+               <div style="text-align: center; color: #FF9800;">
+                 <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 16px;"></i>
+                 <h3 class="solana-pay-title">Verification Error</h3>
+                 <p>We encountered an error verifying your payment.</p>
+                 <p style="font-size: 0.85rem; color: #666;">${error.message || 'Network error'}</p>
+                 <button class="solana-pay-close" style="margin-top: 20px; font-size: 1rem; border: 1px solid #ccc; padding: 8px 16px; border-radius: 8px; cursor: pointer;">Close</button>
+               </div>
+             </div>
+           `;
+           modal.querySelector('.solana-pay-close').onclick = () => modal.remove();
+        }
+      }
+    }
+
+    // Check for return from Paystack
+    verifyPaystackOnReturn();
+
     // Payment selection with animation
     document.querySelectorAll('.payment-option').forEach(option => {
       option.addEventListener('click', function() {
@@ -914,7 +1056,13 @@
           return;
         }
 
-        // Default flow for other payment methods (Card, Bank Transfer, PayPal)
+        // Handle Paystack
+        if (method === 'paystack') {
+           initializePaystackPayment();
+           return;
+        }
+
+        // Default flow for other payment methods (Card, Bank Transfer)
         showToast('Processing payment...');
         
         setTimeout(() => {
