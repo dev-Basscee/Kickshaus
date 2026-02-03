@@ -45,6 +45,17 @@ const envSchema = z.object({
   SOCIAL_CALLBACK_URL: z.string().default('http://localhost:3000/api/auth'),
   FRONTEND_URL: z.string().default('http://localhost:3000'),
   SESSION_SECRET: z.string().optional(),
+
+  // Paystack
+  PAYSTACK_SECRET_KEY: z.string().optional(),
+  PAYSTACK_PUBLIC_KEY: z.string().optional(),
+
+  // Email (SMTP)
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.string().default('587'),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  SMTP_FROM: z.string().default('noreply@kickshaus.com'),
 });
 
 // Parse and validate environment
@@ -82,6 +93,11 @@ function validateEnv() {
           SOCIAL_CALLBACK_URL: process.env.SOCIAL_CALLBACK_URL || 'http://localhost:3000/api/auth',
           FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:3000',
           SESSION_SECRET: process.env.SESSION_SECRET,
+          SMTP_HOST: process.env.SMTP_HOST,
+          SMTP_PORT: process.env.SMTP_PORT || '587',
+          SMTP_USER: process.env.SMTP_USER,
+          SMTP_PASS: process.env.SMTP_PASS,
+          SMTP_FROM: process.env.SMTP_FROM || 'noreply@kickshaus.com',
         };
       }
       
@@ -149,6 +165,19 @@ export const config = {
     callbackUrl: env.SOCIAL_CALLBACK_URL,
     frontendUrl: env.FRONTEND_URL,
     sessionSecret: env.SESSION_SECRET || env.JWT_SECRET,
+  },
+
+  paystack: {
+    secretKey: env.PAYSTACK_SECRET_KEY,
+    publicKey: env.PAYSTACK_PUBLIC_KEY,
+  },
+
+  email: {
+    host: env.SMTP_HOST,
+    port: parseInt(env.SMTP_PORT, 10),
+    user: env.SMTP_USER,
+    pass: env.SMTP_PASS,
+    from: env.SMTP_FROM,
   },
 };
 
