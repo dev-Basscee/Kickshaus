@@ -268,6 +268,16 @@ const api = {
   },
 
   /**
+   * Create a transaction for an order
+   * @param {string} orderId - Order ID
+   * @param {string} account - User's wallet public key
+   * @returns {Promise<Object>}
+   */
+  async createTransaction(orderId, account) {
+    return await this.request('/payment/transaction', 'POST', { orderId, account });
+  },
+
+  /**
    * Verify payment status
    * @param {string} reference - Payment reference key
    * @returns {Promise<Object>}

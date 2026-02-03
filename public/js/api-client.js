@@ -284,6 +284,29 @@ const KickshausAPI = {
       method: 'GET',
     });
   },
+
+  /**
+   * Initialize Paystack payment
+   * @param {Object} data - Payment data (items, email, etc.)
+   * @returns {Promise<Object>} Paystack authorization data
+   */
+  async initializePaystack(data) {
+    return await this.request('/payment/paystack/initialize', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Verify Paystack payment
+   * @param {string} reference - Paystack reference
+   * @returns {Promise<Object>} Payment status
+   */
+  async verifyPaystack(reference) {
+    return await this.request(`/payment/paystack/verify?reference=${reference}`, {
+      method: 'GET',
+    });
+  },
 };
 
 // Make globally available
