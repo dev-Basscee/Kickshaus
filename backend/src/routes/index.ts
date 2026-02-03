@@ -6,6 +6,10 @@ import adminRoutes from './admin.routes';
 import cartRoutes from './cart.routes';
 import paymentRoutes from './payment.routes';
 
+import { paymentController } from '../controllers/payment.controller';
+import { authenticateUser } from '../middleware/auth';
+import { asyncHandler } from '../middleware/error';
+
 const router = Router();
 
 // Health check endpoint
@@ -19,6 +23,9 @@ router.get('/health', (req, res) => {
     },
   });
 });
+
+// Backward compatibility for cached clients (redirects /api/orders to /api/payment/orders logic)
+router.get('/orders', authenticateUser, asyncHandler(paymentController.getUserOrders.bind(paymentController)));
 
 // Mount routes
 router.use('/auth', authRoutes);
