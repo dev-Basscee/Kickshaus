@@ -2,8 +2,10 @@ import { supabaseAdmin } from '../config/supabase';
 import { User, Merchant, UserRole, MerchantStatus, AuthProvider } from '../types';
 import { hashPassword, verifyPassword } from '../utils/helpers';
 import { ConflictError, NotFoundError, UnauthorizedError, BadRequestError, AppError } from '../utils/errors';
-import { isSupabaseConfigured } from '../config/env';
+import { isSupabaseConfigured, config } from '../config/env';
 import type { SocialProfile } from '../config/passport';
+import crypto from 'crypto';
+import { emailService } from './email.service';
 
 export class AuthService {
   /**
@@ -353,6 +355,121 @@ export class AuthService {
     }
 
     return data;
+  }
+
+  /**
+   * Request password reset
+   */
+  async requestPasswordReset(email: string): Promise<void> {
+    email = email.toLowerCase().trim();
+    if (!isSupabaseConfigured()) {
+      throw new AppError('Service unavailable', 503, 'SERVICE_UNAVAILABLE');
+    }
+
+    // 1. Check Users table
+    let { data: user } = await supabaseAdmin
+      .from('users')
+      .select('id, email')
+      .eq('email', email)
+      .single();
+
+    let table = 'users';
+    let id = user?.id;
+
+    // 2. If not found in Users, check Merchants table
+    if (!user) {
+      const { data: merchant } = await supabaseAdmin
+        .from('merchants')
+        .select('id, email')
+        .eq('email', email)
+        .single();
+      
+      if (merchant) {
+        table = 'merchants';
+        id = merchant.id;
+      }
+    }
+
+    // If user/merchant found, generate token and send email (mock)
+    if (id) {
+      const token = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 3600000); // 1 hour from now
+
+      const { error } = await supabaseAdmin
+        .from(table)
+        .update({
+          reset_token: token,
+          reset_token_expires: expiresAt.toISOString(),
+        })
+        .eq('id', id);
+
+      if (error) {
+        console.error(`Failed to set reset token for ${email}:`, error);
+        throw new AppError('Failed to process request', 500, 'INTERNAL_ERROR');
+      }
+
+      // Send email via dedicated service
+      await emailService.sendPasswordResetEmail(email, token);
+    }
+
+    // Always return void to prevent email enumeration (security best practice)
+  }
+
+  /**
+   * Reset password with token
+   */
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    if (!isSupabaseConfigured()) {
+      throw new AppError('Service unavailable', 503, 'SERVICE_UNAVAILABLE');
+    }
+
+    const now = new Date().toISOString();
+
+    // 1. Try to find user with valid token
+    let { data: user } = await supabaseAdmin
+      .from('users')
+      .select('id')
+      .eq('reset_token', token)
+      .gt('reset_token_expires', now)
+      .single();
+
+    let table = 'users';
+    let id = user?.id;
+
+    // 2. If not found, try merchants
+    if (!user) {
+      const { data: merchant } = await supabaseAdmin
+        .from('merchants')
+        .select('id')
+        .eq('reset_token', token)
+        .gt('reset_token_expires', now)
+        .single();
+
+      if (merchant) {
+        table = 'merchants';
+        id = merchant.id;
+      }
+    }
+
+    if (!id) {
+      throw new BadRequestError('Invalid or expired password reset token');
+    }
+
+    const passwordHash = hashPassword(newPassword);
+
+    const { error } = await supabaseAdmin
+      .from(table)
+      .update({
+        password_hash: passwordHash,
+        reset_token: null,
+        reset_token_expires: null,
+      })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Failed to reset password:', error);
+      throw new AppError('Failed to reset password', 500, 'INTERNAL_ERROR');
+    }
   }
 
   /**

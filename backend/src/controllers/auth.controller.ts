@@ -7,7 +7,9 @@ import { config } from '../config/env';
 import { 
   RegisterUserInput, 
   LoginInput, 
-  RegisterMerchantInput 
+  RegisterMerchantInput,
+  ForgotPasswordInput,
+  ResetPasswordInput
 } from '../utils/validators';
 
 // Type for the user attached by Passport during social auth
@@ -58,6 +60,34 @@ export class AuthController {
       user,
       token,
       type,
+    });
+  }
+
+  /**
+   * Request password reset link
+   * POST /api/auth/forgot-password
+   */
+  async forgotPassword(req: Request, res: Response): Promise<void> {
+    const { email } = req.body as ForgotPasswordInput;
+    
+    await authService.requestPasswordReset(email);
+
+    sendSuccess(res, {
+      message: 'If an account exists with this email, a password reset link has been sent.',
+    });
+  }
+
+  /**
+   * Reset password using token
+   * POST /api/auth/reset-password
+   */
+  async resetPassword(req: Request, res: Response): Promise<void> {
+    const { token, password } = req.body as ResetPasswordInput;
+    
+    await authService.resetPassword(token, password);
+
+    sendSuccess(res, {
+      message: 'Password reset successful',
     });
   }
 

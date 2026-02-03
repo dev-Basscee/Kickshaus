@@ -30,6 +30,15 @@ export const registerMerchantSchema = z.object({
     .regex(/^[1-9A-HJ-NP-Za-km-z]+$/, 'Invalid Solana wallet address format'),
 });
 
+export const forgotPasswordSchema = z.object({
+  email,
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1, 'Token is required'),
+  password,
+});
+
 // Product schemas
 export const productImagesSchema = z.object({
   main: z.string().url('Main image must be a valid URL'),
@@ -100,6 +109,8 @@ export const paginationSchema = z.object({
 export type RegisterUserInput = z.infer<typeof registerUserSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterMerchantInput = z.infer<typeof registerMerchantSchema>;
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type CreateProductInput = z.infer<typeof createProductSchema>;
 export type UpdateProductInput = z.infer<typeof updateProductSchema>;
 export type CartItem = z.infer<typeof cartItemSchema>;

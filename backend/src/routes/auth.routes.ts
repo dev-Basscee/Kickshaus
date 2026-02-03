@@ -7,7 +7,9 @@ import { asyncHandler } from '../middleware/error';
 import { isGoogleAuthConfigured, isFacebookAuthConfigured, config } from '../config/env';
 import { 
   registerUserSchema, 
-  loginSchema
+  loginSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema
 } from '../utils/validators';
 
 const router = Router();
@@ -34,6 +36,26 @@ router.post(
   '/login',
   validateBody(loginSchema),
   asyncHandler(authController.login.bind(authController))
+);
+
+/**
+ * POST /api/auth/forgot-password
+ * Request password reset link
+ */
+router.post(
+  '/forgot-password',
+  validateBody(forgotPasswordSchema),
+  asyncHandler(authController.forgotPassword.bind(authController))
+);
+
+/**
+ * POST /api/auth/reset-password
+ * Reset password using token
+ */
+router.post(
+  '/reset-password',
+  validateBody(resetPasswordSchema),
+  asyncHandler(authController.resetPassword.bind(authController))
 );
 
 // =====================================================
