@@ -461,17 +461,20 @@
         submitBtn.textContent = 'Creating Account...';
         submitBtn.disabled = true;
 
+        const fullName = fullNameInput.value.trim();
         const email = emailInput.value.trim();
         const password = passwordInput.value;
-        // Note: Your current backend doesn't store 'fullName' in the users table, 
-        // so we are only sending email/password for now.
-
+        
         try {
           // 1. Send Data to API
           const response = await fetch('/api/auth/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password })
+            body: JSON.stringify({ 
+              full_name: fullName,
+              email, 
+              password 
+            })
           });
 
           const data = await response.json();
