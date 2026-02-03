@@ -12,6 +12,7 @@ import {
 } from '../types';
 import { CartItem } from '../utils/validators';
 import { cartService } from './cart.service';
+import { emailService } from './email.service';
 import { 
   NotFoundError, 
   PaymentError, 
@@ -119,6 +120,287 @@ export class PaymentService {
     
     // Round to 9 decimal places (SOL precision)
     return Math.round(amountSOL * 1e9) / 1e9;
+  }
+
+  /**
+   * Generate a unique transaction reference
+   */
+  private generateTransactionReference(): string {
+    // KICK - Product - Timestamp - Random
+    const timestamp = Date.now().toString(36);
+    const random = Math.random().toString(36).substring(2, 7).toUpperCase();
+    return `KICK-${timestamp}-${random}`;
+  }
+
+  /**
+   * Initialize a Paystack transaction
+   * Professional implementation with "Generate Reference First" pattern for idempotency.
+   */
+  async initializePaystackTransaction(
+    userId: string,
+    email: string,
+    items: CartItem[],
+    callbackUrl: string,
+    delivery?: {
+      contact_name?: string;
+      contact_email?: string;
+      sender_phone?: string;
+      receiver_phone?: string;
+      shipping_address?: string;
+      city?: string;
+      state?: string;
+      notes?: string;
+    }
+  ) {
+    // 1. Validate cart and calculate total
+    const validation = await cartService.validateCart(items);
+    
+    if (!validation.success) {
+      const outOfStock = validation.items.filter(i => !i.in_stock);
+      throw new InsufficientStockError(outOfStock.map(i => i.product_id).join(', '));
+    }
+
+    const totalFiat = validation.total_fiat;
+    // Paystack expects amount in kobo (multiply by 100)
+    const amountKobo = Math.round(totalFiat * 100);
+
+    // 2. Generate a secure, unique reference explicitly
+    // This is safer than relying on Paystack to generate one or using a temp one.
+    const reference = this.generateTransactionReference();
+
+    // 3. Create order in database first (PENDING state)
+    const { data: order, error: orderError } = await supabaseAdmin
+      .from('orders')
+      .insert({
+        user_id: userId,
+        total_amount_fiat: totalFiat,
+        total_amount_sol: 0, // Not a crypto transaction
+        payment_status: 'pending' as PaymentStatus,
+        fulfillment_status: 'pending',
+        reference_key: reference, // Store the reference immediately
+        expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(), // 1 hour expiry
+        contact_name: delivery?.contact_name ?? null,
+        contact_email: email,
+        sender_phone: delivery?.sender_phone ?? null,
+        receiver_phone: delivery?.receiver_phone ?? null,
+        shipping_address: delivery?.shipping_address ?? null,
+        city: delivery?.city ?? null,
+        state: delivery?.state ?? null,
+        notes: delivery?.notes ?? null,
+      })
+      .select('*')
+      .single();
+
+    if (orderError || !order) {
+      throw new Error(`Failed to create order: ${orderError?.message}`);
+    }
+
+    // 4. Create order items
+    const orderItems = validation.items.map(item => ({
+      order_id: order.id,
+      product_id: item.product_id,
+      quantity: item.quantity,
+      price_at_purchase: item.unit_price,
+    }));
+
+    const { error: itemsError } = await supabaseAdmin
+      .from('order_items')
+      .insert(orderItems);
+
+    if (itemsError) {
+      // Rollback: Delete the order if item creation fails to prevent ghost orders
+      await supabaseAdmin.from('orders').delete().eq('id', order.id);
+      throw new Error(`Failed to create order items: ${itemsError.message}`);
+    }
+
+    // 5. Call Paystack API with the pre-generated reference
+    try {
+      const response = await fetch('https://api.paystack.co/transaction/initialize', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${config.paystack.secretKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          amount: amountKobo,
+          reference: reference, // Pass our generated reference
+          callback_url: callbackUrl,
+          metadata: {
+            order_id: order.id,
+            user_id: userId,
+            custom_fields: [
+              {
+                display_name: "Order ID",
+                variable_name: "order_id",
+                value: order.id
+              }
+            ]
+          },
+        }),
+      });
+
+      const data = await response.json() as any;
+
+      if (!response.ok || !data.status) {
+        throw new Error(data.message || 'Paystack initialization failed');
+      }
+
+      // 6. Return success with authorization URL
+      return {
+        success: true,
+        authorization_url: data.data.authorization_url,
+        access_code: data.data.access_code,
+        reference: reference,
+        order_id: order.id,
+      };
+    } catch (error) {
+      // Mark order as failed if initialization fails
+      await this.failOrder(order.id, `Paystack initialization failed: ${(error as Error).message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Verify Paystack transaction
+   */
+  async verifyPaystackTransaction(reference: string): Promise<VerifyPaymentResponse> {
+    try {
+      // Call Paystack API
+      const response = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${config.paystack.secretKey}`,
+        },
+      });
+
+      const data = await response.json() as any;
+
+      if (!data.status || data.data.status !== 'success') {
+        // If verification fails or status is not success
+        const order = await this.getOrderByReference(reference);
+        if (order) {
+           // Only fail if explicitly failed/abandoned, otherwise it might just be pending
+           if (data.data && (data.data.status === 'failed' || data.data.status === 'abandoned')) {
+             await this.failOrder(order.id, `Paystack status: ${data.data.status}`);
+             return { success: false, status: 'failed', order_id: order.id };
+           }
+        }
+        return { success: false, status: 'pending', order_id: order?.id };
+      }
+
+      // Payment successful
+      const paystackData = data.data;
+      const orderId = paystackData.metadata?.order_id;
+      
+      if (!orderId) {
+        // Fallback: try to find order by reference if metadata missing
+        const order = await this.getOrderByReference(reference);
+        if (!order) throw new NotFoundError('Order not found for this reference');
+        return await this.confirmPaystackOrder(order.id, reference);
+      }
+
+      return await this.confirmPaystackOrder(orderId, reference);
+
+    } catch (error) {
+      console.error('Paystack verification error:', error);
+      throw new PaymentError('Failed to verify Paystack payment');
+    }
+  }
+
+  private async getOrderByReference(reference: string) {
+    const { data: order } = await supabaseAdmin
+      .from('orders')
+      .select('*')
+      .eq('reference_key', reference)
+      .single();
+    return order;
+  }
+
+  /**
+   * Confirm order using Database RPC for atomicity
+   * Decrements stock and updates status in a single transaction
+   */
+  async confirmOrder(orderId: string, transactionSignature: string): Promise<boolean> {
+    try {
+      const { data, error } = await supabaseAdmin.rpc('confirm_order', {
+        p_order_id: orderId,
+        p_transaction_signature: transactionSignature,
+      });
+
+      if (error) {
+        console.error('Error confirming order:', error);
+        return false;
+      }
+      
+      if (!data) return false;
+
+      // Order confirmed successfully. Now send email.
+      // We do this asynchronously to not block the response
+      this.sendConfirmationEmail(orderId, transactionSignature).catch(err => {
+        console.error('Failed to send confirmation email:', err);
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Exception confirming order:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Helper to fetch order details and send email
+   */
+  private async sendConfirmationEmail(orderId: string, txHash: string) {
+    // Fetch full order details with items and products
+    const { data: order } = await supabaseAdmin
+      .from('orders')
+      .select(`
+        *,
+        users (email),
+        order_items (
+          quantity,
+          price_at_purchase,
+          products (name)
+        )
+      `)
+      .eq('id', orderId)
+      .single();
+
+    if (!order) return;
+
+    const email = order.contact_email || order.users?.email;
+    if (!email) return;
+
+    const items = order.order_items.map((item: any) => ({
+      name: item.products?.name || 'Product',
+      quantity: item.quantity,
+      price: item.price_at_purchase
+    }));
+
+    await emailService.sendOrderConfirmationEmail(
+      email,
+      order.id,
+      items,
+      order.total_amount_fiat,
+      txHash
+    );
+  }
+
+  private async confirmPaystackOrder(orderId: string, reference: string): Promise<VerifyPaymentResponse> {
+    // USE UNIFIED CONFIRMATION METHOD
+    const confirmed = await this.confirmOrder(orderId, reference);
+
+    if (!confirmed) {
+       throw new PaymentError('Failed to confirm order in database');
+    }
+
+    return {
+      success: true,
+      status: 'confirmed',
+      transaction_signature: reference,
+      order_id: orderId,
+    };
   }
 
   /**
@@ -234,6 +516,11 @@ export class PaymentService {
       throw new NotFoundError('Order not found');
     }
 
+    // Check if order has expired
+    if (new Date(order.expires_at) < new Date()) {
+      throw new PaymentError('Order has expired. Please create a new order.');
+    }
+
     // Check wallet balance
     const walletPublicKey = new PublicKey(account);
     const balance = await this.connection.getBalance(walletPublicKey);
@@ -253,13 +540,21 @@ export class PaymentService {
     });
 
     // Add the transfer instruction
-    transaction.add(
-      SystemProgram.transfer({
-        fromPubkey: new PublicKey(account),
-        toPubkey: this.platformWallet,
-        lamports: new BigNumber(order.total_amount_sol).multipliedBy(LAMPORTS_PER_SOL).toNumber(),
-      })
-    );
+    const transferInstruction = SystemProgram.transfer({
+      fromPubkey: new PublicKey(account),
+      toPubkey: this.platformWallet,
+      lamports: new BigNumber(order.total_amount_sol).multipliedBy(LAMPORTS_PER_SOL).toNumber(),
+    });
+
+    // CRITICAL: Add the reference key to the instruction so findReference can verify it
+    // This allows the backend to find the transaction on-chain
+    transferInstruction.keys.push({
+      pubkey: new PublicKey(order.reference_key),
+      isSigner: false,
+      isWritable: false,
+    });
+
+    transaction.add(transferInstruction);
 
     // Add the memo instruction
     transaction.add(
@@ -360,14 +655,10 @@ export class PaymentService {
         { commitment: 'confirmed' }
       );
 
-      // Confirm the order using database function (atomic operation)
-      const { data: confirmed, error: confirmError } = await supabaseAdmin
-        .rpc('confirm_order', {
-          p_order_id: order.id,
-          p_transaction_signature: signatureInfo.signature,
-        });
+      // USE UNIFIED CONFIRMATION METHOD
+      const confirmed = await this.confirmOrder(order.id, signatureInfo.signature);
 
-      if (confirmError || !confirmed) {
+      if (!confirmed) {
         throw new PaymentError('Failed to confirm order in database');
       }
 
