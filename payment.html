@@ -429,6 +429,12 @@
         </div>
       </div>
 
+      <div style="text-align: center; margin-top: 40px;">
+        <a href="index.html" class="btn btn-secondary" style="padding: 12px 24px; border-radius: 12px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; background: var(--bg-card); color: var(--text-primary); border: 2px solid var(--border-color);">
+          <i class="fas fa-home"></i> Back to Home
+        </a>
+      </div>
+
     </div>
   </main>
 
@@ -948,7 +954,7 @@
      */
     async function verifyPaystackOnReturn() {
       const urlParams = new URLSearchParams(window.location.search);
-      const reference = urlParams.get('reference') || urlParams.get('trxref'); // Paystack sends trxref usually, or reference
+      const reference = urlParams.get('reference') || urlParams.get('trxref');
 
       if (reference) {
         // Clear query params to avoid re-verification on refresh
@@ -956,7 +962,7 @@
 
         // Show a modal or loading state
         const modal = document.createElement('div');
-        modal.className = 'solana-pay-modal'; // Reuse styles
+        modal.className = 'solana-pay-modal';
         modal.innerHTML = `
           <div class="solana-pay-content">
             <h3 class="solana-pay-title">Verifying Payment</h3>
@@ -970,62 +976,66 @@
         document.body.appendChild(modal);
 
         try {
+          console.log('Verifying reference:', reference);
           const response = await window.api.verifyPaystack(reference);
+          console.log('Verify response:', response);
 
-          if (response.success && response.data && response.data.status === 'confirmed') {
-             modal.innerHTML = `
-               <div class="solana-pay-content">
-                 <div style="text-align: center; color: #4CAF50;">
-                   <i class="fas fa-check-circle" style="font-size: 3rem; margin-bottom: 16px;"></i>
-                   <h3 class="solana-pay-title">Payment Successful!</h3>
-                   <p>Your order has been confirmed.</p>
-                   <p style="font-size: 0.9rem; color: #666; margin-top: 8px;">Order Ref: ${reference}</p>
-                 </div>
-               </div>
-             `;
+          if (response.success && response.data) {
+             const status = response.data.status;
              
-             // Clear cart and storage
-             const isBuyNow = checkoutSummary.isBuyNow;
-             if (isBuyNow) {
-                localStorage.removeItem('buyNowOrder');
-                localStorage.removeItem('pendingBuyNowOrder');
-             } else {
-                KickshausState.clearCart();
-             }
-             localStorage.removeItem('checkoutSummary');
-             localStorage.removeItem('deliveryDetails');
-             localStorage.removeItem('validatedCart');
+             if (status === 'confirmed' || status === 'success') {
+                 // SUCCESS
+                 modal.innerHTML = `
+                   <div class="solana-pay-content">
+                     <div style="text-align: center; color: #4CAF50;">
+                       <i class="fas fa-check-circle" style="font-size: 3rem; margin-bottom: 16px;"></i>
+                       <h3 class="solana-pay-title">Payment Successful!</h3>
+                       <p>Your order has been confirmed.</p>
+                       <p style="font-size: 0.9rem; color: #666; margin-top: 8px;">Order Ref: ${reference}</p>
+                       <p style="font-size: 0.9rem; color: #666;">Redirecting to home...</p>
+                     </div>
+                   </div>
+                 `;
+                 
+                 // Clear cart and storage safely
+                 try {
+                    if (typeof KickshausState !== 'undefined') {
+                        KickshausState.clearCart();
+                    }
+                    localStorage.removeItem('checkoutSummary');
+                    localStorage.removeItem('deliveryDetails');
+                    localStorage.removeItem('validatedCart');
+                    localStorage.removeItem('buyNowOrder');
+                    localStorage.removeItem('pendingBuyNowOrder');
+                 } catch (e) {
+                    console.error('Error clearing cart:', e);
+                 }
 
-             setTimeout(() => {
-               window.location.href = 'index.html';
-             }, 3000);
-          } else {
-             modal.innerHTML = `
-               <div class="solana-pay-content">
-                 <div style="text-align: center; color: #F44336;">
-                   <i class="fas fa-times-circle" style="font-size: 3rem; margin-bottom: 16px;"></i>
-                   <h3 class="solana-pay-title">Payment Not Confirmed</h3>
-                   <p>${response.error || 'The payment could not be verified at this time.'}</p>
-                   <p style="font-size: 0.85rem; color: #999; margin-top: 8px;">Ref: ${reference}</p>
-                   <button class="solana-pay-close" style="margin-top: 20px; font-size: 1rem; border: 1px solid #ccc; padding: 8px 16px; border-radius: 8px; cursor: pointer;">Close & Try Again</button>
-                 </div>
-               </div>
-             `;
-             modal.querySelector('.solana-pay-close').onclick = () => modal.remove();
+                 setTimeout(() => {
+                   window.location.href = 'index.html';
+                 }, 2500);
+                 return;
+             }
           }
+          
+          // FAILURE (if we get here)
+          throw new Error(response.error || 'Payment could not be verified.');
+
         } catch (error) {
+           console.error('Verify loop error:', error);
            modal.innerHTML = `
              <div class="solana-pay-content">
                <div style="text-align: center; color: #FF9800;">
                  <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 16px;"></i>
-                 <h3 class="solana-pay-title">Verification Error</h3>
-                 <p>We encountered an error verifying your payment.</p>
-                 <p style="font-size: 0.85rem; color: #666;">${error.message || 'Network error'}</p>
-                 <button class="solana-pay-close" style="margin-top: 20px; font-size: 1rem; border: 1px solid #ccc; padding: 8px 16px; border-radius: 8px; cursor: pointer;">Close</button>
+                 <h3 class="solana-pay-title">Verification Issue</h3>
+                 <p>We encountered an issue updating the display.</p>
+                 <p style="font-size: 0.85rem; color: #666;">${error.message || 'Unknown error'}</p>
+                 <div style="margin-top:20px;">
+                    <a href="index.html" class="solana-pay-close" style="display:inline-block; border: 1px solid #ccc; padding: 8px 16px; border-radius: 8px; cursor: pointer; text-decoration:none; color:#333;">Go Home</a>
+                 </div>
                </div>
              </div>
            `;
-           modal.querySelector('.solana-pay-close').onclick = () => modal.remove();
         }
       }
     }
