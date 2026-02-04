@@ -214,7 +214,7 @@ function renderAllMerchants(merchants) {
   const otherMerchants = merchants.filter(m => m.status !== "pending");
 
   if (pendingMerchants.length === 0) {
-    pendingContainer.innerHTML = "<tr><td colspan=\x224\x22 style=\x22text-align: center;\x22>No merchants awaiting approval.</td></tr>";
+    pendingContainer.innerHTML = "<tr><td colspan='4' style='text-align: center;'>No merchants awaiting approval.</td></tr>";
   } else {
     pendingContainer.innerHTML = pendingMerchants.map(merchant => `
       <tr>
@@ -222,15 +222,15 @@ function renderAllMerchants(merchants) {
         <td>${merchant.email}</td>
         <td><span class="status-badge pending">Pending</span></td>
         <td>
-          <button onclick="approveMerchant(\x27${merchant.id}\x27)" class="btn btn-secondary" style="font-size: 12px; padding: 6px 10px;">Approve</button>
-          <button onclick="rejectMerchant(\x27${merchant.id}\x27)" class="btn btn-secondary" style="font-size: 12px; padding: 6px 10px;">Reject</button>
+          <button onclick="approveMerchant('${merchant.id}')" class="btn btn-secondary" style="font-size: 12px; padding: 6px 10px;">Approve</button>
+          <button onclick="rejectMerchant('${merchant.id}')" class="btn btn-secondary" style="font-size: 12px; padding: 6px 10px;">Reject</button>
         </td>
       </tr>
     `).join("");
   }
 
   if (otherMerchants.length === 0) {
-    otherContainer.innerHTML = "<tr><td colspan=\x224\x22 style=\x22text-align: center;\x22>No other merchants found.</td></tr>";
+    otherContainer.innerHTML = "<tr><td colspan='4' style='text-align: center;'>No other merchants found.</td></tr>";
   } else {
     otherContainer.innerHTML = otherMerchants.map(merchant => `
       <tr>
@@ -258,7 +258,7 @@ function renderRecentOrders(orders) {
   const container = document.getElementById("recentOrdersTable");
   if (!container) return;
   if (orders.length === 0) {
-    container.innerHTML = "<tr><td colspan=\x224\x22 style=\x22text-align: center;\x22>No recent orders.</td></tr>";
+    container.innerHTML = "<tr><td colspan='4' style='text-align: center;'>No recent orders.</td></tr>";
     return;
   }
   container.innerHTML = orders.slice(0, 5).map(order => `
@@ -275,7 +275,7 @@ function renderAllOrders(orders) {
   const container = document.getElementById("allOrdersTable");
   if (!container) return;
   if (orders.length === 0) {
-    container.innerHTML = "<tr><td colspan=\x228\x22 style=\x22text-align: center;\x22>No orders found.</td></tr>";
+    container.innerHTML = "<tr><td colspan='8' style='text-align: center;'>No orders found.</td></tr>";
     return;
   }
   container.innerHTML = orders.map(order => `
@@ -286,7 +286,7 @@ function renderAllOrders(orders) {
       <td>₦${(Number(order.total_amount_fiat) || 0).toLocaleString()}</td>
       <td><span class="status-badge ${order.payment_status}">${order.payment_status}</span></td>
       <td>
-        <select onchange="updateOrderStatus(\x27${order.id}\x27, this.value)" class="status-select">
+        <select onchange="updateOrderStatus('${order.id}', this.value)" class="status-select">
           <option value="pending" ${order.order_status === "pending" ? "selected" : ""}>Pending</option>
           <option value="processing" ${order.order_status === "processing" ? "selected" : ""}>Processing</option>
           <option value="shipped" ${order.order_status === "shipped" ? "selected" : ""}>Shipped</option>
@@ -295,7 +295,7 @@ function renderAllOrders(orders) {
         </select>
       </td>
       <td>${new Date(order.created_at).toLocaleDateString()}</td>
-      <td><button onclick="viewOrderDetails(\x27${order.id}\x27)" class="btn btn-secondary" style="font-size: 11px; padding: 4px 8px;">View</button></td>
+      <td><button onclick="viewOrderDetails('${order.id}')" class="btn btn-secondary" style="font-size: 11px; padding: 4px 8px;">View</button></td>
     </tr>
   `).join("");
 }
@@ -305,7 +305,7 @@ function renderDeliveries(orders) {
   if (!container) return;
   const deliveryOrders = orders.filter(o => o.order_status === "shipped" || o.order_status === "delivered");
   if (deliveryOrders.length === 0) {
-    container.innerHTML = "<tr><td colspan=\x225\x22 style=\x22text-align: center;\x22>No active deliveries.</td></tr>";
+    container.innerHTML = "<tr><td colspan='5' style='text-align: center;'>No active deliveries.</td></tr>";
     return;
   }
   container.innerHTML = deliveryOrders.map(order => `
@@ -314,7 +314,7 @@ function renderDeliveries(orders) {
       <td>${order.customer_name || "N/A"}</td>
       <td><span class="status-badge ${order.order_status}">${order.order_status}</span></td>
       <td>${new Date(order.updated_at).toLocaleString()}</td>
-      <td><button onclick="viewOrderDetails(\x27${order.id}\x27)" class="btn btn-secondary" style="font-size: 11px; padding: 4px 8px;">Track</button></td>
+      <td><button onclick="viewOrderDetails('${order.id}')" class="btn btn-secondary" style="font-size: 11px; padding: 4px 8px;">Track</button></td>
     </tr>
   `).join("");
 }
@@ -328,7 +328,7 @@ async function loadAllCustomers() {
     const result = await response.json();
     const customers = result.data.customers || [];
     if (customers.length === 0) {
-      container.innerHTML = "<tr><td colspan=\x223\x22 style=\x22text-align: center;\x22>No customers found.</td></tr>";
+      container.innerHTML = "<tr><td colspan='3' style='text-align: center;'>No customers found.</td></tr>";
       return;
     }
     container.innerHTML = customers.map(customer => `
@@ -350,7 +350,7 @@ async function loadAllProducts() {
     const result = await response.json();
     const products = result.data.products || [];
     if (products.length === 0) {
-      container.innerHTML = "<tr><td colspan=\x224\x22 style=\x22text-align: center;\x22>No products found.</td></tr>";
+      container.innerHTML = "<tr><td colspan='4' style='text-align: center;'>No products found.</td></tr>";
       return;
     }
     container.innerHTML = products.map(product => `
@@ -440,20 +440,47 @@ window.viewOrderDetails = async (id) => {
     payStatus.className = `status-badge ${order.payment_status}`;
     
     document.getElementById("modalReference").textContent = order.reference_key || "N/A";
-    document.getElementById("modalSignature").textContent = order.transaction_signature || "N/A";
+    const signatureEl = document.getElementById("modalSignature");
+    const txSig = order.transaction_signature;
+    
+    if (txSig && txSig !== 'N/A') {
+      const isPaystack = txSig.startsWith('KICK-') || txSig.startsWith('TEST-');
+      
+      if (isPaystack) {
+        signatureEl.innerHTML = `<span style="color:var(--text-secondary);"><i class="fas fa-receipt"></i> ${txSig}</span>`;
+      } else {
+        const explorerUrl = window.api ? window.api.getSolanaExplorerUrl(txSig) : `https://solscan.io/tx/${txSig}`;
+        signatureEl.innerHTML = `<a href="${explorerUrl}" target="_blank" style="color:var(--primary); text-decoration:none;"><i class="fas fa-external-link-alt"></i> ${txSig.slice(0, 8)}...${txSig.slice(-8)}</a>`;
+      }
+    } else {
+      signatureEl.textContent = "N/A";
+    }
     
     document.getElementById("modalOrderTotal").textContent = `₦${(Number(order.total_amount_fiat) || 0).toLocaleString()}`;
     
     // Fill Items Table
     const itemsTable = document.getElementById("modalItemsTable");
-    itemsTable.innerHTML = order.order_items.map(item => `
-      <tr>
-        <td>${item.products.name}</td>
-        <td>${item.quantity}</td>
-        <td>₦${(Number(item.price_at_purchase) || 0).toLocaleString()}</td>
-        <td>₦${(Number(item.price_at_purchase) * item.quantity).toLocaleString()}</td>
-      </tr>
-    `).join("");
+    if (order.order_items && order.order_items.length > 0) {
+      itemsTable.innerHTML = order.order_items.map(item => {
+        const productName = item.products?.name || 'Unknown Product';
+        const merchantName = item.products?.merchants?.business_name || 'Unknown Merchant';
+        return `
+        <tr>
+          <td>
+            <div style="font-weight:500;">${productName}</div>
+            <div style="font-size:0.75rem; color:#666;">
+              <i class="fas fa-store" style="font-size:0.7rem; margin-right:4px;"></i>
+              ${merchantName}
+            </div>
+          </td>
+          <td>${item.quantity}</td>
+          <td>₦${(Number(item.price_at_purchase) || 0).toLocaleString()}</td>
+          <td>₦${(Number(item.price_at_purchase) * item.quantity).toLocaleString()}</td>
+        </tr>
+      `}).join("");
+    } else {
+      itemsTable.innerHTML = "<tr><td colspan='4' style='text-align:center'>No items found in this order.</td></tr>";
+    }
     
     // Show Modal
     document.getElementById("orderModal").style.display = "flex";
