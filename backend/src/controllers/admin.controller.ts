@@ -64,12 +64,14 @@ export class AdminController {
       .from('orders')
       .select(`
         id,
-        customer_id,
+        user_id,
         total_amount_fiat,
         payment_status,
-        order_status,
+        fulfillment_status,
         created_at,
-        users (full_name),
+        contact_name,
+        contact_email,
+        users (full_name, email),
         order_items (
           quantity,
           price_at_purchase,
@@ -85,7 +87,9 @@ export class AdminController {
     // Map the nested data to a flatter structure for the frontend
     const orders = data.map((order: any) => ({
       ...order,
-      customer_name: order.users ? order.users.full_name : 'Guest User',
+      order_status: order.fulfillment_status, // Map for frontend compatibility if needed
+      customer_name: order.users?.full_name || order.contact_name || 'Guest User',
+      customer_email: order.users?.email || order.contact_email || 'N/A',
       items_summary: order.order_items.map((item: any) => `${item.products.name} (x${item.quantity})`).join(', ')
     }));
 
@@ -112,7 +116,12 @@ export class AdminController {
             id,
             name,
             category,
-            images
+            images,
+            merchants (
+              id,
+              business_name,
+              email
+            )
           )
         )
       `)
@@ -149,7 +158,7 @@ export class AdminController {
 
     const { data, error } = await supabaseAdmin
       .from('orders')
-      .update({ order_status: status })
+      .update({ fulfillment_status: status })
       .eq('id', orderId)
       .select();
 
