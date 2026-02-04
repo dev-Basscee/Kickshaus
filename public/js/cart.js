@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const imageUrl = item.image 
           || (Array.isArray(item.images) && item.images[0]) 
           || (item.images && item.images.main) 
-          || 'https://via.placeholder.com/100x100?text=No+Image';
+          || 'images/placeholder.svg';
 
         return `
         <div class="cart-item bg-white rounded-xl p-5 grid grid-cols-1 md:grid-cols-6 items-center gap-4 shadow-sm hover:shadow-md transition">
