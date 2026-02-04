@@ -150,10 +150,10 @@
       
       try {
         // Call backend API for merchant login
-        const response = await KickshausAPI.loginMerchant(email, password);
+        const response = await window.api.loginMerchant(email, password);
         
         if (response.success) {
-          showToast('Login successful! Redirecting...', 'success');
+          showToast('✓ Merchant login successful!');
           setTimeout(() => {
             window.location.href = 'merchant-dashboard.html';
           }, 1000);
@@ -162,18 +162,9 @@
         }
       } catch (error) {
         console.error('Merchant login error:', error);
-        showToast(error.message || 'Login failed. Please try again.', 'error');
+        showToast('✗ ' + (error.message || 'Login failed. Please try again.'), 'error');
         btn.disabled = false;
         btn.innerHTML = '<span>Sign In</span> <i class="fas fa-arrow-right"></i>';
-        
-        // Show specific error
-        if (error.message && error.message.toLowerCase().includes('pending')) {
-          document.getElementById('passwordError').textContent = 'Your account is pending approval';
-        } else if (error.message && error.message.toLowerCase().includes('rejected')) {
-          document.getElementById('passwordError').textContent = 'Your application has been rejected';
-        } else {
-          document.getElementById('passwordError').textContent = error.message || 'Invalid email or password';
-        }
       }
     });
   </script>
