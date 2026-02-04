@@ -391,29 +391,55 @@
                 </td>
     
                 <td>
-    
                   <button class="btn-icon" style="background:var(--bg-primary); border:1px solid var(--border-color); padding:6px 12px; border-radius:8px; cursor:pointer;" onclick="viewOrder('${order.id}')">
-    
                     <i class="fas fa-eye" style="color:var(--text-secondary)"></i> View
-    
                   </button>
-    
+                  ${(order.payment_status === 'pending' && order.reference_key) ? 
+                    `<button class="btn-icon" style="margin-left:5px; background:var(--bg-primary); border:1px solid var(--accent); color:var(--accent); padding:6px 12px; border-radius:8px; cursor:pointer;" onclick="reverifyPayment('${order.reference_key}')">Verify</button>` 
+                    : ''}
                 </td>
-    
               </tr>
-    
             `).join('');
-    
           } catch (error) {
-    
             console.error('Error loading orders:', error);
-    
             tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:red; padding: 20px;">Error loading orders: ${error.message}. Please try refreshing.</td></tr>`;
-    
           }
-    
         }
-    
+
+        async function reverifyPayment(reference) {
+             if (!reference) return;
+             
+             // Check if it matches our custom reference format for Paystack (or simple regex)
+             // Paystack references we generate start with KICK- or TEST-
+             const isPaystack = reference.includes('KICK-') || reference.includes('TEST-');
+             
+             showToast('Verifying payment status...', 'info');
+             
+             try {
+                 let res;
+                 if (isPaystack) {
+                     res = await api.verifyPaystack(reference);
+                 } else {
+                     res = await api.verifyPayment(reference);
+                 }
+                 
+                 if (res.success && (res.data.status === 'confirmed' || res.data.status === 'success')) {
+                     showToast('Payment confirmed! Refreshing...', 'success');
+                     setTimeout(loadOrders, 1500);
+                 } else {
+                     const status = res.data ? res.data.status : 'Unknown';
+                     if (status === 'confirmed') {
+                        showToast('Payment confirmed! Refreshing...', 'success');
+                        setTimeout(loadOrders, 1500);
+                     } else {
+                        showToast('Payment verification returned: ' + status, 'warning');
+                     }
+                 }
+             } catch(e) {
+                 console.error(e);
+                 showToast('Verification failed: ' + (e.message || 'Network error'), 'error');
+             }
+        }
     
     
         // Modal Functions
@@ -506,28 +532,32 @@
     
             
     
-            if (order.transaction_signature && order.transaction_signature.length > 10) {
-    
-                const shortHash = `${order.transaction_signature.slice(0, 8)}...${order.transaction_signature.slice(-8)}`;
-    
-                // Link to Solscan for trust
-    
-                document.getElementById('modalTxHash').innerHTML = `
-    
-                    <a href="https://solscan.io/tx/${order.transaction_signature}" target="_blank" style="display:flex; align-items:center; gap:6px; color:var(--primary); text-decoration:none; margin-top:4px;">
-    
-                        <i class="fas fa-external-link-alt"></i> Verify on Blockchain
-    
-                    </a>
-    
-                    <div style="font-family:monospace; font-size:0.75rem; color:var(--text-muted); margin-top:2px;">Ref: ${shortHash}</div>
-    
-                `;
-    
+            const txSig = order.transaction_signature;
+            if (txSig && txSig.length > 10) {
+                const isPaystack = txSig.startsWith('KICK-') || txSig.startsWith('TEST-');
+                
+                if (isPaystack) {
+                    // Paystack Reference
+                    document.getElementById('modalTxHash').innerHTML = `
+                        <div style="display:flex; align-items:center; gap:6px; color:var(--text-secondary); margin-top:4px;">
+                            <i class="fas fa-receipt"></i> Paystack Reference
+                        </div>
+                        <div style="font-family:monospace; font-size:0.75rem; color:var(--text-muted); margin-top:2px;">${txSig}</div>
+                    `;
+                } else {
+                    // Solana Signature
+                    const shortHash = `${txSig.slice(0, 8)}...${txSig.slice(-8)}`;
+                    const explorerUrl = api.getSolanaExplorerUrl(txSig);
+
+                    document.getElementById('modalTxHash').innerHTML = `
+                        <a href="${explorerUrl}" target="_blank" style="display:flex; align-items:center; gap:6px; color:var(--primary); text-decoration:none; margin-top:4px;">
+                            <i class="fas fa-external-link-alt"></i> Verify on Blockchain
+                        </a>
+                        <div style="font-family:monospace; font-size:0.75rem; color:var(--text-muted); margin-top:2px;">Ref: ${shortHash}</div>
+                    `;
+                }
             } else {
-    
                 document.getElementById('modalTxHash').textContent = 'Transaction ID: Pending/N/A';
-    
             }
     
     
