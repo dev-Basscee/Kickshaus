@@ -260,7 +260,7 @@ function showToast(message, type = 'success') {
     font-weight: 600;
     font-family: 'Poppins', sans-serif;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-    z-index: 10000;
+    z-index: 20000;
     transition: transform 0.3s ease;
     max-width: 90%;
     text-align: center;
