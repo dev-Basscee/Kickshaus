@@ -467,41 +467,23 @@
         
         try {
           // 1. Send Data to API
-          const response = await fetch('/api/auth/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              full_name: fullName,
-              email, 
-              password 
-            })
-          });
+          const response = await window.api.register(fullName, email, password);
 
-          const data = await response.json();
-
-          if (!response.ok) {
-            throw new Error(data.message || data.error || 'Registration failed');
+          if (!response.success) {
+            throw new Error(response.error || 'Registration failed');
           }
 
           // 2. Success Feedback
-          if (typeof showToast === 'function') {
-            showToast('Account created successfully! Redirecting...', 'success');
-          } else {
-            alert('Account created! Redirecting to login...');
-          }
+          showToast('✓ Account created successfully! Logging you in...');
 
-          // 3. REDIRECT to Login Page
+          // 3. REDIRECT to Home/Dashboard
           setTimeout(() => {
-            window.location.href = 'login.html';
+            window.location.href = 'index.html';
           }, 1500);
 
         } catch (err) {
           console.error(err);
-          if (typeof showToast === 'function') {
-            showToast(err.message, 'error');
-          } else {
-            alert('Error: ' + err.message);
-          }
+          showToast('✗ ' + (err.message || 'Registration failed. Please try again.'), 'error');
           submitBtn.textContent = originalText;
           submitBtn.disabled = false;
         }
