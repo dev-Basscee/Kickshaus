@@ -488,15 +488,6 @@
           if (response.success) {
             showToast('✓ Login successful!');
             
-            // Store authentication data
-            localStorage.setItem('token', response.data.token);
-            localStorage.setItem('user', JSON.stringify(response.data.user));
-            localStorage.setItem('userType', response.data.type || 'user');
-            
-            // Check if there's a redirect URL
-            const redirectUrl = sessionStorage.getItem('redirectAfterLogin');
-            sessionStorage.removeItem('redirectAfterLogin');
-            
             // Redirect based on user type/role
             const userType = response.data.type;
             let destination = 'index.html'; // Default for customer
@@ -505,8 +496,6 @@
               destination = 'admin-dashboard.html';
             } else if (userType === 'merchant') {
               destination = 'merchant-dashboard.html';
-            } else if (redirectUrl) {
-              destination = redirectUrl;
             }
             
             setTimeout(() => {
@@ -520,9 +509,6 @@
           showToast('✗ ' + (error.message || 'Login failed. Please try again.'), 'error');
           btn.disabled = false;
           btn.textContent = originalText;
-          password.classList.add('error');
-          passwordError.textContent = error.message || 'Invalid email or password';
-          passwordError.classList.add('show');
         }
       }
     });
