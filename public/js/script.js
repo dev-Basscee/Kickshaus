@@ -11,7 +11,7 @@
  * @returns {string} - Image URL or placeholder
  */
 function getProductImageUrl(product) {
-  const placeholder = 'https://via.placeholder.com/300x300?text=No+Image';
+  const placeholder = 'images/placeholder.svg';
   if (!product || !product.images) return placeholder;
   if (Array.isArray(product.images) && product.images.length > 0) {
     return product.images[0];
