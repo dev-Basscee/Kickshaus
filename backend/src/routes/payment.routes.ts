@@ -12,6 +12,16 @@ const router = Router();
 // =====================================================
 
 /**
+ * POST /api/payment/webhook
+ * Paystack Webhook Handler
+ * (Public endpoint - Signature verified in controller)
+ */
+router.post(
+  '/webhook',
+  asyncHandler(paymentController.handleWebhook.bind(paymentController))
+);
+
+/**
  * POST /api/payment/paystack/initialize
  * Initialize Paystack payment
  */
@@ -26,10 +36,11 @@ router.post(
 /**
  * GET /api/payment/paystack/verify
  * Verify Paystack payment
+ * (Public endpoint - Verification relies on Paystack API)
  */
 router.get(
   '/paystack/verify',
-  authenticateUser,
+  // authenticateUser, // Removed to allow verification after redirect even if session issues
   asyncHandler(paymentController.verifyPaystack.bind(paymentController))
 );
 
@@ -72,11 +83,11 @@ router.post(
 /**
  * GET /api/payment/verify
  * Verify payment status by reference key
- * (Requires authentication)
+ * (Public endpoint - Verification relies on Blockchain)
  */
 router.get(
   '/verify',
-  authenticateUser,
+  // authenticateUser, // Removed to allow verification even if session issues
   validateQuery(verifyPaymentSchema),
   asyncHandler(paymentController.verifyPayment.bind(paymentController))
 );
