@@ -68,7 +68,13 @@ function validateEnv() {
       console.error('❌ Environment validation failed:');
       missingVars.forEach(v => console.error(`   - ${v}`));
       
-      // In development, provide a fallback for easier testing
+      // In production, we MUST fail if env vars are missing
+      if (process.env.NODE_ENV === 'production') {
+        console.error('❌ CRITICAL: Missing required environment variables in production. Server exiting.');
+        process.exit(1);
+      }
+
+      // In development/test, provide a fallback for easier testing
       if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
         console.warn('⚠️  Using default development configuration');
         return {
