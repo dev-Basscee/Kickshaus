@@ -152,8 +152,11 @@ export class PaymentService {
       notes?: string;
     }
   ) {
+    // 0. Aggregate items (combine duplicates)
+    const aggregatedItems = cartService.aggregateCartItems(items);
+
     // 1. Validate cart and calculate total
-    const validation = await cartService.validateCart(items);
+    const validation = await cartService.validateCart(aggregatedItems);
     
     if (!validation.success) {
       const outOfStock = validation.items.filter(i => !i.in_stock);
@@ -165,7 +168,6 @@ export class PaymentService {
     const amountKobo = Math.round(totalFiat * 100);
 
     // 2. Generate a secure, unique reference explicitly
-    // This is safer than relying on Paystack to generate one or using a temp one.
     const reference = this.generateTransactionReference();
 
     // 3. Create order in database first (PENDING state)
@@ -195,7 +197,7 @@ export class PaymentService {
       throw new Error(`Failed to create order: ${orderError?.message}`);
     }
 
-    // 4. Create order items
+    // 4. Create order items (using aggregated items)
     const orderItems = validation.items.map(item => ({
       order_id: order.id,
       product_id: item.product_id,
@@ -215,6 +217,8 @@ export class PaymentService {
 
     // 5. Call Paystack API with the pre-generated reference
     try {
+      console.log(`PaymentService: Initializing Paystack transaction with callback_url: ${callbackUrl} and reference: ${reference}`);
+      
       const response = await fetch('https://api.paystack.co/transaction/initialize', {
         method: 'POST',
         headers: {
@@ -241,6 +245,7 @@ export class PaymentService {
       });
 
       const data = await response.json() as any;
+      console.log('PaymentService: Paystack response:', JSON.stringify(data));
 
       if (!response.ok || !data.status) {
         throw new Error(data.message || 'Paystack initialization failed');
@@ -266,6 +271,8 @@ export class PaymentService {
    */
   async verifyPaystackTransaction(reference: string): Promise<VerifyPaymentResponse> {
     try {
+      console.log(`PaymentService: Verifying Paystack transaction for reference: ${reference}`);
+
       // Call Paystack API
       const response = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
         method: 'GET',
@@ -275,6 +282,7 @@ export class PaymentService {
       });
 
       const data = await response.json() as any;
+      console.log('PaymentService: Paystack verification response:', JSON.stringify(data));
 
       if (!data.status || data.data.status !== 'success') {
         // If verification fails or status is not success
@@ -292,15 +300,34 @@ export class PaymentService {
       // Payment successful
       const paystackData = data.data;
       const orderId = paystackData.metadata?.order_id;
-      
-      if (!orderId) {
+      let order;
+
+      if (orderId) {
+        const { data: existingOrder } = await supabaseAdmin
+          .from('orders')
+          .select('*')
+          .eq('id', orderId)
+          .single();
+        order = existingOrder;
+      } else {
         // Fallback: try to find order by reference if metadata missing
-        const order = await this.getOrderByReference(reference);
-        if (!order) throw new NotFoundError('Order not found for this reference');
-        return await this.confirmPaystackOrder(order.id, reference);
+        order = await this.getOrderByReference(reference);
+      }
+      
+      if (!order) throw new NotFoundError('Order not found for this reference');
+
+      // Idempotency check: If already confirmed, return success immediately
+      if (order.payment_status === 'confirmed') {
+        console.log(`PaymentService: Order ${order.id} already confirmed. Returning success.`);
+        return {
+          success: true,
+          status: 'confirmed',
+          transaction_signature: order.transaction_signature || reference,
+          order_id: order.id,
+        };
       }
 
-      return await this.confirmPaystackOrder(orderId, reference);
+      return await this.confirmPaystackOrder(order.id, reference);
 
     } catch (error) {
       console.error('Paystack verification error:', error);
@@ -318,6 +345,27 @@ export class PaymentService {
   }
 
   /**
+   * Handle Webhook Confirmation
+   * Finds order by reference and confirms it securely (Idempotent)
+   */
+  async handleWebhookConfirmation(reference: string): Promise<boolean> {
+    const order = await this.getOrderByReference(reference);
+    
+    if (!order) {
+      console.warn(`Webhook: No order found for reference ${reference}`);
+      return false;
+    }
+
+    // Idempotency: Check if already confirmed
+    if (order.payment_status === 'confirmed') {
+      return true;
+    }
+
+    // Use unified confirmation logic (DB RPC)
+    return await this.confirmOrder(order.id, reference);
+  }
+
+  /**
    * Confirm order using Database RPC for atomicity
    * Decrements stock and updates status in a single transaction
    */
@@ -329,7 +377,11 @@ export class PaymentService {
       });
 
       if (error) {
-        console.error('Error confirming order:', error);
+        if (error.message && error.message.includes('Insufficient stock')) {
+           console.error(`❌ STOCK ERROR: Order ${orderId} failed confirmation due to insufficient stock.`);
+        } else {
+           console.error('Error confirming order:', error);
+        }
         return false;
       }
       
@@ -420,8 +472,11 @@ export class PaymentService {
       notes?: string;
     }
   ): Promise<CreateOrderResponse> {
+    // 0. Aggregate items
+    const aggregatedItems = cartService.aggregateCartItems(items);
+
     // Validate cart and get current prices from DB (zero-trust)
-    const validation = await cartService.validateCart(items);
+    const validation = await cartService.validateCart(aggregatedItems);
     
     if (!validation.success) {
       const outOfStock = validation.items.filter(i => !i.in_stock);
@@ -469,7 +524,7 @@ export class PaymentService {
       throw new Error(`Failed to create order: ${orderError?.message}`);
     }
 
-    // Create order items
+    // Create order items (using aggregated items)
     const orderItems = validation.items.map(item => ({
       order_id: order.id,
       product_id: item.product_id,
