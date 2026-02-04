@@ -4,15 +4,29 @@
 // ===============================================
 
 // Determine base URL based on environment
-const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? 'http://localhost:3000/api'
-  : window.location.origin + '/api';
+// In production, we serve frontend from the same origin, so relative path is safest.
+// For local development with separate frontend/backend, we can default to localhost if needed,
+// but since we are serving static files from Express, relative path works everywhere.
+const API_URL = '/api';
 
 // Storage keys for authentication
 const AUTH_TOKEN_KEY = 'kickshaus_auth_token';
 const USER_DATA_KEY = 'kickshaus_user';
 
 const api = {
+  /**
+   * Get Solana explorer URL for a transaction
+   * @param {string} signature - Transaction signature
+   * @returns {string} - Full Solscan URL
+   */
+  getSolanaExplorerUrl(signature) {
+    if (!signature || signature === 'N/A') return '#';
+    // Use devnet cluster for local development, mainnet for production
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const cluster = isLocal ? '?cluster=devnet' : '';
+    return `https://solscan.io/tx/${signature}${cluster}`;
+  },
+
   /**
    * Make an API request
    * @param {string} endpoint - API endpoint (e.g., '/products')
@@ -118,12 +132,17 @@ const api = {
 
   /**
    * Register a new user
+   * @param {string} fullName - User full name
    * @param {string} email - User email
    * @param {string} password - User password
    * @returns {Promise<Object>} - Registration response
    */
-  async register(email, password) {
-    const response = await this.request('/auth/register', 'POST', { email, password });
+  async register(fullName, email, password) {
+    const response = await this.request('/auth/register', 'POST', { 
+      full_name: fullName,
+      email, 
+      password 
+    });
     
     if (response.success && response.data) {
       if (response.data.token) {
@@ -284,6 +303,24 @@ const api = {
    */
   async verifyPayment(reference) {
     return await this.request(`/payment/verify?reference_key=${reference}`, 'GET');
+  },
+
+  /**
+   * Initialize Paystack payment
+   * @param {Object} data - Payment data (items, email, etc.)
+   * @returns {Promise<Object>} Paystack authorization data
+   */
+  async initializePaystack(data) {
+    return await this.request('/payment/paystack/initialize', 'POST', data);
+  },
+
+  /**
+   * Verify Paystack payment
+   * @param {string} reference - Paystack reference
+   * @returns {Promise<Object>} Payment status
+   */
+  async verifyPaystack(reference) {
+    return await this.request(`/payment/paystack/verify?reference=${reference}`, 'GET');
   },
 
   /**
