@@ -77,9 +77,10 @@
     tr:hover { background: var(--bg-primary); }
     .status-badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; }
     .status-badge.pending { background: rgba(255, 152, 0, 0.1); color: #FF9800; }
-    .status-badge.completed { background: rgba(76, 175, 80, 0.1); color: #4CAF50; }
-    .status-badge.cancelled { background: rgba(244, 67, 54, 0.1); color: #F44336; }
+    .status-badge.completed, .status-badge.confirmed, .status-badge.delivered { background: rgba(76, 175, 80, 0.1); color: #4CAF50; }
+    .status-badge.cancelled, .status-badge.failed, .status-badge.rejected { background: rgba(244, 67, 54, 0.1); color: #F44336; }
     .status-badge.processing { background: rgba(0, 168, 232, 0.1); color: var(--primary); }
+    .status-badge.shipped { background: rgba(156, 39, 176, 0.1); color: #9C27B0; }
     
     /* Buttons */
     .btn { padding: 10px 20px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 8px; font-family: 'Poppins', sans-serif; }
