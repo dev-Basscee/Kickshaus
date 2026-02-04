@@ -1,10 +1,93 @@
 import { Request, Response } from 'express';
+import crypto from 'crypto';
 import { paymentService } from '../services/payment.service';
 import { AuthenticatedRequest } from '../types';
 import { sendSuccess } from '../utils/errors';
 import { CreateOrderInput, VerifyPaymentInput, CreateTransactionInput } from '../utils/validators';
+import { config } from '../config/env';
 
 export class PaymentController {
+  /**
+   * Handle Paystack Webhook
+   * POST /api/payment/webhook
+   * Public endpoint - Secured by signature verification
+   */
+  async handleWebhook(req: Request, res: Response): Promise<void> {
+    try {
+      // 1. Validate Event Signature (Security First)
+      const secret = config.paystack.secretKey;
+      const signature = req.headers['x-paystack-signature'];
+
+      if (!secret || !signature) {
+        console.warn('⚠️ Webhook received without secret or signature');
+        res.sendStatus(401);
+        return;
+      }
+
+      // Hash the body to verify authenticity
+      const hash = crypto.createHmac('sha512', secret)
+        .update(JSON.stringify(req.body))
+        .digest('hex');
+
+      if (hash !== signature) {
+        console.error('❌ Webhook signature mismatch. Potential spoofing attempt.');
+        res.sendStatus(401);
+        return;
+      }
+
+      // 2. Parse Event
+      const event = req.body;
+      
+      // We only care about successful charges
+      if (event.event !== 'charge.success') {
+        // Return 200 to acknowledge receipt of other events we don't handle
+        res.sendStatus(200);
+        return;
+      }
+
+      const { reference, status } = event.data;
+
+      if (status !== 'success') {
+        console.log(`Webhook: Charge not success for ref ${reference}`);
+        res.sendStatus(200);
+        return;
+      }
+
+      console.log(`🔔 Webhook received for reference: ${reference}`);
+
+      // 3. Find Order (Idempotency Check Logic)
+      // We need to find the order ID associated with this reference
+      // Since confirmOrder takes an ID, we'll use a service helper or lookup directly.
+      // paymentService.confirmOrder expects an ID. 
+      // Let's implement a quick lookup in the service or use getOrderByReference logic here if accessible,
+      // But verifyPaystackTransaction logic in service does exactly this: lookup then confirm.
+      
+      // However, verifyPaystackTransaction makes an HTTP call to Paystack. We want to avoid that 
+      // since we already have the trusted payload.
+      
+      // Let's delegate to a new dedicated method in PaymentService or perform lookup here.
+      // To keep controller thin, I will rely on a new `confirmOrderViaWebhook` in PaymentService, 
+      // or simply reuse the existing finding logic if I can.
+      
+      // For now, I will use paymentService.verifyPaystackTransaction logic but strictly for the confirmation part.
+      // Actually, simplest is to implement the lookup and confirmation here via the service.
+      
+      const result = await paymentService.handleWebhookConfirmation(reference);
+      
+      if (result) {
+        console.log(`✅ Order verified via webhook: ${reference}`);
+      } else {
+        console.log(`ℹ️ Webhook processed (Order already confirmed or not found): ${reference}`);
+      }
+
+      res.sendStatus(200);
+    } catch (error) {
+      console.error('Webhook Error:', error);
+      // Return 500 to tell Paystack to retry if it's a server error
+      res.sendStatus(500); 
+    }
+  }
+
   /**
    * Initialize Paystack payment
    * POST /api/payment/paystack/initialize
@@ -23,7 +106,17 @@ export class PaymentController {
     
     // Prioritize contact_email, fall back to explicit 'email' field, or fail
     const email = body.contact_email || body.email;
-    const callbackUrl = body.callback_url || req.headers.referer || 'http://localhost:3000/payment.html';
+    const defaultCallback = `${config.social.frontendUrl}/payment.html`;
+    const callbackUrl = body.callback_url || req.headers.referer || defaultCallback;
+
+    // Redact sensitive info for logging
+    const logBody = { ...req.body };
+    if (logBody.email) logBody.email = '***@***.***';
+    if (logBody.contact_email) logBody.contact_email = '***@***.***';
+    if (logBody.items) logBody.items = `[${logBody.items.length} items]`;
+
+    console.log('PaymentController.initializePaystack - Received request from user:', userId);
+    console.log('PaymentController.initializePaystack - Determined callbackUrl:', callbackUrl);
 
     if (!email) {
        res.status(400).json({ success: false, error: 'Email is required for Paystack payment' });
