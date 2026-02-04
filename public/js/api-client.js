@@ -4,9 +4,7 @@
 // ===============================================
 
 // Determine base URL based on environment
-const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? 'http://localhost:3000/api'
-  : window.location.origin + '/api';
+const API_BASE_URL = '/api';
 
 const KickshausAPI = {
   // Auth token storage key
@@ -99,14 +97,19 @@ const KickshausAPI = {
   
   /**
    * Register a new customer
+   * @param {string} fullName - User full name
    * @param {string} email - User email
    * @param {string} password - User password
    * @returns {Promise<Object>} Registration response with user and token
    */
-  async register(email, password) {
+  async register(fullName, email, password) {
     const response = await this.request('/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ 
+        full_name: fullName,
+        email, 
+        password 
+      }),
     });
     
     if (response.success && response.data) {
